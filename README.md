@@ -1,33 +1,53 @@
 # api-shield
 
-**Route lifecycle management for FastAPI — maintenance mode, environment gating, deprecation, canary rollouts, and more. No restarts required.**
+**Route lifecycle management for Python web frameworks — maintenance mode, environment gating, deprecation, canary rollouts, and more. No restarts required.**
 
-Most "maintenance mode" tools are blunt instruments: shut everything down or nothing at all. `api-shield` treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through an ASGI middleware — no redeployment, no server restart.
+Most "maintenance mode" tools are blunt instruments: shut everything down or nothing at all. `api-shield` treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through middleware — no redeployment, no server restart.
 
 ---
 
 ## Contents
 
-- [Quick Start](#quick-start)
-- [How It Works](#how-it-works)
-- [Decorators](#decorators)
-- [Global Maintenance Mode](#global-maintenance-mode)
+- [Adapters](#adapters)
+  - [FastAPI](#fastapi)
+    - [Installation](#installation)
+    - [Quick Start](#quick-start)
+    - [How It Works](#how-it-works)
+    - [Decorators](#decorators)
+    - [Global Maintenance Mode](#global-maintenance-mode)
+    - [OpenAPI & Docs Integration](#openapi--docs-integration)
+    - [Testing](#testing)
+  - [Django — Coming Soon](#django--coming-soon)
+  - [Flask — Coming Soon](#flask--coming-soon)
 - [Backends](#backends)
-- [OpenAPI & Docs Integration](#openapi--docs-integration)
 - [CLI Reference](#cli-reference)
 - [Audit Log](#audit-log)
 - [Configuration File](#configuration-file)
 - [Architecture](#architecture)
-- [Testing](#testing)
+- [Error Response Format](#error-response-format)
 
 ---
 
-## Quick Start
+## Adapters
+
+### FastAPI
+
+#### Installation
 
 ```bash
 uv add api-shield
 # or: pip install api-shield
 ```
+
+For the full feature set:
+
+```bash
+uv add "api-shield[all]"
+```
+
+---
+
+#### Quick Start
 
 ```python
 from fastapi import FastAPI
@@ -87,7 +107,7 @@ GET /v1/users      → 200  + Deprecation/Sunset/Link response headers
 
 ---
 
-## How It Works
+#### How It Works
 
 ```
 Incoming HTTP request
@@ -114,7 +134,7 @@ ShieldMiddleware.dispatch()
         └─ call_next(request)
 ```
 
-### Route Registration
+##### Route Registration
 
 Shield decorators stamp `__shield_meta__` on the endpoint function. This metadata is registered with the engine at startup via two mechanisms:
 
@@ -125,11 +145,11 @@ State registration is **persistence-first**: if the backend already has a state 
 
 ---
 
-## Decorators
+#### Decorators
 
 All decorators work on any router type — plain `APIRouter`, `ShieldRouter`, or routes added directly to the `FastAPI` app instance.
 
-### `@maintenance(reason, start, end)`
+##### `@maintenance(reason, start, end)`
 
 Puts a route into maintenance mode. Returns 503 with a structured JSON body. If `start`/`end` are provided, the maintenance window is also stored for scheduling.
 
@@ -168,7 +188,7 @@ Response:
 
 ---
 
-### `@disabled(reason)`
+##### `@disabled(reason)`
 
 Permanently disables a route. Returns 503. Use for routes that should never be called again (migrations, removed features).
 
@@ -183,7 +203,7 @@ async def legacy_report():
 
 ---
 
-### `@env_only(*envs)`
+##### `@env_only(*envs)`
 
 Restricts a route to specific environment names. In any other environment the route returns a **silent 404** — it does not reveal that the path exists.
 
@@ -206,7 +226,7 @@ engine = make_engine(current_env="staging")
 
 ---
 
-### `@force_active`
+##### `@force_active`
 
 Bypasses all shield checks. Use for health checks, status endpoints, and any route that must always be reachable.
 
@@ -225,7 +245,7 @@ The only exception is when global maintenance mode is enabled with `include_forc
 
 ---
 
-### `@deprecated(sunset, use_instead)`
+##### `@deprecated(sunset, use_instead)`
 
 Marks a route as deprecated. Requests still succeed, but the middleware injects RFC-compliant response headers:
 
@@ -252,11 +272,11 @@ The route is also marked `deprecated: true` in the OpenAPI schema and shown with
 
 ---
 
-## Global Maintenance Mode
+#### Global Maintenance Mode
 
 Global maintenance blocks **every route** with a single call, without requiring per-route decorators. Use it for full deployments, infrastructure work, or emergency stops.
 
-### Programmatic (lifespan or runtime)
+##### Programmatic (lifespan or runtime)
 
 ```python
 from contextlib import asynccontextmanager
@@ -291,7 +311,7 @@ print(cfg.enabled, cfg.reason, cfg.exempt_paths)
 await engine.set_global_exempt_paths(["/health", "/status"])
 ```
 
-### Via CLI
+##### Via CLI
 
 ```bash
 # Enable with exemptions
@@ -314,7 +334,7 @@ shield global status
 shield global disable
 ```
 
-### Options
+##### Options
 
 | Option | Default | Description |
 |---|---|---|
@@ -324,9 +344,148 @@ shield global disable
 
 ---
 
+#### OpenAPI & Docs Integration
+
+##### Schema filtering
+
+```python
+from shield.fastapi import apply_shield_to_openapi
+
+apply_shield_to_openapi(app, engine)
+```
+
+Effect on `/docs` and `/redoc`:
+
+| Route status | Schema behaviour |
+|---|---|
+| `DISABLED` | Hidden from all schemas |
+| `ENV_GATED` (wrong env) | Hidden from all schemas |
+| `MAINTENANCE` | Visible; operation summary prefixed with `🔧`; description shows warning block; `x-shield-status` extension added |
+| `DEPRECATED` | Marked `deprecated: true`; successor path shown |
+| `ACTIVE` | No change |
+
+Schema is computed fresh on every request — runtime state changes (CLI, engine calls) reflect immediately without restarting.
+
+---
+
+##### Docs UI customisation
+
+```python
+from shield.fastapi import setup_shield_docs
+
+apply_shield_to_openapi(app, engine)  # must come first
+setup_shield_docs(app, engine)
+```
+
+Replaces both `/docs` and `/redoc` with enhanced versions:
+
+**Global maintenance ON:**
+- Full-width pulsing red sticky banner at the top of the page
+- Reason text and exempt paths displayed
+- Refreshes automatically every 15 seconds — no page reload needed
+
+**Global maintenance OFF:**
+- Small green "All systems operational" chip in the bottom-right corner
+
+**Per-route maintenance:**
+- Orange left-border on the operation block
+- `🔧 MAINTENANCE` badge appended to the summary bar
+
+---
+
+#### Testing
+
+```python
+import pytest
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
+
+from shield.core.backends.memory import MemoryBackend
+from shield.core.engine import ShieldEngine
+from shield.fastapi.decorators import maintenance, force_active
+from shield.fastapi.middleware import ShieldMiddleware
+from shield.fastapi.router import ShieldRouter
+
+
+async def test_maintenance_returns_503():
+    engine = ShieldEngine(backend=MemoryBackend())
+    app = FastAPI()
+    app.add_middleware(ShieldMiddleware, engine=engine)
+    router = ShieldRouter(engine=engine)
+
+    @router.get("/payments")
+    @maintenance(reason="DB migration")
+    async def get_payments():
+        return {"ok": True}
+
+    app.include_router(router)
+    await app.router.startup()   # trigger shield route registration
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.get("/payments")
+
+    assert resp.status_code == 503
+    assert resp.json()["error"]["code"] == "MAINTENANCE_MODE"
+
+
+async def test_runtime_enable_via_engine():
+    engine = ShieldEngine(backend=MemoryBackend())
+
+    await engine.set_maintenance("GET:/orders", reason="Upgrade")
+    await engine.enable("GET:/orders")
+
+    state = await engine.get_state("GET:/orders")
+    assert state.status.value == "active"
+```
+
+`pyproject.toml` includes:
+```toml
+[tool.pytest.ini_options]
+asyncio_mode = "auto"   # all async tests work without @pytest.mark.asyncio
+```
+
+Run tests:
+
+```bash
+uv run pytest          # all tests
+uv run pytest -v       # verbose
+uv run pytest tests/fastapi/test_middleware.py   # specific file
+uv run pytest tests/core/                        # core only (no FastAPI dependency)
+```
+
+---
+
+### Django — Coming Soon
+
+Django adapter is planned. It will provide:
+
+- `ShieldMiddleware` as a standard Django middleware class
+- Same decorators (`@maintenance`, `@disabled`, `@env_only`, `@deprecated`, `@force_active`) usable on Django views and DRF viewsets
+- Integration with Django's URL routing for route registration at startup
+- DRF schema filtering for `drf-spectacular` / `drf-yasg`
+
+Track progress: [github.com/Attakay78/api-shield](https://github.com/Attakay78/api-shield)
+
+---
+
+### Flask — Coming Soon
+
+Flask adapter is planned. It will provide:
+
+- `ShieldMiddleware` as a WSGI/ASGI middleware compatible with Flask
+- Same decorators usable on Flask route functions and Blueprints
+- Integration with Flask's URL map for route registration at startup
+- OpenAPI schema filtering for `flask-openapi3` / `flasgger`
+
+Track progress: [github.com/Attakay78/api-shield](https://github.com/Attakay78/api-shield)
+
+---
+
 ## Backends
 
-The backend determines where route state and the audit log are persisted.
+The backend determines where route state and the audit log are persisted. Backends are shared across all adapters.
 
 ### `MemoryBackend` (default)
 
@@ -382,113 +541,29 @@ Best for: multi-instance / load-balanced deployments, production.
 
 ---
 
-### Config file (`.shield`)
-
-Both the app and CLI auto-discover a `.shield` file by walking up from the current directory:
-
-```ini
-# .shield
-SHIELD_BACKEND=file
-SHIELD_FILE_PATH=shield-state.json
-SHIELD_ENV=production
-```
-
-Priority order (highest wins):
-1. Explicit constructor arguments
-2. `os.environ`
-3. `.shield` file
-4. Built-in defaults
-
-Pass a specific config file to the CLI:
-```bash
-shield --config /etc/myapp/.shield status
-```
-
----
-
-## OpenAPI & Docs Integration
-
-### Schema filtering
-
-```python
-from shield.fastapi import apply_shield_to_openapi
-
-apply_shield_to_openapi(app, engine)
-```
-
-Effect on `/docs` and `/redoc`:
-
-| Route status | Schema behaviour |
-|---|---|
-| `DISABLED` | Hidden from all schemas |
-| `ENV_GATED` (wrong env) | Hidden from all schemas |
-| `MAINTENANCE` | Visible; operation summary prefixed with `🔧`; description shows warning block; `x-shield-status` extension added |
-| `DEPRECATED` | Marked `deprecated: true`; successor path shown |
-| `ACTIVE` | No change |
-
-Schema is computed fresh on every request — runtime state changes (CLI, engine calls) reflect immediately without restarting.
-
----
-
-### Docs UI customisation
-
-```python
-from shield.fastapi import setup_shield_docs
-
-apply_shield_to_openapi(app, engine)  # must come first
-setup_shield_docs(app, engine)
-```
-
-Replaces both `/docs` and `/redoc` with enhanced versions:
-
-**Global maintenance ON:**
-- Full-width pulsing red sticky banner at the top of the page
-- Reason text and exempt paths displayed
-- Refreshes automatically every 15 seconds — no page reload needed
-
-**Global maintenance OFF:**
-- Small green "All systems operational" chip in the bottom-right corner
-
-**Per-route maintenance:**
-- Orange left-border on the operation block
-- `🔧 MAINTENANCE` badge appended to the summary bar
-
----
-
 ## CLI Reference
 
 The `shield` CLI operates on the same backend as the running server. Requires `SHIELD_BACKEND=file` or `SHIELD_BACKEND=redis` to share state (the default `memory` backend is process-local).
 
 ```bash
-# Install entry point
 uv pip install -e ".[cli]"
 ```
 
 ### Route commands
 
 ```bash
-# Show all registered routes
-shield status
+shield status                           # all registered routes
+shield status GET:/payments             # inspect one route
 
-# Show one route
-shield status GET:/payments
-
-# Enable a route
 shield enable GET:/payments
-
-# Disable with a reason
 shield disable GET:/payments --reason "Security patch"
 
-# Put in maintenance (immediate)
 shield maintenance GET:/payments --reason "DB swap"
-
-# Put in maintenance with a time window
 shield maintenance GET:/payments \
   --reason "DB migration" \
   --start 2025-06-01T02:00Z \
   --end 2025-06-01T04:00Z
 
-# Schedule a future maintenance window (auto-activates and deactivates)
 shield schedule GET:/payments \
   --start 2025-06-01T02:00Z \
   --end 2025-06-01T04:00Z \
@@ -513,7 +588,7 @@ shield log --route GET:/payments    # filter by route
 shield log --limit 100
 ```
 
-### Notes on route keys
+### Route key format
 
 Routes are stored with method-prefixed keys:
 
@@ -523,7 +598,6 @@ Routes are stored with method-prefixed keys:
 | `@router.post("/payments")` | `POST:/payments` |
 | `@router.get("/api/v1/users")` | `GET:/api/v1/users` |
 
-Use the same format with the CLI:
 ```bash
 shield disable "GET:/payments"
 shield enable "/payments"           # applies to all methods
@@ -536,7 +610,6 @@ shield enable "/payments"           # applies to all methods
 Every state change writes an immutable audit entry:
 
 ```python
-# Via engine
 entries = await engine.get_audit_log(limit=50)
 entries = await engine.get_audit_log(path="GET:/payments", limit=20)
 
@@ -547,7 +620,7 @@ for e in entries:
 
 Fields: `id`, `timestamp`, `path`, `action`, `actor`, `reason`, `previous_status`, `new_status`.
 
-The CLI uses `getpass.getuser()` (the logged-in OS username) as the default actor — no `--actor` flag needed for accountability:
+The CLI uses `getpass.getuser()` (the logged-in OS username) as the default actor:
 
 ```bash
 shield disable GET:/payments --reason "Security patch"
@@ -556,11 +629,34 @@ shield disable GET:/payments --reason "Security patch"
 
 ---
 
+## Configuration File
+
+Both the app and CLI auto-discover a `.shield` file by walking up from the current directory:
+
+```ini
+# .shield
+SHIELD_BACKEND=file
+SHIELD_FILE_PATH=shield-state.json
+SHIELD_ENV=production
+```
+
+Priority order (highest wins):
+1. Explicit constructor arguments
+2. `os.environ`
+3. `.shield` file
+4. Built-in defaults
+
+```bash
+shield --config /etc/myapp/.shield status
+```
+
+---
+
 ## Architecture
 
 ```
 shield/
-├── core/                       # Framework-agnostic — zero FastAPI imports
+├── core/                       # Framework-agnostic — zero framework imports
 │   ├── models.py               # RouteState, AuditEntry, GlobalMaintenanceConfig
 │   ├── engine.py               # ShieldEngine — all business logic
 │   ├── scheduler.py            # MaintenanceScheduler (asyncio.Task based)
@@ -572,11 +668,15 @@ shield/
 │       ├── file.py             # JSON file via aiofiles
 │       └── redis.py            # Redis via redis-py async
 │
-├── fastapi/                    # FastAPI adapter layer
+├── fastapi/                    # FastAPI adapter
 │   ├── middleware.py           # ShieldMiddleware (ASGI, BaseHTTPMiddleware)
 │   ├── decorators.py           # @maintenance, @disabled, @env_only, ...
 │   ├── router.py               # ShieldRouter + scan_routes()
 │   └── openapi.py              # Schema filter + docs UI customisation
+│
+├── adapters/                   # Future framework adapters
+│   ├── django/                 # Coming soon
+│   └── flask/                  # Coming soon
 │
 └── cli/
     └── main.py                 # Typer CLI app
@@ -584,88 +684,11 @@ shield/
 
 ### Key design rules
 
-1. **`shield.core` never imports from `shield.fastapi`** — the core is framework-agnostic and can power future adapters (Flask, Litestar, Django).
+1. **`shield.core` never imports from any adapter** — the core is framework-agnostic and powers all current and future adapters.
 2. **All business logic lives in `ShieldEngine`** — middleware and decorators are transport layers that call `engine.check()`, never make policy decisions themselves.
-3. **`engine.check()` is the single chokepoint** — every request, regardless of router type, goes through this one method.
+3. **`engine.check()` is the single chokepoint** — every request, regardless of framework or router type, goes through this one method.
 4. **Fail-open on backend errors** — if the backend is unreachable, requests pass through. Shield never takes down an API due to its own failures.
 5. **Persistence-first registration** — if a route already has persisted state, the decorator default is ignored. Runtime changes survive restarts.
-
----
-
-## Testing
-
-```bash
-# Run all tests
-uv run pytest
-
-# Run with verbose output
-uv run pytest -v
-
-# Run a specific test file
-uv run pytest tests/fastapi/test_middleware.py
-
-# Run only core tests (no FastAPI dependency)
-uv run pytest tests/core/
-```
-
-### Writing tests with shield
-
-```python
-import pytest
-from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
-
-from shield.core.backends.memory import MemoryBackend
-from shield.core.engine import ShieldEngine
-from shield.fastapi.decorators import maintenance, force_active
-from shield.fastapi.middleware import ShieldMiddleware
-from shield.fastapi.router import ShieldRouter
-
-
-async def test_maintenance_returns_503():
-    engine = ShieldEngine(backend=MemoryBackend())
-    app = FastAPI()
-    app.add_middleware(ShieldMiddleware, engine=engine)
-    router = ShieldRouter(engine=engine)
-
-    @router.get("/payments")
-    @maintenance(reason="DB migration")
-    async def get_payments():
-        return {"ok": True}
-
-    app.include_router(router)
-    await app.router.startup()   # trigger shield route registration
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
-        resp = await client.get("/payments")
-
-    assert resp.status_code == 503
-    assert resp.json()["error"]["code"] == "MAINTENANCE_MODE"
-
-
-async def test_runtime_enable_via_engine():
-    engine = ShieldEngine(backend=MemoryBackend())
-    # ... set up app ...
-
-    # Put a route in maintenance at runtime (no decorator needed)
-    await engine.set_maintenance("GET:/orders", reason="Upgrade")
-
-    # Re-enable it
-    await engine.enable("GET:/orders")
-
-    state = await engine.get_state("GET:/orders")
-    assert state.status.value == "active"
-```
-
-### Test configuration
-
-`pyproject.toml` includes:
-```toml
-[tool.pytest.ini_options]
-asyncio_mode = "auto"   # all async tests work without @pytest.mark.asyncio
-```
 
 ---
 

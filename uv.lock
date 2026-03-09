@@ -50,6 +50,11 @@ trio = [
 name = "api-shield"
 version = "0.1.0"
 source = { editable = "." }
+dependencies = [
+    { name = "anyio" },
+    { name = "pydantic" },
+    { name = "starlette" },
+]
 
 [package.optional-dependencies]
 all = [
@@ -88,6 +93,7 @@ requires-dist = [
     { name = "aiofiles", marker = "extra == 'all'", specifier = ">=23.0" },
     { name = "aiofiles", marker = "extra == 'dashboard'", specifier = ">=23.0" },
     { name = "aiofiles", marker = "extra == 'dev'", specifier = ">=23.0" },
+    { name = "anyio", specifier = ">=4.0" },
     { name = "anyio", extras = ["trio"], marker = "extra == 'dev'" },
     { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.100" },
     { name = "fastapi", marker = "extra == 'dev'", specifier = ">=0.100" },
@@ -96,11 +102,13 @@ requires-dist = [
     { name = "jinja2", marker = "extra == 'all'", specifier = ">=3.1" },
     { name = "jinja2", marker = "extra == 'dashboard'", specifier = ">=3.1" },
     { name = "mypy", marker = "extra == 'dev'" },
+    { name = "pydantic", specifier = ">=2.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
     { name = "redis", extras = ["asyncio"], marker = "extra == 'all'", specifier = ">=5.0" },
     { name = "redis", extras = ["asyncio"], marker = "extra == 'redis'", specifier = ">=5.0" },
     { name = "ruff", marker = "extra == 'dev'" },
+    { name = "starlette", specifier = ">=0.27" },
     { name = "typer", marker = "extra == 'all'", specifier = ">=0.12" },
     { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
 ]
