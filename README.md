@@ -17,9 +17,11 @@ Most "maintenance mode" tools are blunt instruments: shut everything down or not
     - [Global Maintenance Mode](#global-maintenance-mode)
     - [OpenAPI & Docs Integration](#openapi--docs-integration)
     - [Testing](#testing)
+    - [Examples](#examples)
   - [Django — Coming Soon](#django--coming-soon)
   - [Flask — Coming Soon](#flask--coming-soon)
 - [Backends](#backends)
+  - [Custom Backends](#custom-backends)
 - [CLI Reference](#cli-reference)
 - [Audit Log](#audit-log)
 - [Configuration File](#configuration-file)
@@ -457,6 +459,35 @@ uv run pytest tests/core/                        # core only (no FastAPI depende
 
 ---
 
+#### Examples
+
+Runnable examples are in [examples/fastapi/](examples/fastapi/).
+
+| File | What it demonstrates |
+|---|---|
+| [basic.py](examples/fastapi/basic.py) | Core decorators: `@maintenance`, `@disabled`, `@env_only`, `@force_active`, `@deprecated` |
+| [scheduled_maintenance.py](examples/fastapi/scheduled_maintenance.py) | Auto-activating maintenance windows via `schedule_maintenance()` |
+| [global_maintenance.py](examples/fastapi/global_maintenance.py) | Blocking every route at once with `enable_global_maintenance()` |
+| [custom_backend/sqlite_backend.py](examples/fastapi/custom_backend/sqlite_backend.py) | Full custom backend implementation using SQLite |
+
+Run any example:
+
+```bash
+# Basic decorators
+uv run uvicorn examples.fastapi.basic:app --reload
+
+# Scheduled maintenance window
+uv run uvicorn examples.fastapi.scheduled_maintenance:app --reload
+
+# Global maintenance mode
+uv run uvicorn examples.fastapi.global_maintenance:app --reload
+
+# SQLite custom backend (requires: pip install aiosqlite)
+uv run uvicorn examples.fastapi.custom_backend.sqlite_backend:app --reload
+```
+
+---
+
 ### Django — Coming Soon
 
 Django adapter is planned. It will provide:
@@ -538,6 +569,142 @@ Key schema:
 - `shield:global` — global maintenance configuration
 
 Best for: multi-instance / load-balanced deployments, production.
+
+---
+
+### Custom Backends
+
+Any storage layer can be used as a backend by subclassing `ShieldBackend` and implementing six async methods. api-shield handles everything else — the engine, middleware, decorators, CLI, and audit log all work unchanged.
+
+#### Contract
+
+```python
+from shield.core.backends.base import ShieldBackend
+from shield.core.models import AuditEntry, RouteState
+
+class MyBackend(ShieldBackend):
+
+    async def get_state(self, path: str) -> RouteState:
+        # Return stored state. MUST raise KeyError if path not found.
+        ...
+
+    async def set_state(self, path: str, state: RouteState) -> None:
+        # Persist state for path, overwriting any existing entry.
+        ...
+
+    async def delete_state(self, path: str) -> None:
+        # Remove state for path. No-op if not found.
+        ...
+
+    async def list_states(self) -> list[RouteState]:
+        # Return all registered route states.
+        ...
+
+    async def write_audit(self, entry: AuditEntry) -> None:
+        # Append entry to the audit log.
+        ...
+
+    async def get_audit_log(
+        self, path: str | None = None, limit: int = 100
+    ) -> list[AuditEntry]:
+        # Return audit entries newest-first, optionally filtered by path.
+        ...
+```
+
+`subscribe()` is optional. The base class raises `NotImplementedError` by default, and the dashboard falls back to polling. Override it if your backend supports pub/sub.
+
+#### Serialisation
+
+`RouteState` and `AuditEntry` are Pydantic v2 models. Use their built-in helpers:
+
+```python
+# Serialise to a JSON string for storage
+json_str = state.model_dump_json()
+
+# Deserialise from a JSON string
+state = RouteState.model_validate_json(json_str)
+```
+
+#### Rules
+
+| Rule | Detail |
+|---|---|
+| `get_state()` must raise `KeyError` | The engine uses `KeyError` to distinguish "not registered" from "registered but active" |
+| Fail-open on errors | Let exceptions bubble up — `ShieldEngine` wraps every backend call and allows requests through on failure |
+| Thread safety | All methods are async; use your storage library's async client where available |
+| Global maintenance | Inherited from `ShieldBackend` base class — no extra work needed unless you want a dedicated storage path |
+
+#### Wire the custom backend to the engine
+
+```python
+from shield.core.engine import ShieldEngine
+
+backend = MyBackend()
+engine  = ShieldEngine(backend=backend)
+```
+
+From here everything works as normal — decorators, middleware, CLI, audit log.
+
+#### SQLite example
+
+A complete working implementation backed by SQLite is in
+[examples/fastapi/custom_backend/sqlite_backend.py](examples/fastapi/custom_backend/sqlite_backend.py).
+
+Key points from that implementation:
+
+```python
+import aiosqlite
+from shield.core.backends.base import ShieldBackend
+from shield.core.models import AuditEntry, RouteState
+
+class SQLiteBackend(ShieldBackend):
+    def __init__(self, db_path: str = "shield-state.db") -> None:
+        self._db_path = db_path
+        self._db: aiosqlite.Connection | None = None
+
+    async def connect(self) -> None:
+        """Open connection and create tables. Call at app startup."""
+        self._db = await aiosqlite.connect(self._db_path)
+        await self._db.execute("""
+            CREATE TABLE IF NOT EXISTS shield_states (
+                path TEXT PRIMARY KEY, state_json TEXT NOT NULL
+            )
+        """)
+        await self._db.execute("""
+            CREATE TABLE IF NOT EXISTS shield_audit (
+                id TEXT PRIMARY KEY, timestamp TEXT NOT NULL,
+                path TEXT NOT NULL,  entry_json TEXT NOT NULL
+            )
+        """)
+        await self._db.commit()
+
+    async def get_state(self, path: str) -> RouteState:
+        async with self._db.execute(
+            "SELECT state_json FROM shield_states WHERE path = ?", (path,)
+        ) as cur:
+            row = await cur.fetchone()
+        if row is None:
+            raise KeyError(path)           # ← required contract
+        return RouteState.model_validate_json(row[0])
+
+    async def set_state(self, path: str, state: RouteState) -> None:
+        await self._db.execute(
+            "INSERT INTO shield_states VALUES (?, ?)"
+            " ON CONFLICT(path) DO UPDATE SET state_json = excluded.state_json",
+            (path, state.model_dump_json()),
+        )
+        await self._db.commit()
+
+    # ... delete_state, list_states, write_audit, get_audit_log
+    # See the full file for the complete implementation.
+```
+
+Run it:
+
+```bash
+pip install aiosqlite
+uv run uvicorn examples.fastapi.custom_backend.sqlite_backend:app --reload
+```
 
 ---
 
