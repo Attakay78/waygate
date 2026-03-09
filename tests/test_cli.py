@@ -8,7 +8,7 @@ from __future__ import annotations
 import anyio
 from typer.testing import CliRunner
 
-from shield.cli.main import app
+from shield.cli.main import cli as app
 
 runner = CliRunner()
 
@@ -347,20 +347,37 @@ def test_disable_all_methods_route(monkeypatch, tmp_path):
     assert "/payments" in result.output
 
 
-def test_unknown_route_raises_error(monkeypatch, tmp_path):
-    """Operating on a non-existent route must exit with code 1."""
+def test_nonexistent_route_raises_error(monkeypatch, tmp_path):
+    """Mutating a path not registered by the app must exit with code 1."""
     file_path = str(tmp_path / "s.json")
     monkeypatch.setenv("SHIELD_BACKEND", "file")
     monkeypatch.setenv("SHIELD_FILE_PATH", file_path)
-    # Do NOT seed /api/unknown
+    # Do NOT seed /api/nonexistent — it is not a known application route.
 
     result = runner.invoke(
         app,
-        ["disable", "/api/unknown", "--reason", "oops"],
+        ["disable", "/api/nonexistent", "--reason", "oops"],
         catch_exceptions=False,
     )
     assert result.exit_code == 1
-    assert "Error" in result.output or "No registered state" in result.output
+    assert "not registered" in result.output
+
+
+def test_undecorated_route_can_be_mutated(monkeypatch, tmp_path):
+    """An undecorated route seeded as ACTIVE (by startup scan) can be disabled."""
+    file_path = str(tmp_path / "s.json")
+    monkeypatch.setenv("SHIELD_BACKEND", "file")
+    monkeypatch.setenv("SHIELD_FILE_PATH", file_path)
+    # Simulate the startup scan: register the route as ACTIVE with no decorator.
+    _seed(file_path, "GET:/orders")
+
+    result = runner.invoke(
+        app,
+        ["disable", "GET:/orders", "--reason", "shutting down"],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    assert "DISABLED" in result.output
 
 
 def test_invalid_method_raises_error(monkeypatch, tmp_path):

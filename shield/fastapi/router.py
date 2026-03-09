@@ -21,11 +21,21 @@ from shield.core.engine import ShieldEngine
 
 
 async def scan_routes(app: Any, engine: ShieldEngine) -> None:
-    """Scan *app*'s routes for ``__shield_meta__`` and register them with *engine*.
+    """Scan *app*'s routes and register them with *engine*.
 
     Works with any ``FastAPI`` or ``Starlette`` application — including routes
     defined on plain ``APIRouter`` instances and routes added directly to the
-    ``FastAPI`` app.  Routes with no ``__shield_meta__`` are silently skipped.
+    ``FastAPI`` app.
+
+    **All routes are registered**, not just decorated ones:
+
+    - Routes with ``__shield_meta__`` are registered with their decorator state.
+    - Routes without ``__shield_meta__`` are registered as ``ACTIVE``.
+
+    This ensures the backend is the definitive record of every route that
+    exists in the application.  The CLI uses this to distinguish between a
+    real undecorated route (registered as ``ACTIVE`` — mutable via CLI) and a
+    path that does not exist (not in backend — CLI raises an error).
 
     This function is **idempotent**: routes already registered (e.g. by a
     ``ShieldRouter`` startup hook or a previous ``scan_routes()`` call) are
@@ -45,9 +55,15 @@ async def scan_routes(app: Any, engine: ShieldEngine) -> None:
         endpoint = getattr(route, "endpoint", None)
         if endpoint is None:
             continue
-        meta: dict[str, Any] | None = getattr(endpoint, "__shield_meta__", None)
-        if meta is None:
+        # Skip FastAPI's built-in docs/schema routes — they are not
+        # user-defined routes and should never appear in shield status.
+        if route.path in {
+            "/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"
+        }:
             continue
+        # Use decorator meta if present; fall back to empty dict for
+        # undecorated routes so they are still registered as ACTIVE.
+        meta: dict[str, Any] = getattr(endpoint, "__shield_meta__", {})
         methods: set[str] = route.methods or set()
         if methods:
             for method in sorted(methods):
@@ -114,9 +130,9 @@ class ShieldRouter(APIRouter):
         """
         super().add_api_route(path, endpoint, **kwargs)
 
-        meta: dict[str, Any] | None = getattr(endpoint, "__shield_meta__", None)
-        if meta is None:
-            return
+        # Use decorator meta if present; fall back to empty dict for
+        # undecorated routes so they are still registered as ACTIVE.
+        meta: dict[str, Any] = getattr(endpoint, "__shield_meta__", {})
 
         # Prepend the router prefix so the key aligns with the full app path.
         full_path = (self.prefix or "") + path

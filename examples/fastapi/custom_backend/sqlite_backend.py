@@ -10,14 +10,27 @@ Requirements:
     pip install aiosqlite
     # or: uv add aiosqlite
 
-Usage:
+Run the demo app:
     uv run uvicorn examples.fastapi.custom_backend.sqlite_backend:app --reload
+
+Use with the CLI:
+    SHIELD_BACKEND=custom \\
+    SHIELD_CUSTOM_PATH=examples.fastapi.custom_backend.sqlite_backend:make_backend \\
+    SHIELD_SQLITE_PATH=shield-state.db \\
+        shield status
+
+    # or put this in your .shield file:
+    #   SHIELD_BACKEND=custom
+    #   SHIELD_CUSTOM_PATH=examples.fastapi.custom_backend.sqlite_backend:make_backend
+    #   SHIELD_SQLITE_PATH=shield-state.db
 """
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import aiosqlite
@@ -42,15 +55,18 @@ from shield.fastapi import (
 #
 #   1. Subclass ``ShieldBackend`` from ``shield.core.backends.base``.
 #   2. Implement all six @abstractmethod methods.
-#   3. RouteState and AuditEntry are Pydantic models — use .model_dump_json()
+#   3. Override ``startup()`` / ``shutdown()`` for async initialisation —
+#      the engine calls these automatically when used as ``async with engine:``.
+#      The CLI also calls them via its ``async with _make_engine() as engine:``
+#      pattern, so no special CLI wiring is needed.
+#   4. RouteState and AuditEntry are Pydantic models — use .model_dump_json()
 #      to serialise and .model_validate_json() to deserialise.
-#   4. get_state() must raise KeyError when the path is not found.
-#   5. Fail-open: if your storage layer errors, let the exception bubble up —
-#      ShieldEngine wraps every backend call in try/except and allows the
-#      request through on failure.
-#   6. subscribe() is optional. If your backend doesn't support pub/sub,
-#      leave it as-is (the base class raises NotImplementedError and the
-#      dashboard falls back to polling).
+#   5. get_state() must raise KeyError when the path is not found.
+#   6. Fail-open: let exceptions bubble up — ShieldEngine wraps every backend
+#      call in try/except and allows the request through on failure.
+#   7. subscribe() is optional. Leave it as-is if your backend doesn't support
+#      pub/sub (the base class raises NotImplementedError and the dashboard
+#      falls back to polling).
 # ---------------------------------------------------------------------------
 
 _MAX_AUDIT_ROWS = 1000
@@ -81,10 +97,22 @@ class SQLiteBackend(ShieldBackend):
         Path to the SQLite file.  Use ``:memory:`` for an in-process
         database (useful for tests — not shared across processes).
 
+    CLI usage
+    ---------
+    Point ``SHIELD_BACKEND`` to a zero-arg factory that returns a configured
+    instance (see ``make_backend()`` below):
+
+        SHIELD_BACKEND=myapp.backends:make_backend shield status
+
+    The factory is called with no arguments, so it must read any configuration
+    (like ``db_path``) from its own environment variables.
+
     Example
     -------
     >>> backend = SQLiteBackend("shield-state.db")
     >>> engine  = ShieldEngine(backend=backend)
+    >>> async with engine:           # calls startup() then shutdown()
+    ...     states = await engine.list_states()
     """
 
     def __init__(self, db_path: str | Path = "shield-state.db") -> None:
@@ -92,14 +120,14 @@ class SQLiteBackend(ShieldBackend):
         self._db: aiosqlite.Connection | None = None
 
     # ------------------------------------------------------------------
-    # Lifecycle
+    # Lifecycle hooks — called automatically by ShieldEngine
     # ------------------------------------------------------------------
 
-    async def connect(self) -> None:
+    async def startup(self) -> None:
         """Open the database connection and create tables if needed.
 
-        Call this once at application startup (e.g. inside a lifespan
-        context manager) before the engine starts handling requests.
+        Called automatically by ``ShieldEngine.__aenter__``.  You do not
+        need to call this yourself when using ``async with engine:``.
         """
         self._db = await aiosqlite.connect(self._db_path)
         self._db.row_factory = sqlite3.Row
@@ -107,8 +135,11 @@ class SQLiteBackend(ShieldBackend):
         await self._db.execute(_CREATE_AUDIT_TABLE)
         await self._db.commit()
 
-    async def close(self) -> None:
-        """Close the database connection at application shutdown."""
+    async def shutdown(self) -> None:
+        """Close the database connection.
+
+        Called automatically by ``ShieldEngine.__aexit__``.
+        """
         if self._db is not None:
             await self._db.close()
             self._db = None
@@ -118,7 +149,7 @@ class SQLiteBackend(ShieldBackend):
         if self._db is None:
             raise RuntimeError(
                 "SQLiteBackend is not connected. "
-                "Call await backend.connect() before use."
+                "Use 'async with engine:' to ensure startup() is called."
             )
         return self._db
 
@@ -225,12 +256,6 @@ class SQLiteBackend(ShieldBackend):
 
     # ------------------------------------------------------------------
     # subscribe() — not implemented; dashboard falls back to polling
-    #
-    # To add live push support you would need a mechanism to notify other
-    # coroutines when set_state() is called.  For SQLite the simplest
-    # approach is an asyncio.Queue (like MemoryBackend), though it only
-    # works within a single process.  A multi-process setup would require
-    # a separate pub/sub channel (Redis, PostgreSQL LISTEN/NOTIFY, etc.).
     # ------------------------------------------------------------------
 
     async def subscribe(self) -> AsyncIterator[RouteState]:  # type: ignore[return]
@@ -242,10 +267,35 @@ class SQLiteBackend(ShieldBackend):
 
 
 # ---------------------------------------------------------------------------
-# Demo FastAPI app using SQLiteBackend
+# Zero-arg factory for CLI use
+#
+# The CLI resolves SHIELD_BACKEND as a dotted-path factory:
+#
+#   SHIELD_BACKEND=examples.fastapi.custom_backend.sqlite_backend:make_backend
+#
+# This function reads SHIELD_SQLITE_PATH from the environment so the CLI can
+# be configured entirely via env vars or a .shield file:
+#
+#   # .shield
+#   SHIELD_BACKEND=examples.fastapi.custom_backend.sqlite_backend:make_backend
+#   SHIELD_SQLITE_PATH=shield-state.db
 # ---------------------------------------------------------------------------
 
-from contextlib import asynccontextmanager  # noqa: E402  (kept near app code)
+
+def make_backend() -> SQLiteBackend:
+    """Construct a ``SQLiteBackend`` from environment variables.
+
+    Reads ``SHIELD_SQLITE_PATH`` (default: ``shield-state.db``).
+    Called by the CLI when ``SHIELD_BACKEND`` is set to the dotted path
+    of this function.
+    """
+    db_path = os.environ.get("SHIELD_SQLITE_PATH", "shield-state.db")
+    return SQLiteBackend(db_path=db_path)
+
+
+# ---------------------------------------------------------------------------
+# Demo FastAPI app using SQLiteBackend
+# ---------------------------------------------------------------------------
 
 backend = SQLiteBackend("shield-state.db")
 engine = ShieldEngine(backend=backend)
@@ -316,17 +366,16 @@ async def admin_audit(limit: int = 20):
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    await backend.connect()
-    yield
-    await backend.close()
+    # async with engine: calls backend.startup() then backend.shutdown()
+    async with engine:
+        yield
 
 
 app = FastAPI(
     title="api-shield — SQLite Custom Backend Example",
     description=(
         "All route state and audit log entries are persisted in `shield-state.db`. "
-        "Restart the server and the state survives — try putting `/orders` in "
-        "maintenance via the engine, restarting, and hitting it again."
+        "Restart the server and the state survives."
     ),
     lifespan=lifespan,
 )

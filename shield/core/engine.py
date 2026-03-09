@@ -63,6 +63,25 @@ class ShieldEngine:
         self._webhooks: list[tuple[str, WebhookFormatter]] = []
 
     # ------------------------------------------------------------------
+    # Async context manager — calls backend lifecycle hooks
+    # ------------------------------------------------------------------
+
+    async def __aenter__(self) -> ShieldEngine:
+        """Call ``backend.startup()`` and return *self*.
+
+        Use ``async with ShieldEngine(...) as engine:`` to ensure the
+        backend is initialised before use and cleanly shut down afterwards.
+        This is the recommended pattern for CLI scripts and custom backends
+        that require async setup (e.g. opening a database connection).
+        """
+        await self.backend.startup()
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        """Call ``backend.shutdown()`` regardless of whether an exception occurred."""
+        await self.backend.shutdown()
+
+    # ------------------------------------------------------------------
     # Hot-path: check
     # ------------------------------------------------------------------
 

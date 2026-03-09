@@ -199,7 +199,8 @@ async def test_openapi_reflects_state_change_without_restart():
     )
 
     # Third call: disable /new at runtime (was never decorated).
-    await engine.disable("/new")
+    # Must use the method-prefixed key since startup registers GET:/new.
+    await engine.disable("GET:/new")
     schema3 = app.openapi()
     assert "/new" not in schema3["paths"], (
         "/new was disabled at runtime but still in schema — cache mutation bug"

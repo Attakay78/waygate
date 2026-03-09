@@ -17,10 +17,17 @@ Configuration is loaded in priority order (highest wins):
 
 Environment variables
 ---------------------
-SHIELD_BACKEND    ``memory`` | ``file`` | ``redis``  (default: ``memory``)
-SHIELD_FILE_PATH  Path to the JSON state file        (default: ``shield-state.json``)
-SHIELD_REDIS_URL  Redis connection URL                (default: ``redis://localhost:6379/0``)
-SHIELD_ENV        Runtime environment name            (default: ``production``)
+SHIELD_BACKEND      ``memory`` | ``file`` | ``redis`` | ``custom``
+                    (default: ``memory``)
+SHIELD_FILE_PATH    Path to the JSON state file
+                    (default: ``shield-state.json``)
+SHIELD_REDIS_URL    Redis connection URL
+                    (default: ``redis://localhost:6379/0``)
+SHIELD_CUSTOM_PATH  Dotted import path to a zero-arg factory when
+                    ``SHIELD_BACKEND=custom``
+                    (e.g. ``myapp.backends:make_backend``)
+SHIELD_ENV          Runtime environment name
+                    (default: ``production``)
 """
 
 from __future__ import annotations
@@ -37,6 +44,7 @@ from shield.core.backends.base import ShieldBackend
 ENV_BACKEND = "SHIELD_BACKEND"
 ENV_FILE_PATH = "SHIELD_FILE_PATH"
 ENV_REDIS_URL = "SHIELD_REDIS_URL"
+ENV_CUSTOM_PATH = "SHIELD_CUSTOM_PATH"
 ENV_CURRENT_ENV = "SHIELD_ENV"
 
 _DEFAULT_BACKEND = "memory"
@@ -108,6 +116,54 @@ def _getvar(key: str, file_cfg: dict[str, str], default: str) -> str:
     return os.environ.get(key) or file_cfg.get(key) or default
 
 
+def _load_custom_backend(dotted_path: str) -> ShieldBackend:
+    """Import and instantiate a custom backend from a dotted path.
+
+    Parameters
+    ----------
+    dotted_path:
+        ``"module.path:FactoryOrClass"`` — the part before ``:`` is the
+        importable module; the part after is a callable that takes no
+        required arguments and returns a ``ShieldBackend`` instance.
+
+    Raises
+    ------
+    ValueError
+        If the path is malformed, the module cannot be imported, the
+        attribute does not exist, or the returned object is not a
+        ``ShieldBackend``.
+    """
+    if ":" not in dotted_path:
+        raise ValueError(
+            f"SHIELD_CUSTOM_PATH {dotted_path!r} is not a valid dotted path. "
+            "Expected format: mypackage.module:FactoryOrClass"
+        )
+
+    module_path, _, attr = dotted_path.partition(":")
+    try:
+        import importlib
+        import sys
+
+        cwd = str(Path.cwd())
+        if cwd not in sys.path:
+            sys.path.insert(0, cwd)
+
+        module = importlib.import_module(module_path)
+        factory = getattr(module, attr)
+        instance = factory()
+    except (ImportError, AttributeError) as exc:
+        raise ValueError(
+            f"Cannot load custom backend from {dotted_path!r}: {exc}"
+        ) from exc
+
+    if not isinstance(instance, ShieldBackend):
+        raise TypeError(
+            f"SHIELD_CUSTOM_PATH {dotted_path!r} returned "
+            f"{type(instance).__name__!r}, which does not extend ShieldBackend."
+        )
+    return instance
+
+
 # ---------------------------------------------------------------------------
 # Public factory functions
 # ---------------------------------------------------------------------------
@@ -116,6 +172,7 @@ def make_backend(
     backend_type: str | None = None,
     file_path: str | None = None,
     redis_url: str | None = None,
+    custom_path: str | None = None,
     config_file: str | None = None,
 ) -> ShieldBackend:
     """Construct a backend from explicit args, env vars, or the ``.shield`` file.
@@ -125,11 +182,14 @@ def make_backend(
     Parameters
     ----------
     backend_type:
-        ``"memory"``, ``"file"``, or ``"redis"``.
+        ``"memory"``, ``"file"``, ``"redis"``, or ``"custom"``.
     file_path:
         Path for ``FileBackend``.
     redis_url:
         URL for ``RedisBackend``.
+    custom_path:
+        Dotted import path for a custom backend factory when
+        ``backend_type="custom"``.  Falls back to ``SHIELD_CUSTOM_PATH``.
     config_file:
         Path to a ``.shield``-format config file.  ``None`` = auto-discover.
     """
@@ -154,9 +214,18 @@ def make_backend(
 
         return MemoryBackend()
 
+    if btype == "custom":
+        dotted = custom_path or _getvar(ENV_CUSTOM_PATH, cfg, "")
+        if not dotted:
+            raise ValueError(
+                "SHIELD_BACKEND=custom requires SHIELD_CUSTOM_PATH to be set.\n"
+                "Example: SHIELD_CUSTOM_PATH=myapp.backends:make_backend"
+            )
+        return _load_custom_backend(dotted)
+
     raise ValueError(
         f"Unknown SHIELD_BACKEND value {btype!r}. "
-        "Valid options: memory, file, redis"
+        "Valid options: memory, file, redis, custom"
     )
 
 
@@ -164,6 +233,7 @@ def make_engine(
     backend_type: str | None = None,
     file_path: str | None = None,
     redis_url: str | None = None,
+    custom_path: str | None = None,
     current_env: str | None = None,
     config_file: str | None = None,
 ):
@@ -175,11 +245,14 @@ def make_engine(
     Parameters
     ----------
     backend_type:
-        ``"memory"``, ``"file"``, or ``"redis"``.
+        ``"memory"``, ``"file"``, ``"redis"``, or ``"custom"``.
     file_path:
         Path for ``FileBackend``.
     redis_url:
         URL for ``RedisBackend``.
+    custom_path:
+        Dotted import path for a custom backend factory when
+        ``backend_type="custom"``.  Falls back to ``SHIELD_CUSTOM_PATH``.
     current_env:
         Runtime environment name (e.g. ``"production"``).
     config_file:
@@ -197,6 +270,7 @@ def make_engine(
         backend_type=backend_type,
         file_path=file_path,
         redis_url=redis_url,
+        custom_path=custom_path,
         config_file=config_file,
     )
     env = current_env or _getvar(ENV_CURRENT_ENV, cfg, _DEFAULT_ENV)

@@ -633,6 +633,7 @@ state = RouteState.model_validate_json(json_str)
 | Fail-open on errors | Let exceptions bubble up — `ShieldEngine` wraps every backend call and allows requests through on failure |
 | Thread safety | All methods are async; use your storage library's async client where available |
 | Global maintenance | Inherited from `ShieldBackend` base class — no extra work needed unless you want a dedicated storage path |
+| Lifecycle hooks | Override `startup()` / `shutdown()` for async setup/teardown — called automatically by `async with engine:` |
 
 #### Wire the custom backend to the engine
 
@@ -643,7 +644,58 @@ backend = MyBackend()
 engine  = ShieldEngine(backend=backend)
 ```
 
-From here everything works as normal — decorators, middleware, CLI, audit log.
+Use `async with engine:` to call `startup()` and `shutdown()` automatically:
+
+```python
+# FastAPI lifespan
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine:   # → backend.startup() … backend.shutdown()
+        yield
+
+app = FastAPI(lifespan=lifespan)
+```
+
+From there everything works as normal — decorators, middleware, CLI, audit log.
+
+#### CLI access for custom backends
+
+Set `SHIELD_BACKEND=custom` and point `SHIELD_CUSTOM_PATH` at a **zero-arg factory function** that returns your configured backend instance:
+
+```python
+# myapp/backends.py
+import os
+from myapp.db import MyBackend
+
+def make_shield_backend() -> MyBackend:
+    """Zero-arg factory — reads config from environment variables."""
+    return MyBackend(dsn=os.environ["MY_DB_DSN"])
+```
+
+```bash
+# One-off
+SHIELD_BACKEND=custom \
+SHIELD_CUSTOM_PATH=myapp.backends:make_shield_backend \
+MY_DB_DSN=postgresql://localhost/myapp \
+    shield status
+```
+
+Or configure it once in your `.shield` file so you don't repeat it on every command:
+
+```ini
+# .shield
+SHIELD_BACKEND=custom
+SHIELD_CUSTOM_PATH=myapp.backends:make_shield_backend
+MY_DB_DSN=postgresql://localhost/myapp
+```
+
+```bash
+shield status
+shield disable GET:/payments --reason "patch"
+shield log
+```
+
+The CLI calls `startup()` and `shutdown()` automatically around every command, so your backend's connection lifecycle is handled correctly with no extra work.
 
 #### SQLite example
 
@@ -699,11 +751,26 @@ class SQLiteBackend(ShieldBackend):
     # See the full file for the complete implementation.
 ```
 
-Run it:
+Run the demo app:
 
 ```bash
 pip install aiosqlite
 uv run uvicorn examples.fastapi.custom_backend.sqlite_backend:app --reload
+```
+
+Use it with the CLI:
+
+```bash
+# One-off
+SHIELD_BACKEND=custom \
+SHIELD_CUSTOM_PATH=examples.fastapi.custom_backend.sqlite_backend:make_backend \
+SHIELD_SQLITE_PATH=shield-state.db \
+    shield status
+
+# Or in .shield
+# SHIELD_BACKEND=custom
+# SHIELD_CUSTOM_PATH=examples.fastapi.custom_backend.sqlite_backend:make_backend
+# SHIELD_SQLITE_PATH=shield-state.db
 ```
 
 ---

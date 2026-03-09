@@ -66,16 +66,17 @@ async def test_router_registers_disabled_route(engine, router):
     assert state.status == RouteStatus.DISABLED
 
 
-async def test_router_skips_undecorated_routes(engine, router):
+async def test_router_registers_undecorated_routes_as_active(engine, router):
     @router.get("/health")
     async def health():
         return {"status": "ok"}
 
     await router.register_shield_routes()
 
-    # Undecorated route should not be registered in the backend.
-    with pytest.raises(KeyError):
-        await engine.backend.get_state("GET:/health")
+    # Undecorated routes are registered as ACTIVE so the CLI can
+    # validate that a path actually exists in the application.
+    state = await engine.backend.get_state("GET:/health")
+    assert state.status.value == "active"
 
 
 async def test_from_engine_factory(engine):

@@ -89,6 +89,26 @@ class ShieldBackend(ABC):
         )
         await self.set_state(_GLOBAL_KEY, sentinel)
 
+    # ------------------------------------------------------------------
+    # Lifecycle hooks — override these in backends that need async setup
+    # ------------------------------------------------------------------
+
+    async def startup(self) -> None:
+        """Called by ``ShieldEngine`` on startup.
+
+        Override to open database connections, create tables, or perform
+        any other async initialisation your backend requires.  The default
+        implementation is a no-op, so built-in backends (MemoryBackend,
+        FileBackend, RedisBackend) require no changes.
+        """
+
+    async def shutdown(self) -> None:
+        """Called by ``ShieldEngine`` on shutdown.
+
+        Override to close database connections or release resources.  The
+        default implementation is a no-op.
+        """
+
     async def subscribe(self) -> AsyncIterator[RouteState]:  # type: ignore[return]
         """Stream live ``RouteState`` changes as they occur.
 
