@@ -128,9 +128,7 @@ async def test_global_maintenance_overrides_force_active_when_flag_set():
     """When include_force_active=True, even @force_active routes return 503."""
     app, engine = _app_with_routes()
     await app.router.startup()
-    await engine.enable_global_maintenance(
-        reason="Hard lockdown", include_force_active=True
-    )
+    await engine.enable_global_maintenance(reason="Hard lockdown", include_force_active=True)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         resp = await c.get("/health")
@@ -140,9 +138,7 @@ async def test_global_maintenance_overrides_force_active_when_flag_set():
 
 async def test_global_maintenance_exempt_path_passes_through():
     app, engine = _app_with_routes()
-    await engine.enable_global_maintenance(
-        reason="System upgrade", exempt_paths=["/payments"]
-    )
+    await engine.enable_global_maintenance(reason="System upgrade", exempt_paths=["/payments"])
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         resp = await c.get("/payments")

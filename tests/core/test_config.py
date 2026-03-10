@@ -85,6 +85,7 @@ def test_make_engine_env_from_envvar(monkeypatch):
 
 def test_make_engine_returns_shield_engine():
     from shield.core.engine import ShieldEngine
+
     engine = make_engine(backend_type="memory")
     assert isinstance(engine, ShieldEngine)
 

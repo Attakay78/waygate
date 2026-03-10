@@ -108,9 +108,7 @@ async def test_deprecated_route_still_returns_200():
     app.include_router(router)
     await app.router.startup()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/v1/users")
 
     assert resp.status_code == 200
@@ -128,9 +126,7 @@ async def test_deprecated_injects_deprecation_header():
     app.include_router(router)
     await app.router.startup()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/v1/users")
 
     assert resp.headers.get("deprecation") == "true"
@@ -148,9 +144,7 @@ async def test_deprecated_injects_sunset_header():
     app.include_router(router)
     await app.router.startup()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/v1/users")
 
     assert "Sat, 01 Jan 2026" in resp.headers.get("sunset", "")
@@ -168,9 +162,7 @@ async def test_deprecated_injects_link_header_when_successor_set():
     app.include_router(router)
     await app.router.startup()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/v1/users")
 
     link = resp.headers.get("link", "")
@@ -190,9 +182,7 @@ async def test_deprecated_no_link_header_without_successor():
     app.include_router(router)
     await app.router.startup()
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/v1/items")
 
     assert "link" not in resp.headers
@@ -209,9 +199,7 @@ async def test_active_route_has_no_deprecation_headers():
 
     app.include_router(router)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/v2/users")
 
     assert "deprecation" not in resp.headers

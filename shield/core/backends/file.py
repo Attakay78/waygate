@@ -19,9 +19,9 @@ import json
 import tomllib
 from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-import aiofiles
+import aiofiles  # type: ignore[import-untyped]
 
 from shield.core.backends.base import ShieldBackend
 from shield.core.models import AuditEntry, RouteState
@@ -32,7 +32,7 @@ _MAX_AUDIT_ENTRIES = 1000
 _EXT_TO_FORMAT: dict[str, str] = {
     ".json": "json",
     ".yaml": "yaml",
-    ".yml":  "yaml",
+    ".yml": "yaml",
     ".toml": "toml",
 }
 
@@ -96,7 +96,7 @@ class FileBackend(ShieldBackend):
     def _parse(self, raw: str) -> dict[str, Any]:
         """Deserialise *raw* text using the file's format."""
         if self._format == "json":
-            return json.loads(raw)  # type: ignore[no-any-return]
+            return cast(dict[str, Any], json.loads(raw))
 
         if self._format == "yaml":
             try:
@@ -106,10 +106,10 @@ class FileBackend(ShieldBackend):
                     "pyyaml is required for YAML FileBackend support. "
                     "Install it with: pip install pyyaml"
                 ) from exc
-            return yaml.safe_load(raw) or {}  # type: ignore[no-any-return]
+            return cast(dict[str, Any], yaml.safe_load(raw) or {})
 
         # toml
-        return tomllib.loads(raw)  # type: ignore[no-any-return]
+        return tomllib.loads(raw)
 
     def _serialize(self, data: dict[str, Any]) -> str:
         """Serialise *data* to text using the file's format."""
@@ -118,17 +118,17 @@ class FileBackend(ShieldBackend):
 
         if self._format == "yaml":
             try:
-                import yaml  # type: ignore[import-untyped]
+                import yaml
             except ImportError as exc:
                 raise ImportError(
                     "pyyaml is required for YAML FileBackend support. "
                     "Install it with: pip install pyyaml"
                 ) from exc
-            return yaml.dump(data, default_flow_style=False, allow_unicode=True)
+            return cast(str, yaml.dump(data, default_flow_style=False, allow_unicode=True))
 
         # toml
         try:
-            import tomli_w  # type: ignore[import-untyped]
+            import tomli_w
         except ImportError as exc:
             raise ImportError(
                 "tomli-w is required to write TOML FileBackend files. "
@@ -205,9 +205,7 @@ class FileBackend(ShieldBackend):
                 data["audit"] = data["audit"][-_MAX_AUDIT_ENTRIES:]
             await self._write(data)
 
-    async def get_audit_log(
-        self, path: str | None = None, limit: int = 100
-    ) -> list[AuditEntry]:
+    async def get_audit_log(self, path: str | None = None, limit: int = 100) -> list[AuditEntry]:
         """Return audit entries, newest first, optionally filtered by *path*."""
         data = await self._read()
         entries = data["audit"]
@@ -215,9 +213,7 @@ class FileBackend(ShieldBackend):
             entries = [e for e in entries if e["path"] == path]
         return [AuditEntry.model_validate(e) for e in reversed(entries)][:limit]
 
-    async def subscribe(self) -> AsyncIterator[RouteState]:  # type: ignore[override]
+    async def subscribe(self) -> AsyncIterator[RouteState]:
         """Not supported — raises ``NotImplementedError``."""
-        raise NotImplementedError(
-            "FileBackend does not support pub/sub. Use polling instead."
-        )
-        yield  # type: ignore[misc]
+        raise NotImplementedError("FileBackend does not support pub/sub. Use polling instead.")
+        yield

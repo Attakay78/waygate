@@ -49,9 +49,7 @@ async def test_restore_skips_already_tracked_path():
 
     # The task must be the SAME object — it was not cancelled and replaced.
     task_after = engine.scheduler._tasks.get("GET:/orders")
-    assert task_after is task_before, (
-        "restore_from_backend cancelled and replaced a live task"
-    )
+    assert task_after is task_before, "restore_from_backend cancelled and replaced a live task"
 
     task_before.cancel()
 

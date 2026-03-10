@@ -53,9 +53,7 @@ class ShieldBackend(ABC):
         """Append *entry* to the audit log."""
 
     @abstractmethod
-    async def get_audit_log(
-        self, path: str | None = None, limit: int = 100
-    ) -> list[AuditEntry]:
+    async def get_audit_log(self, path: str | None = None, limit: int = 100) -> list[AuditEntry]:
         """Return audit entries, newest first.
 
         If *path* is given, return only entries for that route.
@@ -109,7 +107,7 @@ class ShieldBackend(ABC):
         default implementation is a no-op.
         """
 
-    async def subscribe(self) -> AsyncIterator[RouteState]:  # type: ignore[return]
+    async def subscribe(self) -> AsyncIterator[RouteState]:
         """Stream live ``RouteState`` changes as they occur.
 
         Backends that support pub/sub (e.g. Redis) should override this.
@@ -117,8 +115,7 @@ class ShieldBackend(ABC):
         and the dashboard will fall back to polling ``list_states()``.
         """
         raise NotImplementedError(
-            f"{type(self).__name__} does not support pub/sub subscriptions. "
-            "Use polling instead."
+            f"{type(self).__name__} does not support pub/sub subscriptions. Use polling instead."
         )
-        # Make the type checker happy — this is never reached.
-        yield  # type: ignore[misc]
+        # Unreachable — makes this an async generator so the return type is valid.
+        yield

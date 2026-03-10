@@ -35,16 +35,14 @@ class SlackWebhookFormatter:
 
     # Colours for the Slack attachment sidebar.
     _COLOURS = {
-        "maintenance_on": "#FFA500",   # orange
+        "maintenance_on": "#FFA500",  # orange
         "maintenance_off": "#36A64F",  # green
-        "disable": "#FF0000",          # red
-        "enable": "#36A64F",           # green
-        "env_gate": "#439FE0",         # blue
+        "disable": "#FF0000",  # red
+        "enable": "#36A64F",  # green
+        "env_gate": "#439FE0",  # blue
     }
 
-    def __call__(
-        self, event: str, path: str, state: RouteState
-    ) -> dict[str, Any]:
+    def __call__(self, event: str, path: str, state: RouteState) -> dict[str, Any]:
         """Return a Slack Incoming Webhook payload."""
         colour = self._COLOURS.get(event, "#888888")
         text = f"*{event.upper()}*: `{path}`"

@@ -39,8 +39,12 @@ from __future__ import annotations
 
 import getpass
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import anyio
+
+if TYPE_CHECKING:
+    from shield.core.engine import ShieldEngine
 import typer
 from rich import box
 from rich.console import Console
@@ -97,7 +101,7 @@ def _global_options(
     _config_file = config
 
 
-def _make_engine():
+def _make_engine() -> ShieldEngine:
     """Construct the engine, forwarding the active --config file."""
     return _cfg_make_engine(config_file=_config_file)
 
@@ -123,13 +127,10 @@ def _parse_route(route: str) -> tuple[str | None, str, str]:
         method = raw_method.upper()
         if method not in _VALID_METHODS:
             raise typer.BadParameter(
-                f"Unknown HTTP method {raw_method!r}. "
-                f"Valid: {', '.join(sorted(_VALID_METHODS))}"
+                f"Unknown HTTP method {raw_method!r}. Valid: {', '.join(sorted(_VALID_METHODS))}"
             )
         if not path.startswith("/"):
-            raise typer.BadParameter(
-                f"Path must start with '/'. Got: {path!r}"
-            )
+            raise typer.BadParameter(f"Path must start with '/'. Got: {path!r}")
         return method, path, f"{method}:{path}"
     if not route.startswith("/"):
         raise typer.BadParameter(
@@ -244,7 +245,7 @@ def status(
 ) -> None:
     """Show current shield status for all routes (or one route)."""
 
-    async def _run():
+    async def _run() -> None:
         async with _make_engine() as engine:
             if route:
                 _, _, key = _parse_route(route)
@@ -266,9 +267,7 @@ def status(
 
             for s in sorted(states, key=lambda x: x.path):
                 colour = _status_colour(s.status)
-                window_end = (
-                    s.window.end.strftime("%Y-%m-%d %H:%M UTC") if s.window else ""
-                )
+                window_end = s.window.end.strftime("%Y-%m-%d %H:%M UTC") if s.window else ""
                 table.add_row(
                     s.path,
                     f"[{colour}]{s.status.upper()}[/{colour}]",
@@ -289,21 +288,21 @@ def enable(
         help="Route: /path or METHOD:/path (e.g. GET:/payments)",
     ),
     reason: str = typer.Option(
-        "", "--reason", "-r",
+        "",
+        "--reason",
+        "-r",
         help="Optional note explaining why the route is being re-enabled "
-             "(e.g. 'Migration complete').  Stored in the audit log.",
+        "(e.g. 'Migration complete').  Stored in the audit log.",
     ),
 ) -> None:
     """Enable a route that is in maintenance or disabled state."""
 
-    async def _run():
+    async def _run() -> None:
         _, _, key = _parse_route(route)
         async with _make_engine() as engine:
             await _require_registered(engine, key)
             state = await engine.enable(key, actor=_CLI_ACTOR, reason=reason)
-            console.print(
-                f"[green]✓[/green] {key} → [green]{state.status.upper()}[/green]"
-            )
+            console.print(f"[green]✓[/green] {key} → [green]{state.status.upper()}[/green]")
             if reason:
                 console.print(f"  Reason: {reason}")
 
@@ -323,7 +322,7 @@ def disable_cmd(
 ) -> None:
     """Permanently disable a route (returns 503 to all callers)."""
 
-    async def _run():
+    async def _run() -> None:
         _, _, key = _parse_route(route)
         async with _make_engine() as engine:
             await _require_registered(engine, key)
@@ -336,9 +335,7 @@ def disable_cmd(
                 end_dt = _parse_until(until)
                 from shield.core.models import MaintenanceWindow
 
-                window = MaintenanceWindow(
-                    start=datetime.now(UTC), end=end_dt, reason=reason
-                )
+                window = MaintenanceWindow(start=datetime.now(UTC), end=end_dt, reason=reason)
                 await engine.schedule_maintenance(key, window, actor=_CLI_ACTOR)
                 console.print(
                     "  Auto-re-enable scheduled for "
@@ -360,7 +357,7 @@ def maintenance_cmd(
 ) -> None:
     """Put a route into maintenance mode immediately."""
 
-    async def _run():
+    async def _run() -> None:
         from shield.core.models import MaintenanceWindow
 
         _, _, key = _parse_route(route)
@@ -374,9 +371,7 @@ def maintenance_cmd(
             state = await engine.set_maintenance(
                 key, reason=reason, window=window, actor=_CLI_ACTOR
             )
-            console.print(
-                f"[yellow]⚠[/yellow] {key} → [yellow]{state.status.upper()}[/yellow]"
-            )
+            console.print(f"[yellow]⚠[/yellow] {key} → [yellow]{state.status.upper()}[/yellow]")
             if reason:
                 console.print(f"  Reason: {reason}")
             if window:
@@ -400,25 +395,17 @@ def schedule_cmd(
 ) -> None:
     """Schedule a future maintenance window (auto-activates and deactivates)."""
 
-    async def _run():
+    async def _run() -> None:
         from shield.core.models import MaintenanceWindow
 
         _, _, key = _parse_route(route)
         async with _make_engine() as engine:
             await _require_registered(engine, key)
-            window = MaintenanceWindow(
-                start=_parse_dt(start), end=_parse_dt(end), reason=reason
-            )
+            window = MaintenanceWindow(start=_parse_dt(start), end=_parse_dt(end), reason=reason)
             await engine.schedule_maintenance(key, window, actor=_CLI_ACTOR)
-            console.print(
-                f"[cyan]⏰[/cyan] Scheduled maintenance for [bold]{key}[/bold]"
-            )
-            console.print(
-                f"   Start: [cyan]{window.start.strftime('%Y-%m-%d %H:%M UTC')}[/cyan]"
-            )
-            console.print(
-                f"   End:   [cyan]{window.end.strftime('%Y-%m-%d %H:%M UTC')}[/cyan]"
-            )
+            console.print(f"[cyan]⏰[/cyan] Scheduled maintenance for [bold]{key}[/bold]")
+            console.print(f"   Start: [cyan]{window.start.strftime('%Y-%m-%d %H:%M UTC')}[/cyan]")
+            console.print(f"   End:   [cyan]{window.end.strftime('%Y-%m-%d %H:%M UTC')}[/cyan]")
             if reason:
                 console.print(f"   Reason: {reason}")
 
@@ -427,14 +414,12 @@ def schedule_cmd(
 
 @cli.command("log")
 def log_cmd(
-    route: str | None = typer.Option(
-        None, "--route", help="Filter by route path"
-    ),
+    route: str | None = typer.Option(None, "--route", help="Filter by route path"),
     limit: int = typer.Option(20, "--limit", "-n", help="Number of entries to show"),
 ) -> None:
     """Show the audit log (most recent first)."""
 
-    async def _run():
+    async def _run() -> None:
         async with _make_engine() as engine:
             entries = await engine.get_audit_log(path=route, limit=limit)
 
@@ -485,7 +470,7 @@ cli.add_typer(global_app, name="global")
 def global_status() -> None:
     """Show the current global maintenance configuration."""
 
-    async def _run():
+    async def _run() -> None:
         async with _make_engine() as engine:
             cfg = await engine.get_global_maintenance()
 
@@ -498,9 +483,7 @@ def global_status() -> None:
                 console.print(f"  Reason            : {cfg.reason or '—'}")
                 fa_colour = "red" if cfg.include_force_active else "green"
                 fa_text = "yes" if cfg.include_force_active else "no"
-                console.print(
-                    f"  Include @force_active: [{fa_colour}]{fa_text}[/{fa_colour}]"
-                )
+                console.print(f"  Include @force_active: [{fa_colour}]{fa_text}[/{fa_colour}]")
                 if cfg.exempt_paths:
                     console.print("  Exempt paths      :")
                     for p in cfg.exempt_paths:
@@ -514,9 +497,7 @@ def global_status() -> None:
 
 @global_app.command("enable")
 def global_enable(
-    reason: str = typer.Option(
-        "", "--reason", "-r", help="Reason shown in 503 responses"
-    ),
+    reason: str = typer.Option("", "--reason", "-r", help="Reason shown in 503 responses"),
     exempt: list[str] | None = typer.Option(
         None,
         "--exempt",
@@ -537,7 +518,7 @@ def global_enable(
 ) -> None:
     """Enable global maintenance mode — all non-exempt routes return 503."""
 
-    async def _run():
+    async def _run() -> None:
         async with _make_engine() as engine:
             cfg = await engine.enable_global_maintenance(
                 reason=reason,
@@ -545,9 +526,7 @@ def global_enable(
                 include_force_active=include_force_active,
                 actor=_CLI_ACTOR,
             )
-            console.print(
-                "[yellow]⚠[/yellow]  Global maintenance [yellow]ENABLED[/yellow]"
-            )
+            console.print("[yellow]⚠[/yellow]  Global maintenance [yellow]ENABLED[/yellow]")
             if cfg.reason:
                 console.print(f"   Reason: {cfg.reason}")
             if cfg.exempt_paths:
@@ -562,12 +541,10 @@ def global_enable(
 def global_disable() -> None:
     """Disable global maintenance mode, restoring normal per-route state."""
 
-    async def _run():
+    async def _run() -> None:
         async with _make_engine() as engine:
             await engine.disable_global_maintenance(actor=_CLI_ACTOR)
-            console.print(
-                "[green]✓[/green]  Global maintenance [green]DISABLED[/green]"
-            )
+            console.print("[green]✓[/green]  Global maintenance [green]DISABLED[/green]")
 
     anyio.run(_run)
 
@@ -581,14 +558,12 @@ def global_exempt_add(
 ) -> None:
     """Add a route to the global maintenance exempt list."""
 
-    async def _run():
+    async def _run() -> None:
         async with _make_engine() as engine:
             cfg = await engine.get_global_maintenance()
             key = route if route.startswith("/") or ":" in route else f"/{route}"
             if key not in cfg.exempt_paths:
-                updated = await engine.set_global_exempt_paths(
-                    cfg.exempt_paths + [key]
-                )
+                updated = await engine.set_global_exempt_paths(cfg.exempt_paths + [key])
                 console.print(
                     f"[green]✓[/green] Added [cyan]{key}[/cyan] to exempt list "
                     f"({len(updated.exempt_paths)} total)"
@@ -608,16 +583,14 @@ def global_exempt_remove(
 ) -> None:
     """Remove a route from the global maintenance exempt list."""
 
-    async def _run():
+    async def _run() -> None:
         async with _make_engine() as engine:
             cfg = await engine.get_global_maintenance()
             key = route if route.startswith("/") or ":" in route else f"/{route}"
             if key in cfg.exempt_paths:
                 remaining = [p for p in cfg.exempt_paths if p != key]
                 await engine.set_global_exempt_paths(remaining)
-                console.print(
-                    f"[green]✓[/green] Removed [cyan]{key}[/cyan] from exempt list"
-                )
+                console.print(f"[green]✓[/green] Removed [cyan]{key}[/cyan] from exempt list")
             else:
                 console.print(f"[dim]{key} was not in the exempt list.[/dim]")
 

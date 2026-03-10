@@ -65,12 +65,7 @@ async def schedule_maintenance():
 async def admin_status():
     """Current shield state for all registered routes."""
     states = await engine.list_states()
-    return {
-        "routes": [
-            {"path": s.path, "status": s.status, "reason": s.reason}
-            for s in states
-        ]
-    }
+    return {"routes": [{"path": s.path, "status": s.status, "reason": s.reason} for s in states]}
 
 
 @router.get("/health")

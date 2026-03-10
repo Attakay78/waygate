@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -47,17 +47,14 @@ def maintenance(
     def decorator(func: F) -> F:
         @wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            return await func(*args, **kwargs)  # type: ignore[misc]
+            return await func(*args, **kwargs)
 
         @wraps(func)
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
-        wrapper = async_wrapper if _is_async(func) else sync_wrapper
-        return _stamp(
-            wrapper,  # type: ignore[arg-type]
-            {"status": "maintenance", "reason": reason, "window": window},
-        )
+        wrapper = cast(F, async_wrapper if _is_async(func) else sync_wrapper)
+        return _stamp(wrapper, {"status": "maintenance", "reason": reason, "window": window})
 
     return decorator
 
@@ -76,17 +73,14 @@ def env_only(*envs: str) -> Callable[[F], F]:
     def decorator(func: F) -> F:
         @wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            return await func(*args, **kwargs)  # type: ignore[misc]
+            return await func(*args, **kwargs)
 
         @wraps(func)
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
-        wrapper = async_wrapper if _is_async(func) else sync_wrapper
-        return _stamp(
-            wrapper,  # type: ignore[arg-type]
-            {"status": "env_gated", "allowed_envs": list(envs)},
-        )
+        wrapper = cast(F, async_wrapper if _is_async(func) else sync_wrapper)
+        return _stamp(wrapper, {"status": "env_gated", "allowed_envs": list(envs)})
 
     return decorator
 
@@ -103,17 +97,14 @@ def disabled(reason: str = "") -> Callable[[F], F]:
     def decorator(func: F) -> F:
         @wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            return await func(*args, **kwargs)  # type: ignore[misc]
+            return await func(*args, **kwargs)
 
         @wraps(func)
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
-        wrapper = async_wrapper if _is_async(func) else sync_wrapper
-        return _stamp(
-            wrapper,  # type: ignore[arg-type]
-            {"status": "disabled", "reason": reason},
-        )
+        wrapper = cast(F, async_wrapper if _is_async(func) else sync_wrapper)
+        return _stamp(wrapper, {"status": "disabled", "reason": reason})
 
     return decorator
 
@@ -145,15 +136,15 @@ def deprecated(
     def decorator(func: F) -> F:
         @wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            return await func(*args, **kwargs)  # type: ignore[misc]
+            return await func(*args, **kwargs)
 
         @wraps(func)
         def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
-        wrapper = async_wrapper if _is_async(func) else sync_wrapper
+        wrapper = cast(F, async_wrapper if _is_async(func) else sync_wrapper)
         return _stamp(
-            wrapper,  # type: ignore[arg-type]
+            wrapper,
             {
                 "status": "deprecated",
                 "sunset_date": sunset,
@@ -173,14 +164,14 @@ def force_active(func: F) -> F:
 
     @wraps(func)
     async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-        return await func(*args, **kwargs)  # type: ignore[misc]
+        return await func(*args, **kwargs)
 
     @wraps(func)
     def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
         return func(*args, **kwargs)
 
-    wrapper = async_wrapper if _is_async(func) else sync_wrapper
-    return _stamp(wrapper, {"force_active": True})  # type: ignore[return-value]
+    wrapper = cast(F, async_wrapper if _is_async(func) else sync_wrapper)
+    return _stamp(wrapper, {"force_active": True})
 
 
 # ---------------------------------------------------------------------------

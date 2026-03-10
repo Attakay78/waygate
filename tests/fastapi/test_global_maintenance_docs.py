@@ -167,9 +167,7 @@ async def test_setup_shield_docs_injects_global_banner_script():
     apply_shield_to_openapi(app, engine)
     setup_shield_docs(app, engine)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         docs = await client.get("/docs")
         redoc = await client.get("/redoc")
 
@@ -188,9 +186,7 @@ async def test_setup_shield_docs_both_endpoints_respond():
     apply_shield_to_openapi(app, engine)
     setup_shield_docs(app, engine)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         docs_resp = await client.get("/docs")
         redoc_resp = await client.get("/redoc")
 
@@ -207,9 +203,7 @@ async def test_setup_shield_docs_polling_script_present():
     apply_shield_to_openapi(app, engine)
     setup_shield_docs(app, engine)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         html = (await client.get("/docs")).text
 
     assert "POLL_INTERVAL_MS" in html

@@ -49,9 +49,7 @@ async def test_check_maintenance_sets_retry_after(engine):
         start=datetime(2025, 3, 10, 2, 0, tzinfo=UTC),
         end=datetime(2025, 3, 10, 4, 0, tzinfo=UTC),
     )
-    state = RouteState(
-        path="/api/pay", status=RouteStatus.MAINTENANCE, window=window
-    )
+    state = RouteState(path="/api/pay", status=RouteStatus.MAINTENANCE, window=window)
     await engine.backend.set_state("/api/pay", state)
     with pytest.raises(MaintenanceException) as exc_info:
         await engine.check("/api/pay")
@@ -59,9 +57,7 @@ async def test_check_maintenance_sets_retry_after(engine):
 
 
 async def test_check_disabled_raises(engine):
-    state = RouteState(
-        path="/api/old", status=RouteStatus.DISABLED, reason="gone"
-    )
+    state = RouteState(path="/api/old", status=RouteStatus.DISABLED, reason="gone")
     await engine.backend.set_state("/api/old", state)
     with pytest.raises(RouteDisabledException) as exc_info:
         await engine.check("/api/old")
@@ -134,9 +130,7 @@ async def test_register_defaults_to_active(engine):
 
 
 async def test_register_env_gated(engine):
-    await engine.register(
-        "/api/debug", {"status": "env_gated", "allowed_envs": ["dev"]}
-    )
+    await engine.register("/api/debug", {"status": "env_gated", "allowed_envs": ["dev"]})
     state = await engine.backend.get_state("/api/debug")
     assert state.status == RouteStatus.ENV_GATED
     assert state.allowed_envs == ["dev"]

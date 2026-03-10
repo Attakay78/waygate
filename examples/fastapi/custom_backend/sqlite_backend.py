@@ -188,16 +188,12 @@ class SQLiteBackend(ShieldBackend):
 
     async def delete_state(self, path: str) -> None:
         """Remove the state row for *path*. No-op if not found."""
-        await self._conn.execute(
-            "DELETE FROM shield_states WHERE path = ?", (path,)
-        )
+        await self._conn.execute("DELETE FROM shield_states WHERE path = ?", (path,))
         await self._conn.commit()
 
     async def list_states(self) -> list[RouteState]:
         """Return all registered route states."""
-        async with self._conn.execute(
-            "SELECT state_json FROM shield_states"
-        ) as cursor:
+        async with self._conn.execute("SELECT state_json FROM shield_states") as cursor:
             rows = await cursor.fetchall()
         return [RouteState.model_validate_json(row["state_json"]) for row in rows]
 
@@ -229,9 +225,7 @@ class SQLiteBackend(ShieldBackend):
         )
         await self._conn.commit()
 
-    async def get_audit_log(
-        self, path: str | None = None, limit: int = 100
-    ) -> list[AuditEntry]:
+    async def get_audit_log(self, path: str | None = None, limit: int = 100) -> list[AuditEntry]:
         """Return audit entries, newest first, optionally filtered by *path*."""
         if path is not None:
             query = """
@@ -260,8 +254,7 @@ class SQLiteBackend(ShieldBackend):
 
     async def subscribe(self) -> AsyncIterator[RouteState]:  # type: ignore[return]
         raise NotImplementedError(
-            "SQLiteBackend does not support pub/sub. "
-            "The dashboard will use polling instead."
+            "SQLiteBackend does not support pub/sub. The dashboard will use polling instead."
         )
         yield  # makes the type checker treat this as an async generator
 
@@ -337,10 +330,7 @@ async def admin_status():
     return {
         "backend": "sqlite",
         "db": "shield-state.db",
-        "routes": [
-            {"path": s.path, "status": s.status, "reason": s.reason}
-            for s in states
-        ],
+        "routes": [{"path": s.path, "status": s.status, "reason": s.reason} for s in states],
     }
 
 

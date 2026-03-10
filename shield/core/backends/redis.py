@@ -124,15 +124,13 @@ class RedisBackend(ShieldBackend):
             logger.error("shield: redis write_audit error: %s", exc)
             raise
 
-    async def get_audit_log(
-        self, path: str | None = None, limit: int = 100
-    ) -> list[AuditEntry]:
+    async def get_audit_log(self, path: str | None = None, limit: int = 100) -> list[AuditEntry]:
         """Return audit entries, newest first, optionally filtered by *path*."""
         try:
             async with self._client() as r:
                 # Fetch more than limit to allow post-filter narrowing.
                 fetch = limit if path is None else _MAX_AUDIT_ENTRIES
-                raws: list[str] = await r.lrange(_AUDIT_KEY, 0, fetch - 1)
+                raws: list[str] = await r.lrange(_AUDIT_KEY, 0, fetch - 1)  # type: ignore[misc]
         except Exception as exc:
             logger.error("shield: redis get_audit_log error: %s", exc)
             raise
@@ -155,11 +153,7 @@ class RedisBackend(ShieldBackend):
                     if message["type"] != "message":
                         continue
                     try:
-                        state = RouteState.model_validate(
-                            json.loads(message["data"])
-                        )
+                        state = RouteState.model_validate(json.loads(message["data"]))
                         yield state
                     except Exception as exc:
-                        logger.warning(
-                            "shield: redis subscribe parse error: %s", exc
-                        )
+                        logger.warning("shield: redis subscribe parse error: %s", exc)

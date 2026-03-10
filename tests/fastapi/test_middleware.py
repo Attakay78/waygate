@@ -54,9 +54,7 @@ async def test_maintenance_returns_503():
     _include(app, router)
     await _startup(app)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/payments")
 
     assert resp.status_code == 503
@@ -74,9 +72,7 @@ async def test_maintenance_sets_retry_after_header():
     )
     await engine.set_maintenance("/api/pay", reason="test", window=window)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/api/pay")
 
     assert resp.status_code == 503
@@ -101,9 +97,7 @@ async def test_disabled_returns_503():
     _include(app, router)
     await _startup(app)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/old-endpoint")
 
     assert resp.status_code == 503
@@ -129,9 +123,7 @@ async def test_env_gated_wrong_env_returns_404():
     _include(app, router)
     await _startup(app)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/debug")
 
     assert resp.status_code == 404
@@ -150,9 +142,7 @@ async def test_env_gated_correct_env_passes():
     _include(app, router)
     await _startup(app)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/debug")
 
     assert resp.status_code == 200
@@ -185,9 +175,7 @@ async def test_force_active_bypasses_engine():
     # A path-level state ("/health") does not trigger the guard because no
     # such key exists in the backend — the middleware bypass catches it instead.
     # Either way the response must be 200.
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/health")
 
     assert resp.status_code == 200
@@ -209,9 +197,7 @@ async def test_active_route_passes():
 
     _include(app, router)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/api/users")
 
     assert resp.status_code == 200
@@ -226,9 +212,7 @@ async def test_docs_path_is_skipped():
     app, engine = _build_app()
     await engine.set_maintenance("/docs", reason="test")
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/docs")
 
     assert resp.status_code == 200
@@ -238,9 +222,7 @@ async def test_openapi_json_is_skipped():
     app, engine = _build_app()
     await engine.set_maintenance("/openapi.json", reason="test")
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/openapi.json")
 
     assert resp.status_code == 200

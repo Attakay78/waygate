@@ -63,9 +63,7 @@ async def acceptance_app():
 
 async def test_payments_returns_503(acceptance_app):
     app, _ = acceptance_app
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/payments")
     assert resp.status_code == 503
     body = resp.json()
@@ -75,9 +73,7 @@ async def test_payments_returns_503(acceptance_app):
 
 async def test_debug_returns_404_in_production(acceptance_app):
     app, _ = acceptance_app
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/debug")
     assert resp.status_code == 404
     assert resp.content == b""  # silent
@@ -85,9 +81,7 @@ async def test_debug_returns_404_in_production(acceptance_app):
 
 async def test_old_endpoint_returns_503(acceptance_app):
     app, _ = acceptance_app
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/old-endpoint")
     assert resp.status_code == 503
     body = resp.json()
@@ -98,9 +92,7 @@ async def test_health_always_200(acceptance_app):
     app, engine = acceptance_app
     # Even if we force maintenance on /health, force_active must win.
     await engine.set_maintenance("/health", reason="test")
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/health")
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok"}

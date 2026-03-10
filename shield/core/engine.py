@@ -123,17 +123,14 @@ class ShieldEngine:
             if global_cfg.enabled:
                 method_key = f"{method.upper()}:{path}" if method else None
                 is_exempt = path in global_cfg.exempt_paths or (
-                    method_key is not None
-                    and method_key in global_cfg.exempt_paths
+                    method_key is not None and method_key in global_cfg.exempt_paths
                 )
                 if not is_exempt:
                     raise MaintenanceException(reason=global_cfg.reason)
         except MaintenanceException:
             raise
         except Exception:
-            logger.exception(
-                "shield: backend error reading global config — failing open"
-            )
+            logger.exception("shield: backend error reading global config — failing open")
 
         # 2. Per-route state check.
         state = await self._resolve_state(path, method)
@@ -163,9 +160,7 @@ class ShieldEngine:
             # Deprecated routes still serve requests — headers injected by middleware.
             return
 
-    async def _resolve_state(
-        self, path: str, method: str | None
-    ) -> RouteState | None:
+    async def _resolve_state(self, path: str, method: str | None) -> RouteState | None:
         """Return the applicable ``RouteState`` for *path* / *method*.
 
         Checks method-specific state first, then falls back to path-level.
@@ -183,9 +178,7 @@ class ShieldEngine:
             except KeyError:
                 continue
             except Exception:
-                logger.exception(
-                    "shield: backend error reading state for %r — failing open", key
-                )
+                logger.exception("shield: backend error reading state for %r — failing open", key)
                 return None  # fail-open
 
         return None  # no state found
@@ -268,9 +261,7 @@ class ShieldEngine:
             raise RouteProtectedException(path)
         return state
 
-    async def enable(
-        self, path: str, actor: str = "system", reason: str = ""
-    ) -> RouteState:
+    async def enable(self, path: str, actor: str = "system", reason: str = "") -> RouteState:
         """Enable *path*, returning the updated ``RouteState``.
 
         Parameters
@@ -300,14 +291,10 @@ class ShieldEngine:
         self._fire_webhooks("enable", path, new_state)
         return new_state
 
-    async def disable(
-        self, path: str, reason: str = "", actor: str = "system"
-    ) -> RouteState:
+    async def disable(self, path: str, reason: str = "", actor: str = "system") -> RouteState:
         """Disable *path* permanently, returning the updated ``RouteState``."""
         old_state = await self._assert_mutable(path)
-        new_state = old_state.model_copy(
-            update={"status": RouteStatus.DISABLED, "reason": reason}
-        )
+        new_state = old_state.model_copy(update={"status": RouteStatus.DISABLED, "reason": reason})
         await self.backend.set_state(path, new_state)
         await self._audit(
             path=path,
@@ -360,14 +347,10 @@ class ShieldEngine:
         backend so it can be recovered after a restart.
         """
         # Persist the window immediately so restart recovery can find it.
-        await self.set_maintenance(
-            path, reason=window.reason, window=window, actor=actor
-        )
+        await self.set_maintenance(path, reason=window.reason, window=window, actor=actor)
         await self.scheduler.schedule(path, window, actor=actor)
 
-    async def set_env_only(
-        self, path: str, envs: list[str], actor: str = "system"
-    ) -> RouteState:
+    async def set_env_only(self, path: str, envs: list[str], actor: str = "system") -> RouteState:
         """Restrict *path* to *envs*, returning the updated ``RouteState``."""
         old_state = await self._assert_mutable(path)
         new_state = old_state.model_copy(
@@ -433,9 +416,7 @@ class ShieldEngine:
         )
         return cfg
 
-    async def disable_global_maintenance(
-        self, actor: str = "system"
-    ) -> GlobalMaintenanceConfig:
+    async def disable_global_maintenance(self, actor: str = "system") -> GlobalMaintenanceConfig:
         """Disable global maintenance mode, restoring per-route state."""
         old_cfg = await self.backend.get_global_config()
         cfg = GlobalMaintenanceConfig(enabled=False)
@@ -482,9 +463,7 @@ class ShieldEngine:
         """
         self._webhooks.append((url, formatter or default_formatter))
 
-    def _fire_webhooks(
-        self, event: str, path: str, state: RouteState
-    ) -> None:
+    def _fire_webhooks(self, event: str, path: str, state: RouteState) -> None:
         """Schedule fire-and-forget POST to every registered webhook URL.
 
         Failures are logged and never propagated — a broken webhook must
@@ -524,9 +503,7 @@ class ShieldEngine:
         states = await self.backend.list_states()
         return [s for s in states if not s.path.startswith("__shield:")]
 
-    async def get_audit_log(
-        self, path: str | None = None, limit: int = 100
-    ) -> list[AuditEntry]:
+    async def get_audit_log(self, path: str | None = None, limit: int = 100) -> list[AuditEntry]:
         """Return audit log entries, newest first."""
         return await self.backend.get_audit_log(path=path, limit=limit)
 

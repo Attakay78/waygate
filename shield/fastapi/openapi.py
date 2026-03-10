@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import asyncio
 import concurrent.futures
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI
 from starlette.responses import HTMLResponse
@@ -75,9 +75,7 @@ def apply_shield_to_openapi(app: FastAPI, engine: ShieldEngine) -> None:
         original_paths: dict[str, Any] = dict(base.get("paths", {}))
         filtered: dict[str, Any] = {}
 
-        _http_verbs = (
-            "get", "post", "put", "patch", "delete", "head", "options"
-        )
+        _http_verbs = ("get", "post", "put", "patch", "delete", "head", "options")
 
         for path, path_item in original_paths.items():
             # Resolve state using the same priority as engine.check():
@@ -122,15 +120,10 @@ def apply_shield_to_openapi(app: FastAPI, engine: ShieldEngine) -> None:
                     if engine.current_env not in state.allowed_envs:
                         continue  # hide in this env
 
-                if state.status == RouteStatus.DEPRECATED and isinstance(
-                    value, dict
-                ):
+                if state.status == RouteStatus.DEPRECATED and isinstance(value, dict):
                     patched_item[key] = {**value, "deprecated": True}
 
-                elif (
-                    state.status == RouteStatus.MAINTENANCE
-                    and isinstance(value, dict)
-                ):
+                elif state.status == RouteStatus.MAINTENANCE and isinstance(value, dict):
                     patched_item[key] = _annotate_maintenance(value, state)
 
                 else:
@@ -171,9 +164,7 @@ def apply_shield_to_openapi(app: FastAPI, engine: ShieldEngine) -> None:
                     if path in exempt or method_key in exempt:
                         patched_for_global[key] = value
                         continue
-                    patched_for_global[key] = _annotate_maintenance(
-                        value, global_state
-                    )
+                    patched_for_global[key] = _annotate_maintenance(value, global_state)
                     changed = True
                 if changed:
                     filtered[path] = patched_for_global
@@ -200,9 +191,7 @@ def apply_shield_to_openapi(app: FastAPI, engine: ShieldEngine) -> None:
     app.openapi = patched_openapi  # type: ignore[method-assign]
 
 
-def _annotate_maintenance(
-    operation: dict[str, Any], state: RouteState
-) -> dict[str, Any]:
+def _annotate_maintenance(operation: dict[str, Any], state: RouteState) -> dict[str, Any]:
     """Return a copy of *operation* annotated with maintenance indicators.
 
     Changes applied:
@@ -554,11 +543,9 @@ def setup_shield_docs(app: FastAPI, engine: ShieldEngine) -> None:
 
     # Remove both built-in docs routes so ours are the only matches.
     app.routes[:] = [
-        r for r in app.routes
-        if not (
-            isinstance(r, Route)
-            and getattr(r, "path", None) in (docs_url, redoc_url)
-        )
+        r
+        for r in app.routes
+        if not (isinstance(r, Route) and getattr(r, "path", None) in (docs_url, redoc_url))
     ]
 
     def _inject(base_html: str) -> str:
@@ -574,20 +561,22 @@ def setup_shield_docs(app: FastAPI, engine: ShieldEngine) -> None:
     async def shield_swagger_ui() -> HTMLResponse:
         from fastapi.openapi.docs import get_swagger_ui_html
 
-        base: str = get_swagger_ui_html(
+        raw = get_swagger_ui_html(
             openapi_url=openapi_url,
             title=f"{app.title} - Swagger UI",
-        ).body.decode()
+        ).body
+        base: str = bytes(raw).decode()
         return HTMLResponse(_inject(base))
 
     @app.get(redoc_url, include_in_schema=False)
     async def shield_redoc() -> HTMLResponse:
         from fastapi.openapi.docs import get_redoc_html
 
-        base: str = get_redoc_html(
+        raw = get_redoc_html(
             openapi_url=openapi_url,
             title=f"{app.title} - ReDoc",
-        ).body.decode()
+        ).body
+        base: str = bytes(raw).decode()
         return HTMLResponse(_inject(base))
 
 
@@ -598,12 +587,12 @@ def setup_shield_docs(app: FastAPI, engine: ShieldEngine) -> None:
 
 def _fetch_states(engine: ShieldEngine) -> list[RouteState] | None:
     """Fetch all route states from both sync and async call contexts."""
-    return _run_async(engine.list_states())
+    return cast(list[RouteState] | None, _run_async(engine.list_states()))
 
 
 def _fetch_global_config(engine: ShieldEngine) -> GlobalMaintenanceConfig | None:
     """Fetch the global maintenance config from both sync and async contexts."""
-    return _run_async(engine.get_global_maintenance())
+    return cast(GlobalMaintenanceConfig | None, _run_async(engine.get_global_maintenance()))
 
 
 def _run_async(coro: object) -> Any:
@@ -616,7 +605,7 @@ def _run_async(coro: object) -> Any:
     try:
         if loop is not None and loop.is_running():
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                fut = pool.submit(asyncio.run, coro)  # type: ignore[arg-type]
+                fut: concurrent.futures.Future[Any] = pool.submit(asyncio.run, coro)  # type: ignore[arg-type]
                 return fut.result(timeout=5)
         elif loop is not None:
             return loop.run_until_complete(coro)  # type: ignore[arg-type]

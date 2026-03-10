@@ -29,10 +29,9 @@ for environments where the ASGI lifespan is not used.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
 from typing import Any
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Match
@@ -130,9 +129,7 @@ class ShieldMiddleware(BaseHTTPMiddleware):
     # HTTP dispatch
     # ------------------------------------------------------------------
 
-    async def dispatch(
-        self, request: Request, call_next: Callable[..., Any]
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Intercept the request and run shield checks."""
         path = request.url.path
 
@@ -180,9 +177,7 @@ class ShieldMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # Inject deprecation headers for DEPRECATED routes (does not block).
-        response = await self._inject_deprecation_headers(
-            check_path, request.method, response
-        )
+        response = await self._inject_deprecation_headers(check_path, request.method, response)
         return response
 
     def _resolve_route(self, request: Request) -> tuple[bool, str | None]:
@@ -229,9 +224,7 @@ class ShieldMiddleware(BaseHTTPMiddleware):
         if state.sunset_date:
             response.headers["Sunset"] = state.sunset_date
         if state.successor_path:
-            response.headers["Link"] = (
-                f'<{state.successor_path}>; rel="successor-version"'
-            )
+            response.headers["Link"] = f'<{state.successor_path}>; rel="successor-version"'
         return response
 
     # ------------------------------------------------------------------
@@ -239,12 +232,8 @@ class ShieldMiddleware(BaseHTTPMiddleware):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _maintenance_response(
-        path: str, exc: MaintenanceException
-    ) -> JSONResponse:
-        retry_after = (
-            exc.retry_after.isoformat() if exc.retry_after else None
-        )
+    def _maintenance_response(path: str, exc: MaintenanceException) -> JSONResponse:
+        retry_after = exc.retry_after.isoformat() if exc.retry_after else None
         body: dict[str, Any] = {
             "error": {
                 "code": "MAINTENANCE_MODE",
