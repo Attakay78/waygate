@@ -31,7 +31,6 @@ from shield.core.engine import ShieldEngine
 from shield.core.models import MaintenanceWindow
 from shield.fastapi import ShieldMiddleware, ShieldRouter, force_active
 
-
 engine = ShieldEngine(backend=MemoryBackend())
 router = ShieldRouter(engine=engine)
 

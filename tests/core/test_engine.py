@@ -375,7 +375,6 @@ async def test_force_active_set_env_only_raises(engine):
 
 
 async def test_force_active_schedule_maintenance_raises(engine):
-    from datetime import timedelta
 
     from shield.core.exceptions import RouteProtectedException
     from shield.core.models import MaintenanceWindow

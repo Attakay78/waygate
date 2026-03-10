@@ -8,13 +8,11 @@ requiring per-route decorators.  Options include:
 
 from __future__ import annotations
 
-import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from shield.core.backends.memory import MemoryBackend
 from shield.core.engine import ShieldEngine
-from shield.core.models import RouteStatus
 from shield.fastapi.decorators import disabled, force_active
 from shield.fastapi.middleware import ShieldMiddleware
 from shield.fastapi.router import ShieldRouter

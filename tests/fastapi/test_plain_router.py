@@ -11,7 +11,6 @@ registers any ``__shield_meta__``-bearing endpoints with the engine.
 
 from __future__ import annotations
 
-import pytest
 from fastapi import APIRouter, FastAPI
 from httpx import ASGITransport, AsyncClient
 

@@ -3,7 +3,6 @@ and the custom Swagger UI provided by setup_shield_docs."""
 
 from __future__ import annotations
 
-import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 

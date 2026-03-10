@@ -57,6 +57,7 @@ dev = [
     "mypy",
     "aiofiles>=23.0",
     "fastapi>=0.100",
+    "pre-commit>=3.7",
 ]
 
 [project.scripts]
@@ -74,7 +75,7 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]

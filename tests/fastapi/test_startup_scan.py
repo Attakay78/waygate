@@ -20,7 +20,6 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-import pytest
 from fastapi import APIRouter, FastAPI
 from httpx import ASGITransport, AsyncClient
 
@@ -31,7 +30,6 @@ from shield.fastapi.decorators import deprecated, disabled, env_only, maintenanc
 from shield.fastapi.middleware import ShieldMiddleware
 from shield.fastapi.openapi import apply_shield_to_openapi
 from shield.fastapi.router import ShieldRouter
-
 
 # ---------------------------------------------------------------------------
 # Helper: simulate ASGI lifespan startup
