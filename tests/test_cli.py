@@ -123,10 +123,14 @@ def test_maintenance_with_window(monkeypatch, tmp_path):
     _seed(file_path, "/api/pay")
 
     result = invoke(
-        "maintenance", "/api/pay",
-        "--reason", "DB swap",
-        "--start", "2025-03-10T02:00Z",
-        "--end", "2025-03-10T04:00Z",
+        "maintenance",
+        "/api/pay",
+        "--reason",
+        "DB swap",
+        "--start",
+        "2025-03-10T02:00Z",
+        "--end",
+        "2025-03-10T04:00Z",
     )
     assert result.exit_code == 0
     assert "Window" in result.output
@@ -144,10 +148,14 @@ def test_schedule_command(monkeypatch, tmp_path):
     _seed(file_path, "/api/pay")
 
     result = invoke(
-        "schedule", "/api/pay",
-        "--start", "2025-03-10T02:00Z",
-        "--end", "2025-03-10T04:00Z",
-        "--reason", "nightly migration",
+        "schedule",
+        "/api/pay",
+        "--start",
+        "2025-03-10T02:00Z",
+        "--end",
+        "2025-03-10T04:00Z",
+        "--reason",
+        "nightly migration",
     )
     assert result.exit_code == 0
     assert "Scheduled" in result.output
@@ -249,9 +257,7 @@ def test_config_flag_loads_named_file(tmp_path, monkeypatch):
 
     state_file = tmp_path / "state.json"
     cfg_file = tmp_path / "prod.shield"
-    cfg_file.write_text(
-        f"SHIELD_BACKEND=file\nSHIELD_FILE_PATH={state_file}\n"
-    )
+    cfg_file.write_text(f"SHIELD_BACKEND=file\nSHIELD_FILE_PATH={state_file}\n")
     _seed(str(state_file), "/api/pay")  # pre-register route
 
     # Disable via the named config.
@@ -280,9 +286,7 @@ def test_config_flag_short_form(tmp_path, monkeypatch):
 
     state_file = tmp_path / "state.json"
     cfg_file = tmp_path / "custom.env"
-    cfg_file.write_text(
-        f"SHIELD_BACKEND=file\nSHIELD_FILE_PATH={state_file}\n"
-    )
+    cfg_file.write_text(f"SHIELD_BACKEND=file\nSHIELD_FILE_PATH={state_file}\n")
 
     result = runner.invoke(
         app,
@@ -406,9 +410,7 @@ def test_force_active_route_cannot_be_disabled(monkeypatch, tmp_path):
 
     async def _seed():
         b = FileBackend(file_path)
-        await b.set_state(
-            "GET:/health", RouteState(path="GET:/health", force_active=True)
-        )
+        await b.set_state("GET:/health", RouteState(path="GET:/health", force_active=True))
 
     anyio.run(_seed)
 
@@ -432,9 +434,7 @@ def test_force_active_route_cannot_be_set_to_maintenance(monkeypatch, tmp_path):
 
     async def _seed():
         b = FileBackend(file_path)
-        await b.set_state(
-            "GET:/health", RouteState(path="GET:/health", force_active=True)
-        )
+        await b.set_state("GET:/health", RouteState(path="GET:/health", force_active=True))
 
     anyio.run(_seed)
 

@@ -13,10 +13,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import anyio
 
 from shield.core.models import MaintenanceWindow
+
+if TYPE_CHECKING:
+    from shield.core.engine import ShieldEngine
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +36,8 @@ class MaintenanceScheduler:
         circular import at module level.
     """
 
-    def __init__(self, engine: object) -> None:
-        # Avoid importing ShieldEngine at module level (would be circular).
-        self._engine = engine  # type: ShieldEngine  # noqa: F821
+    def __init__(self, engine: ShieldEngine) -> None:
+        self._engine = engine
         # path → running asyncio.Task
         self._tasks: dict[str, asyncio.Task[None]] = {}
         # path → window (for list_scheduled / restart recovery)
@@ -131,9 +134,7 @@ class MaintenanceScheduler:
             existing = self._tasks.get(state.path)
             if existing is not None and not existing.done():
                 continue
-            logger.info(
-                "shield: restoring scheduled window for %r from backend", state.path
-            )
+            logger.info("shield: restoring scheduled window for %r from backend", state.path)
             await self.schedule(state.path, state.window, actor=actor)
 
     def start_polling(self, interval_seconds: float = 30.0) -> None:
@@ -156,12 +157,8 @@ class MaintenanceScheduler:
                 except Exception:
                     logger.exception("shield: scheduler poll cycle failed")
 
-        self._poll_task = asyncio.create_task(
-            _poll(), name="shield-scheduler-poll"
-        )
-        logger.info(
-            "shield: scheduler polling started (interval=%.0fs)", interval_seconds
-        )
+        self._poll_task = asyncio.create_task(_poll(), name="shield-scheduler-poll")
+        logger.info("shield: scheduler polling started (interval=%.0fs)", interval_seconds)
 
     def stop_polling(self) -> None:
         """Cancel the background polling loop if it is running."""
@@ -174,9 +171,7 @@ class MaintenanceScheduler:
     # Internal
     # ------------------------------------------------------------------
 
-    async def _run_window(
-        self, path: str, window: MaintenanceWindow
-    ) -> None:
+    async def _run_window(self, path: str, window: MaintenanceWindow) -> None:
         """Task body: sleep → activate → sleep → deactivate.
 
         Both the activation and deactivation audit entries always record
@@ -202,9 +197,7 @@ class MaintenanceScheduler:
             )
             logger.info("shield: maintenance window opened for %r", path)
         except Exception:
-            logger.exception(
-                "shield: failed to activate maintenance for %r", path
-            )
+            logger.exception("shield: failed to activate maintenance for %r", path)
             return
 
         # Sleep until end.
@@ -218,9 +211,7 @@ class MaintenanceScheduler:
             await self._engine.enable(path, actor="scheduler")
             logger.info("shield: maintenance window closed for %r", path)
         except Exception:
-            logger.exception(
-                "shield: failed to deactivate maintenance for %r", path
-            )
+            logger.exception("shield: failed to deactivate maintenance for %r", path)
 
     def _on_task_done(self, path: str, task: asyncio.Task[None]) -> None:
         """Callback: remove the task from the tracking dicts when it finishes."""

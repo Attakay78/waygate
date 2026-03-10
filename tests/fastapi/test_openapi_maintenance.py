@@ -157,9 +157,7 @@ async def test_setup_shield_docs_serves_html():
     apply_shield_to_openapi(app, engine)
     setup_shield_docs(app, engine)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/docs")
 
     assert resp.status_code == 200
@@ -179,9 +177,7 @@ async def test_setup_shield_docs_injects_maintenance_script():
     apply_shield_to_openapi(app, engine)
     setup_shield_docs(app, engine)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/docs")
 
     html = resp.text
@@ -199,9 +195,7 @@ async def test_setup_shield_docs_embeds_openapi_url():
     apply_shield_to_openapi(app, engine)
     setup_shield_docs(app, engine)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/docs")
 
     # The data attribute must be present so the injected JS can find the
@@ -222,9 +216,7 @@ async def test_setup_shield_docs_does_not_break_normal_routes():
     apply_shield_to_openapi(app, engine)
     setup_shield_docs(app, engine)
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/health")
 
     assert resp.status_code == 200

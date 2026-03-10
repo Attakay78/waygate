@@ -71,9 +71,7 @@ def backend(request, memory_backend, file_backend, redis_backend):
     return redis_backend
 
 
-def _make_state(
-    path: str = "/api/test", status: RouteStatus = RouteStatus.ACTIVE
-) -> RouteState:
+def _make_state(path: str = "/api/test", status: RouteStatus = RouteStatus.ACTIVE) -> RouteState:
     return RouteState(path=path, status=status, reason="test")
 
 

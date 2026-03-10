@@ -307,6 +307,4 @@ async def test_scope_app_is_set_during_lifespan():
     await _lifespan_startup(app)
 
     assert len(captured_app) == 1, "Lifespan __call__ not invoked"
-    assert captured_app[0] is app, (
-        f"scope['app'] was {captured_app[0]!r}, expected the FastAPI app"
-    )
+    assert captured_app[0] is app, f"scope['app'] was {captured_app[0]!r}, expected the FastAPI app"

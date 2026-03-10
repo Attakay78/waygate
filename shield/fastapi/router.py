@@ -57,9 +57,7 @@ async def scan_routes(app: Any, engine: ShieldEngine) -> None:
             continue
         # Skip FastAPI's built-in docs/schema routes — they are not
         # user-defined routes and should never appear in shield status.
-        if route.path in {
-            "/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"
-        }:
+        if route.path in {"/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"}:
             continue
         # Use decorator meta if present; fall back to empty dict for
         # undecorated routes so they are still registered as ACTIVE.

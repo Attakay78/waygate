@@ -58,6 +58,8 @@ dev = [
     "aiofiles>=23.0",
     "fastapi>=0.100",
     "pre-commit>=3.7",
+    "tomli-w>=1.0",
+    "pyyaml>=6.0",
 ]
 
 [project.scripts]
@@ -84,3 +86,4 @@ select = ["E", "F", "I", "UP"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+

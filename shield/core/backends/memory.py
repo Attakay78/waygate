@@ -53,15 +53,9 @@ class MemoryBackend(ShieldBackend):
         if len(self._audit) > _MAX_AUDIT_ENTRIES:
             self._audit = self._audit[-_MAX_AUDIT_ENTRIES:]
 
-    async def get_audit_log(
-        self, path: str | None = None, limit: int = 100
-    ) -> list[AuditEntry]:
+    async def get_audit_log(self, path: str | None = None, limit: int = 100) -> list[AuditEntry]:
         """Return audit entries, newest first, optionally filtered by *path*."""
-        entries = (
-            self._audit
-            if path is None
-            else [e for e in self._audit if e.path == path]
-        )
+        entries = self._audit if path is None else [e for e in self._audit if e.path == path]
         return list(reversed(entries))[:limit]
 
     async def subscribe(self) -> AsyncIterator[RouteState]:

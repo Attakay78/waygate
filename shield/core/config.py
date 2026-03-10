@@ -35,8 +35,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from shield.core.backends.base import ShieldBackend
+
+if TYPE_CHECKING:
+    from shield.core.engine import ShieldEngine
 
 # ---------------------------------------------------------------------------
 # Public env-var constants — import these instead of hardcoding the names
@@ -60,6 +64,7 @@ _CONFIG_FILE = ".shield"
 # ---------------------------------------------------------------------------
 # Config file loader
 # ---------------------------------------------------------------------------
+
 
 def _load_config_file(path: str | Path | None = None) -> dict[str, str]:
     """Parse a ``.shield`` KEY=value file and return its contents as a dict.
@@ -153,9 +158,7 @@ def _load_custom_backend(dotted_path: str) -> ShieldBackend:
         factory = getattr(module, attr)
         instance = factory()
     except (ImportError, AttributeError) as exc:
-        raise ValueError(
-            f"Cannot load custom backend from {dotted_path!r}: {exc}"
-        ) from exc
+        raise ValueError(f"Cannot load custom backend from {dotted_path!r}: {exc}") from exc
 
     if not isinstance(instance, ShieldBackend):
         raise TypeError(
@@ -168,6 +171,7 @@ def _load_custom_backend(dotted_path: str) -> ShieldBackend:
 # ---------------------------------------------------------------------------
 # Public factory functions
 # ---------------------------------------------------------------------------
+
 
 def make_backend(
     backend_type: str | None = None,
@@ -225,8 +229,7 @@ def make_backend(
         return _load_custom_backend(dotted)
 
     raise ValueError(
-        f"Unknown SHIELD_BACKEND value {btype!r}. "
-        "Valid options: memory, file, redis, custom"
+        f"Unknown SHIELD_BACKEND value {btype!r}. Valid options: memory, file, redis, custom"
     )
 
 
@@ -237,7 +240,7 @@ def make_engine(
     custom_path: str | None = None,
     current_env: str | None = None,
     config_file: str | None = None,
-):
+) -> ShieldEngine:
     """Construct a fully configured ``ShieldEngine``.
 
     Priority for every setting: explicit arg > ``os.environ`` > ``.shield``
