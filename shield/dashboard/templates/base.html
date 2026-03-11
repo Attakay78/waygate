@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shield — Route Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system','BlinkMacSystemFont','Inter','Segoe UI','Helvetica Neue','Arial','sans-serif'],
+                        mono: ['JetBrains Mono','Fira Code','ui-monospace','SFMono-Regular','Menlo','monospace'],
+                    },
+                    colors: {
+                        brand: { DEFAULT: '#4f46e5', light: '#eef2ff', dark: '#3730a3' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"></script>
+    <script src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js"></script>
+    <style>
+        /* HTMX swap transitions */
+        .htmx-swapping { opacity: 0; transition: opacity 80ms ease-out; }
+        .htmx-added    { animation: fadeIn 200ms ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Request indicator: spinner visible only during the request, icon shown otherwise */
+        .htmx-indicator          { display: none; }
+        .htmx-request .htmx-indicator { display: inline; }
+        .htmx-settle-indicator   { display: inline; }
+        .htmx-request .htmx-settle-indicator { display: none; }
+
+        /* Thin scrollbar for overflow-x tables */
+        .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #e2e8f0 transparent; }
+        .scroll-x::-webkit-scrollbar { height: 4px; }
+        .scroll-x::-webkit-scrollbar-track { background: transparent; }
+        .scroll-x::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+
+        /* Native <dialog> modal styling */
+        #shield-modal {
+            border: none;
+            border-radius: 1rem;
+            padding: 0;
+            width: calc(100% - 2rem);
+            max-width: 26rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25), 0 0 0 1px rgb(148 163 184 / 0.2);
+        }
+        #shield-modal[open] {
+            animation: modalIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-6px); }
+            to   { opacity: 1; transform: scale(1)    translateY(0);    }
+        }
+        #shield-modal::backdrop {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-900 antialiased font-sans">
+
+    <!-- ── Header ─────────────────────────────────────────────────── -->
+    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-slate-200 shadow-[0_1px_3px_0_rgb(0,0,0,0.04)]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14">
+
+                <!-- Brand mark -->
+                <a href="{{ prefix }}/" class="flex items-center gap-2.5 group">
+                    <div class="shrink-0 w-7 h-7 bg-indigo-600 group-hover:bg-indigo-700 transition-colors rounded-lg flex items-center justify-center shadow-sm">
+                        <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+                        </svg>
+                    </div>
+                    <span class="font-semibold text-slate-900 text-sm tracking-tight">api-shield</span>
+                    <span class="hidden sm:inline text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">v{{ version }}</span>
+                </a>
+
+                <!-- Navigation tabs -->
+                <nav class="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg">
+                    <a href="{{ prefix }}/"
+                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150
+                              {% if active_tab == 'routes' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/>
+                        </svg>
+                        <span>Routes</span>
+                    </a>
+                    <a href="{{ prefix }}/audit"
+                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150
+                              {% if active_tab == 'audit' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Audit</span>
+                    </a>
+                </nav>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- ── Page body ──────────────────────────────────────────────── -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ── Action modal ───────────────────────────────────────────── -->
+    <dialog id="shield-modal"></dialog>
+
+    <script>
+        const _modal = document.getElementById('shield-modal');
+        // Auto-open whenever HTMX swaps new content into the dialog.
+        document.body.addEventListener('htmx:afterSwap', e => { if (e.detail.target === _modal) _modal.showModal(); });
+        // Close when user clicks the backdrop (outside the dialog box).
+        _modal.addEventListener('click', e => { if (e.target === _modal) _modal.close(); });
+    </script>
+
+</body>
+</html>

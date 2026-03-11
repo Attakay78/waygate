@@ -35,7 +35,11 @@ Issues = "https://github.com/Attakay78/api-shield/issues"
 [project.optional-dependencies]
 fastapi   = ["fastapi>=0.100"]
 redis     = ["redis[asyncio]>=5.0"]
-dashboard = ["jinja2>=3.1", "aiofiles>=23.0"]
+dashboard = [
+    "jinja2>=3.1",
+ "aiofiles>=23.0",
+ "python-multipart>=0.0.22",
+]
 cli       = ["typer>=0.12"]
 yaml      = ["pyyaml>=6.0"]
 toml      = ["tomli-w>=1.0"]
@@ -47,6 +51,7 @@ all       = [
     "typer>=0.12",
     "pyyaml>=6.0",
     "tomli-w>=1.0",
+    "python-multipart>=0.0.22",
 ]
 dev = [
     "pytest>=8.0",

@@ -1,0 +1,4 @@
+{% for state in states %}
+{% set path_slug = path_slug(state.path) %}
+{% include "partials/route_row.html" with context %}
+{% endfor %}

@@ -1,0 +1,105 @@
+"""Shield dashboard — mountable Starlette admin UI factory."""
+
+from __future__ import annotations
+
+import importlib.metadata
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from starlette.applications import Starlette
+from starlette.routing import Route
+from starlette.templating import Jinja2Templates
+
+from shield.core.engine import ShieldEngine
+from shield.dashboard import routes as r
+
+if TYPE_CHECKING:
+    from starlette.types import ASGIApp
+
+_TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+
+def ShieldDashboard(
+    engine: ShieldEngine,
+    prefix: str = "/shield",
+    auth: tuple[str, str] | None = None,
+) -> ASGIApp:
+    """Create a mountable Starlette admin UI for the Shield engine.
+
+    Mount it on any FastAPI / Starlette application::
+
+        app.mount("/shield", ShieldDashboard(engine=engine))
+
+    The dashboard is completely self-contained and does **not** affect the
+    parent application's routing, OpenAPI schema, or middleware stack.
+
+    Parameters
+    ----------
+    engine:
+        The :class:`~shield.core.engine.ShieldEngine` whose state this
+        dashboard will display and control.
+    prefix:
+        The URL prefix at which the dashboard is mounted.  Used to build
+        correct links inside templates.  Should match the path passed to
+        ``app.mount()``.  Defaults to ``"/shield"``.
+    auth:
+        Optional ``(username, password)`` tuple.  When provided, all
+        dashboard requests must carry a valid ``Authorization: Basic …``
+        header.  Without credentials the dashboard is open to anyone who
+        can reach it.
+
+    Returns
+    -------
+    ASGIApp
+        A Starlette ASGI application.  Pass it directly to
+        ``app.mount()``.
+    """
+    templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
+
+    # Register custom Jinja2 filter so templates can base64-encode path keys
+    # for safe embedding in URL segments.
+    import base64
+
+    templates.env.filters["encode_path"] = lambda p: (
+        base64.urlsafe_b64encode(p.encode()).decode().rstrip("=")
+    )
+    # Expose path_slug as a global so templates can call it without import.
+    templates.env.globals["path_slug"] = r.path_slug
+
+    try:
+        version = importlib.metadata.version("api-shield")
+    except importlib.metadata.PackageNotFoundError:
+        version = "0.1.0"
+
+    starlette_app = Starlette(
+        routes=[
+            Route("/", r.index),
+            Route("/routes", r.routes_partial),
+            Route("/modal/global/enable", r.modal_global_enable),
+            Route("/modal/global/disable", r.modal_global_disable),
+            Route("/modal/{action}/{path_key}", r.action_modal),
+            Route("/global-maintenance/enable", r.global_maintenance_enable, methods=["POST"]),
+            Route("/global-maintenance/disable", r.global_maintenance_disable, methods=["POST"]),
+            Route("/toggle/{path_key}", r.toggle, methods=["POST"]),
+            Route("/disable/{path_key}", r.disable, methods=["POST"]),
+            Route("/enable/{path_key}", r.enable, methods=["POST"]),
+            Route("/schedule", r.schedule, methods=["POST"]),
+            Route("/schedule/{path_key}", r.cancel_schedule, methods=["DELETE"]),
+            Route("/audit", r.audit_page),
+            Route("/audit/rows", r.audit_rows),
+            Route("/events", r.events),
+        ],
+    )
+
+    # Inject shared state so route handlers can access engine, templates, etc.
+    starlette_app.state.engine = engine
+    starlette_app.state.templates = templates
+    starlette_app.state.prefix = prefix.rstrip("/")
+    starlette_app.state.version = version
+
+    if auth is not None:
+        from shield.dashboard.auth import BasicAuthMiddleware
+
+        return BasicAuthMiddleware(starlette_app, username=auth[0], password=auth[1])
+
+    return starlette_app
