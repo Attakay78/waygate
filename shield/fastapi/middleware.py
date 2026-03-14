@@ -101,6 +101,13 @@ class ShieldMiddleware(BaseHTTPMiddleware):
                         # have already run.
                         await self._do_scan(app)
                         self.engine.scheduler.start_polling()
+                        # Make the engine discoverable by decorator deps via
+                        # request.app.state.shield_engine — this is what lets
+                        # maintenance()/disabled()/env_only() find the engine
+                        # without needing engine= on every call.
+                        from shield.fastapi.dependencies import configure_shield
+
+                        configure_shield(app, self.engine)
                     elif message.get("type") == "lifespan.shutdown.complete":
                         # Clean up the polling task on graceful shutdown.
                         self.engine.scheduler.stop_polling()

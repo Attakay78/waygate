@@ -46,13 +46,20 @@ def _prefix(request: Request) -> str:
 def path_slug(path: str) -> str:
     """Convert a route path key to a CSS-safe slug for HTML IDs and SSE events.
 
+    Curly braces from parameterised route templates (e.g. ``{user_id}``) are
+    stripped so the resulting slug is a valid CSS identifier.
+
     Examples
     --------
-    ``"/payments"``         → ``"payments"``
-    ``"/api/v1/payments"``  → ``"api-v1-payments"``
-    ``"GET:/payments"``     → ``"GET--payments"``
+    ``"/payments"``               → ``"payments"``
+    ``"/api/v1/payments"``        → ``"api-v1-payments"``
+    ``"GET:/payments"``           → ``"GET--payments"``
+    ``"GET:/users/{user_id}"``    → ``"GET--users-user_id"``
     """
     slug = path.lstrip("/")
+    # Strip template braces before replacing other special characters so that
+    # "/users/{user_id}" becomes "users-user_id" (not "users--user_id-").
+    slug = slug.replace("{", "").replace("}", "")
     for char in "/:._":
         slug = slug.replace(char, "-")
     return slug or "root"

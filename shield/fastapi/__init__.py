@@ -21,6 +21,7 @@ from shield.fastapi.decorators import (
     force_active,
     maintenance,
 )
+from shield.fastapi.dependencies import ShieldGuard, configure_shield
 from shield.fastapi.middleware import ShieldMiddleware
 from shield.fastapi.openapi import apply_shield_to_openapi, setup_shield_docs
 from shield.fastapi.router import ShieldRouter, scan_routes
@@ -28,6 +29,8 @@ from shield.fastapi.router import ShieldRouter, scan_routes
 __all__ = [
     "ShieldMiddleware",
     "ShieldRouter",
+    "ShieldGuard",
+    "configure_shield",
     "scan_routes",
     "apply_shield_to_openapi",
     "setup_shield_docs",
