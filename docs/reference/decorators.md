@@ -189,6 +189,162 @@ The route is also marked `deprecated: true` in the OpenAPI schema.
 
 ---
 
+## Custom responses
+
+By default, blocked routes return a structured JSON error body. You can replace this with any response — HTML, plain text, a redirect, or your own JSON shape — in two ways:
+
+- **Per-route**: pass `response=` directly on the decorator
+- **Global default**: pass `responses=` on `ShieldMiddleware`
+
+Resolution order per request: **per-route** → **global default** → **built-in JSON**.
+
+---
+
+### Per-route: `response=` parameter
+
+Every blocking decorator (`@maintenance`, `@disabled`, `@env_only`) accepts an optional `response=` keyword argument — a sync or async callable with the signature:
+
+```python
+(request: Request, exc: Exception) -> Response
+```
+
+**HTML maintenance page**
+
+```python
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
+from shield.fastapi import maintenance
+
+def maintenance_page(request: Request, exc: Exception) -> HTMLResponse:
+    return HTMLResponse(
+        f"<h1>Down for maintenance</h1><p>{exc.reason}</p>",
+        status_code=503,
+    )
+
+@router.get("/payments")
+@maintenance(reason="DB migration — back at 04:00 UTC", response=maintenance_page)
+async def payments():
+    return {"payments": []}
+```
+
+**Inline lambda for simple cases**
+
+```python
+from starlette.responses import RedirectResponse
+
+@router.get("/payments")
+@maintenance(reason="DB migration", response=lambda *_: RedirectResponse("/status"))
+async def payments():
+    return {"payments": []}
+```
+
+**Async factory (template rendering, DB lookup, etc.)**
+
+```python
+async def maintenance_page(request: Request, exc: Exception) -> HTMLResponse:
+    html = await render_template("maintenance.html", reason=exc.reason)
+    return HTMLResponse(html, status_code=503)
+
+@router.get("/payments")
+@maintenance(reason="DB migration", response=maintenance_page)
+async def payments():
+    return {"payments": []}
+```
+
+**Custom JSON structure**
+
+```python
+from starlette.responses import JSONResponse
+
+def branded_error(request: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(
+        {"ok": False, "message": str(exc), "support": "https://status.example.com"},
+        status_code=503,
+    )
+
+@router.get("/payments")
+@maintenance(reason="DB migration", response=branded_error)
+async def payments():
+    return {"payments": []}
+```
+
+**Reusable factory on multiple routes**
+
+```python
+def maintenance_html(request: Request, exc: Exception) -> HTMLResponse:
+    return HTMLResponse("<h1>Temporarily unavailable</h1>", status_code=503)
+
+@router.get("/payments")
+@maintenance(reason="DB migration", response=maintenance_html)
+async def payments(): ...
+
+@router.post("/orders")
+@maintenance(reason="DB migration", response=maintenance_html)
+async def create_order(): ...
+```
+
+---
+
+### Global default: `responses=` on `ShieldMiddleware`
+
+Set app-wide response defaults once on the middleware. Any route without a per-route `response=` will use these. Per-route always wins.
+
+```python
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
+from shield.fastapi import ShieldMiddleware
+
+def maintenance_page(request: Request, exc: Exception) -> HTMLResponse:
+    return HTMLResponse(
+        f"<h1>Down for maintenance</h1><p>{exc.reason}</p>",
+        status_code=503,
+    )
+
+app.add_middleware(
+    ShieldMiddleware,
+    engine=engine,
+    responses={
+        "maintenance": maintenance_page,
+        "disabled": lambda req, exc: HTMLResponse(
+            f"<h1>Gone</h1><p>{exc.reason}</p>", status_code=503
+        ),
+        # "env_gated": ...  # omit to keep the default silent 404
+    },
+)
+```
+
+Supported keys:
+
+| Key | Triggered by | Default behaviour |
+|---|---|---|
+| `"maintenance"` | `MaintenanceException` (route or global) | 503 JSON |
+| `"disabled"` | `RouteDisabledException` | 503 JSON |
+| `"env_gated"` | `EnvGatedException` | Silent 404 |
+
+---
+
+### Factory signature reference
+
+```python
+# Sync
+def my_factory(request: Request, exc: Exception) -> Response: ...
+
+# Async — works identically
+async def my_factory(request: Request, exc: Exception) -> Response: ...
+```
+
+The `exc` argument is the `ShieldException` subclass that triggered the block:
+
+| Shield state | Exception type | Useful attributes |
+|---|---|---|
+| Maintenance | `MaintenanceException` | `exc.reason`, `exc.retry_after` |
+| Disabled | `RouteDisabledException` | `exc.reason` |
+| Env-gated | `EnvGatedException` | `exc.path`, `exc.current_env`, `exc.allowed_envs` |
+
+Any Starlette `Response` subclass is valid: `HTMLResponse`, `JSONResponse`, `RedirectResponse`, `PlainTextResponse`, or a raw `Response`.
+
+---
+
 ## Decorator composition rules
 
 - Always apply the shield decorator **directly below** the router decorator:

@@ -71,6 +71,19 @@ from shield.core.models import MaintenanceWindow
 
 F = TypeVar("F", bound=Callable[..., Any])
 
+# A response factory is any callable that receives the live Request and the
+# ShieldException that triggered the block, and returns a Starlette Response.
+# Both sync and async callables are supported.
+#
+# Example::
+#
+#     from starlette.responses import HTMLResponse
+#
+#     def my_factory(request: Request, exc: Exception) -> HTMLResponse:
+#         return HTMLResponse("<h1>Down for maintenance</h1>", status_code=503)
+#
+ResponseFactory = Callable[..., Any]
+
 # Pre-built signature that FastAPI's DI system uses to inject a Request.
 # inspect.signature() checks __signature__ on the instance before anything else.
 _REQUEST_SIGNATURE = inspect.Signature(
@@ -236,6 +249,7 @@ def maintenance(
     start: datetime | None = None,
     end: datetime | None = None,
     engine: Any = None,
+    response: ResponseFactory | None = None,
 ) -> _ShieldCallable:
     """Mark a route as being in maintenance mode.
 
@@ -255,26 +269,55 @@ def maintenance(
         ``app.state.shield_engine`` (set by ``configure_shield`` or
         ``ShieldMiddleware``).  Pass explicitly only when you need to target a
         specific engine that differs from the app-level one.
+    response:
+        Optional custom response factory — a sync or async callable with
+        signature ``(request: Request, exc: Exception) -> Response``.
+        When provided, this factory is called instead of the default JSON
+        error body.  Accepts any Starlette ``Response`` subclass (HTML,
+        redirect, plain text, custom JSON, …).  Falls back to the middleware
+        ``responses["maintenance"]`` global default if not set here.
 
     Examples
     --------
+    Default JSON response::
+
+        @router.get("/payments")
+        @maintenance(reason="DB migration")
+        async def payments(): ...
+
+    Inline HTML response::
+
+        from starlette.responses import HTMLResponse
+
+        @router.get("/payments")
+        @maintenance(reason="DB migration", response=lambda req, exc: HTMLResponse(
+            f"<h1>Down for maintenance</h1><p>{exc.reason}</p>", status_code=503
+        ))
+        async def payments(): ...
+
+    Shared factory across routes::
+
+        def maintenance_page(request, exc):
+            return HTMLResponse("<h1>Back soon</h1>", status_code=503)
+
+        @router.get("/payments")
+        @maintenance(reason="DB migration", response=maintenance_page)
+        async def payments(): ...
+
     Zero-config dep (engine resolved from app state automatically)::
 
         configure_shield(app, engine)  # once
 
         @router.get("/payments", dependencies=[Depends(maintenance(reason="Migration"))])
         async def payments(): ...
-
-    Explicit engine override::
-
-        @router.get(
-            "/payments",
-            dependencies=[Depends(maintenance(reason="Migration", engine=engine))],
-        )
-        async def payments(): ...
     """
     window = MaintenanceWindow(start=start, end=end) if start and end else None
-    meta: dict[str, Any] = {"status": "maintenance", "reason": reason, "window": window}
+    meta: dict[str, Any] = {
+        "status": "maintenance",
+        "reason": reason,
+        "window": window,
+        "response_factory": response,
+    }
 
     def dep_raise(request: Request) -> None:
         eff_engine = _resolve_engine(engine, request)
@@ -292,10 +335,12 @@ def maintenance(
     return _ShieldCallable(meta=meta, dep_raise=dep_raise)
 
 
-def env_only(*envs: str, engine: Any = None) -> _ShieldCallable:
+def env_only(
+    *envs: str, engine: Any = None, response: ResponseFactory | None = None
+) -> _ShieldCallable:
     """Restrict a route to the given environment names.
 
-    In any other environment returns a silent 404.
+    In any other environment returns a silent 404 by default.
 
     Parameters
     ----------
@@ -305,6 +350,12 @@ def env_only(*envs: str, engine: Any = None) -> _ShieldCallable:
         Optional explicit engine override.  When omitted, the dep looks up
         ``app.state.shield_engine``.  If no engine is found anywhere, the dep
         fails open (use ``ShieldMiddleware`` for middleware-level enforcement).
+    response:
+        Optional custom response factory — a sync or async callable with
+        signature ``(request: Request, exc: Exception) -> Response``.
+        When provided, this factory is called instead of the default silent
+        404.  Falls back to the middleware ``responses["env_gated"]`` global
+        default if not set here.
 
     Examples
     --------
@@ -314,8 +365,20 @@ def env_only(*envs: str, engine: Any = None) -> _ShieldCallable:
 
         @router.get("/debug", dependencies=[Depends(env_only("dev", "staging"))])
         async def debug(): ...
+
+    Custom response for wrong environment::
+
+        @router.get("/internal")
+        @env_only("dev", "staging", response=lambda req, exc: PlainTextResponse(
+            "Not available in this environment.", status_code=404
+        ))
+        async def internal(): ...
     """
-    meta: dict[str, Any] = {"status": "env_gated", "allowed_envs": list(envs)}
+    meta: dict[str, Any] = {
+        "status": "env_gated",
+        "allowed_envs": list(envs),
+        "response_factory": response,
+    }
 
     def dep_raise(_request: Request) -> None:
         eff_engine = _resolve_engine(engine, _request)
@@ -327,7 +390,9 @@ def env_only(*envs: str, engine: Any = None) -> _ShieldCallable:
     return _ShieldCallable(meta=meta, dep_raise=dep_raise)
 
 
-def disabled(reason: str = "", engine: Any = None) -> _ShieldCallable:
+def disabled(
+    reason: str = "", engine: Any = None, response: ResponseFactory | None = None
+) -> _ShieldCallable:
     """Permanently disable a route (returns 503).
 
     Parameters
@@ -339,6 +404,12 @@ def disabled(reason: str = "", engine: Any = None) -> _ShieldCallable:
         ``app.state.shield_engine``.  When an engine is available the route
         can be re-enabled at runtime via ``shield enable <path>`` or the
         dashboard.
+    response:
+        Optional custom response factory — a sync or async callable with
+        signature ``(request: Request, exc: Exception) -> Response``.
+        When provided, this factory is called instead of the default JSON
+        503 body.  Falls back to the middleware ``responses["disabled"]``
+        global default if not set here.
 
     Examples
     --------
@@ -348,8 +419,19 @@ def disabled(reason: str = "", engine: Any = None) -> _ShieldCallable:
 
         @router.get("/old-endpoint", dependencies=[Depends(disabled(reason="Use /v2"))])
         async def old_endpoint(): ...
+
+    Custom response::
+
+        @router.get("/legacy")
+        @disabled(reason="Retired. Use /v2/orders.", response=lambda req, exc:
+            PlainTextResponse(f"Gone. {exc.reason}", status_code=503))
+        async def legacy(): ...
     """
-    meta: dict[str, Any] = {"status": "disabled", "reason": reason}
+    meta: dict[str, Any] = {
+        "status": "disabled",
+        "reason": reason,
+        "response_factory": response,
+    }
 
     def dep_raise(request: Request) -> None:
         eff_engine = _resolve_engine(engine, request)

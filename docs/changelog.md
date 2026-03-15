@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+#### Custom Responses
+- `response=` parameter on `@maintenance`, `@disabled`, and `@env_only` decorators — pass a sync or async factory `(request, exc) -> Response` to replace the default JSON error body on a per-route basis
+- `responses=` dict parameter on `ShieldMiddleware` — set app-wide response defaults for `"maintenance"`, `"disabled"`, and `"env_gated"` states without repeating the factory on every route
+- Resolution order: per-route `response=` → global `responses[...]` → built-in JSON
+- Factories receive the live `Request` and the triggering `ShieldException` — giving access to `exc.reason`, `exc.retry_after`, `request.url.path`, and any other request context
+- Any Starlette `Response` subclass is supported: `HTMLResponse`, `JSONResponse`, `RedirectResponse`, `PlainTextResponse`, or a raw `Response`
+- `ResponseFactory` type alias exported from `shield.fastapi` for use in type annotations
+- `examples/fastapi/custom_responses.py` — runnable example demonstrating per-route and global response patterns
+
+#### Documentation & Communication
+- Early Access notice added to README and docs homepage — communicates that the library is fully functional and actively developed, and invites community feedback via GitHub Issues
+
 ---
 
 ## [0.2.0] — Admin Redesign & Docs

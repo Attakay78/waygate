@@ -29,7 +29,7 @@ for environments where the ASGI lifespan is not used.
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Any, cast
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -58,18 +58,65 @@ class ShieldMiddleware(BaseHTTPMiddleware):
         The ASGI application to wrap.
     engine:
         The ``ShieldEngine`` that owns all route state.
+    responses:
+        Optional mapping of shield status → response factory used as the
+        **global default** when a route has no per-route ``response=``
+        factory set on its decorator.
+
+        Supported keys:
+
+        * ``"maintenance"`` — called when a route is in maintenance mode or
+          global maintenance is active.
+        * ``"disabled"``    — called when a route is permanently disabled.
+        * ``"env_gated"``   — called when a route is accessed from the wrong
+          environment.
+
+        Each value must be a sync or async callable with the signature
+        ``(request: Request, exc: Exception) -> Response``.
+
+        Resolution order per request: **per-route factory** (``response=``
+        on the decorator) → **global default** (this dict) → **built-in
+        JSON error response**.
+
+        Example::
+
+            from starlette.responses import HTMLResponse
+
+            def maintenance_page(request, exc):
+                return HTMLResponse(
+                    f"<h1>Down for maintenance</h1><p>{exc.reason}</p>",
+                    status_code=503,
+                )
+
+            app.add_middleware(
+                ShieldMiddleware,
+                engine=engine,
+                responses={
+                    "maintenance": maintenance_page,
+                    "disabled": lambda req, exc: HTMLResponse(
+                        "<h1>This page is gone</h1>", status_code=503
+                    ),
+                },
+            )
     """
 
-    def __init__(self, app: ASGIApp, engine: ShieldEngine) -> None:
+    def __init__(
+        self,
+        app: ASGIApp,
+        engine: ShieldEngine,
+        responses: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(app)
         self.engine = engine
+        self._default_responses: dict[str, Any] = responses or {}
         self._scan_lock: asyncio.Lock = asyncio.Lock()
         self._routes_scanned: bool = False
         # Pre-built route lookup cache — populated after scan_routes() completes.
         # Static paths (no path params) get an O(1) dict lookup.
         # Parameterised paths fall back to a short list scan (usually << total routes).
-        self._static_route_meta: dict[str, tuple[bool, str]] = {}
-        self._param_routes: list[tuple[Route, bool, str]] = []
+        # Each entry stores (is_force_active, template_path, response_factory | None).
+        self._static_route_meta: dict[str, tuple[bool, str, Any]] = {}
+        self._param_routes: list[tuple[Route, bool, str, Any]] = []
         self._route_cache_built: bool = False
 
     # ------------------------------------------------------------------
@@ -148,8 +195,8 @@ class ShieldMiddleware(BaseHTTPMiddleware):
         The structure stores ``(is_force_active, template_path)`` per route
         so ``_resolve_route`` can answer both questions in a single pass.
         """
-        static: dict[str, tuple[bool, str]] = {}
-        param: list[tuple[Route, bool, str]] = []
+        static: dict[str, tuple[bool, str, Any]] = {}
+        param: list[tuple[Route, bool, str, Any]] = []
 
         for route in getattr(app, "routes", []):
             if not isinstance(route, Route):
@@ -157,15 +204,16 @@ class ShieldMiddleware(BaseHTTPMiddleware):
             endpoint = getattr(route, "endpoint", None)
             meta = getattr(endpoint, "__shield_meta__", {}) if endpoint else {}
             is_force_active = bool(meta.get("force_active"))
+            response_factory = meta.get("response_factory")
             template = getattr(route, "path", None) or ""
 
             if "{" not in template:
                 # Static path — exact dict key match on every request.
-                static[template] = (is_force_active, template)
+                static[template] = (is_force_active, template, response_factory)
             else:
                 # Parameterised path — requires regex matching per request
                 # but the list is usually a small fraction of total routes.
-                param.append((route, is_force_active, template))
+                param.append((route, is_force_active, template, response_factory))
 
         self._static_route_meta = static
         self._param_routes = param
@@ -194,9 +242,9 @@ class ShieldMiddleware(BaseHTTPMiddleware):
         if any(path.startswith(prefix) for prefix in _SKIP_PREFIXES):
             return await call_next(request)
 
-        # Single route scan: resolves force_active flag AND the template path
-        # in one pass instead of two separate walks through app.routes.
-        is_force_active, template_path = self._resolve_route(request)
+        # Single route scan: resolves force_active flag, the template path,
+        # and the optional custom response factory in one pass.
+        is_force_active, template_path, response_factory = self._resolve_route(request)
 
         # Use the route template for engine lookups so parameterised routes
         # (e.g. /items/{item_id}) match their registered state key correctly.
@@ -219,10 +267,19 @@ class ShieldMiddleware(BaseHTTPMiddleware):
         try:
             await self.engine.check(check_path, method=request.method)
         except MaintenanceException as exc:
+            factory = response_factory or self._default_responses.get("maintenance")
+            if factory:
+                return await self._call_response_factory(factory, request, exc)
             return self._maintenance_response(path, exc)
         except RouteDisabledException as exc:
+            factory = response_factory or self._default_responses.get("disabled")
+            if factory:
+                return await self._call_response_factory(factory, request, exc)
             return self._disabled_response(path, exc)
-        except EnvGatedException:
+        except EnvGatedException as exc:
+            factory = response_factory or self._default_responses.get("env_gated")
+            if factory:
+                return await self._call_response_factory(factory, request, exc)
             # Silent 404 — do not reveal that the route exists.
             return Response(status_code=404)
 
@@ -232,10 +289,10 @@ class ShieldMiddleware(BaseHTTPMiddleware):
         response = await self._inject_deprecation_headers(check_path, request.method, response)
         return response
 
-    def _resolve_route(self, request: Request) -> tuple[bool, str | None]:
+    def _resolve_route(self, request: Request) -> tuple[bool, str | None, Any]:
         """Match the request against app routes using the pre-built cache.
 
-        Returns ``(is_force_active, template_path)`` where:
+        Returns ``(is_force_active, template_path, response_factory)`` where:
 
         - ``is_force_active`` is ``True`` when the matched endpoint carries
           ``@force_active`` and should bypass all shield checks.
@@ -244,8 +301,10 @@ class ShieldMiddleware(BaseHTTPMiddleware):
           state key.  Using the template instead of the concrete URL means
           that parameterised routes (``/items/42`` → ``/items/{item_id}``)
           are resolved correctly.
+        - ``response_factory`` is the callable stamped by ``@shield_response``,
+          or ``None`` when no custom response has been declared.
 
-        Returns ``(False, None)`` when no route matches (unregistered path).
+        Returns ``(False, None, None)`` when no route matches (unregistered path).
 
         Performance
         -----------
@@ -269,12 +328,12 @@ class ShieldMiddleware(BaseHTTPMiddleware):
                 return entry
 
             # Parameterised routes — scan only the short param-route list.
-            for route, is_force_active, template in self._param_routes:
+            for route, is_force_active, template, response_factory in self._param_routes:
                 match, _ = route.matches(request.scope)
                 if match == Match.FULL:
-                    return is_force_active, template
+                    return is_force_active, template, response_factory
 
-            return False, None
+            return False, None, None
 
         # Fallback: full O(N) walk used before the cache is ready.
         routes = getattr(request.app, "routes", [])
@@ -283,8 +342,12 @@ class ShieldMiddleware(BaseHTTPMiddleware):
             if match == Match.FULL:
                 endpoint = getattr(route, "endpoint", None)
                 meta = getattr(endpoint, "__shield_meta__", {}) if endpoint else {}
-                return bool(meta.get("force_active")), getattr(route, "path", None)
-        return False, None
+                return (
+                    bool(meta.get("force_active")),
+                    getattr(route, "path", None),
+                    meta.get("response_factory"),
+                )
+        return False, None, None
 
     async def _inject_deprecation_headers(
         self, path: str, method: str, response: Response
@@ -312,6 +375,19 @@ class ShieldMiddleware(BaseHTTPMiddleware):
     # ------------------------------------------------------------------
     # Response builders
     # ------------------------------------------------------------------
+
+    @staticmethod
+    async def _call_response_factory(factory: Any, request: Request, exc: Exception) -> Response:
+        """Invoke a user-supplied response factory (sync or async).
+
+        The factory receives the live ``Request`` and the ``ShieldException``
+        that triggered the block, and must return a Starlette ``Response``.
+        Both sync and async factories are supported.
+        """
+        result: Any = factory(request, exc)
+        if asyncio.iscoroutine(result):
+            return cast(Response, await result)
+        return cast(Response, result)
 
     @staticmethod
     def _maintenance_response(path: str, exc: MaintenanceException) -> JSONResponse:

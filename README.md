@@ -75,6 +75,49 @@ shield global enable --reason "Deploying v2" --exempt /health
 | `@env_only("dev", "staging")` | Restricted to named environments | 404 elsewhere |
 | `@deprecated(sunset, use_instead)` | Still works, injects deprecation headers | 200 |
 | `@force_active` | Bypasses all shield checks | Always 200 |
+### Custom responses
+
+By default, blocked routes return a structured JSON error body. You can replace it with anything — HTML, a redirect, plain text, or your own JSON — in two ways:
+
+**Per-route** — pass `response=` directly on the decorator:
+
+```python
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, RedirectResponse
+from shield.fastapi import maintenance, disabled
+
+def maintenance_page(request: Request, exc: Exception) -> HTMLResponse:
+    return HTMLResponse(
+        f"<h1>Down for maintenance</h1><p>{exc.reason}</p>", status_code=503
+    )
+
+@router.get("/payments")
+@maintenance(reason="DB migration", response=maintenance_page)
+async def payments():
+    return {"payments": []}
+
+@router.get("/orders")
+@maintenance(reason="Upgrade in progress", response=lambda *_: RedirectResponse("/status"))
+async def orders():
+    return {"orders": []}
+```
+
+**Global default** — set once on `ShieldMiddleware`, applies to every route without a per-route factory:
+
+```python
+app.add_middleware(
+    ShieldMiddleware,
+    engine=engine,
+    responses={
+        "maintenance": maintenance_page,   # all maintenance routes
+        "disabled": lambda req, exc: HTMLResponse(
+            f"<h1>Gone</h1><p>{exc.reason}</p>", status_code=503
+        ),
+    },
+)
+```
+
+Resolution order: **per-route `response=`** → **global `responses[...]`** → **built-in JSON**. The factory can be sync or async and receives the live `Request` and the `ShieldException` that triggered the block.
 
 ## Backends
 

@@ -16,6 +16,7 @@ users need only a single import line::
 
 from shield.admin.app import ShieldAdmin
 from shield.fastapi.decorators import (
+    ResponseFactory,
     deprecated,
     disabled,
     env_only,
@@ -36,6 +37,7 @@ __all__ = [
     "scan_routes",
     "apply_shield_to_openapi",
     "setup_shield_docs",
+    "ResponseFactory",
     "maintenance",
     "env_only",
     "disabled",
