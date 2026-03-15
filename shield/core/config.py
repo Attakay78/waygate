@@ -28,7 +28,7 @@ SHIELD_CUSTOM_PATH  Dotted import path to a zero-arg factory when
                     ``SHIELD_BACKEND=custom``
                     (e.g. ``myapp.backends:make_backend``)
 SHIELD_ENV          Runtime environment name
-                    (default: ``production``)
+                    (default: ``dev``)
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ ENV_CURRENT_ENV = "SHIELD_ENV"
 _DEFAULT_BACKEND = "memory"
 _DEFAULT_FILE_PATH = "shield-state.json"
 _DEFAULT_REDIS_URL = "redis://localhost:6379/0"
-_DEFAULT_ENV = "production"
+_DEFAULT_ENV = "dev"
 
 # Name of the project-level config file that is auto-loaded.
 _CONFIG_FILE = ".shield"

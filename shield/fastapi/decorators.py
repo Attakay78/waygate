@@ -61,6 +61,7 @@ from typing import Any, TypeVar, cast
 import anyio.from_thread
 from fastapi import HTTPException
 from starlette.requests import Request
+from starlette.responses import Response
 
 from shield.core.exceptions import (
     EnvGatedException,
@@ -93,6 +94,23 @@ _REQUEST_SIGNATURE = inspect.Signature(
             inspect.Parameter.POSITIONAL_OR_KEYWORD,
             annotation=Request,
         )
+    ]
+)
+
+# Signature for deps that also need to write response headers (e.g. @deprecated).
+# FastAPI injects both the incoming Request and the mutable Response object.
+_REQUEST_RESPONSE_SIGNATURE = inspect.Signature(
+    [
+        inspect.Parameter(
+            "request",
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            annotation=Request,
+        ),
+        inspect.Parameter(
+            "response",
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            annotation=Response,
+        ),
     ]
 )
 
@@ -206,14 +224,15 @@ class _ShieldCallable:
     def __init__(
         self,
         meta: dict[str, Any],
-        dep_raise: Callable[[Request], None] | None = None,
+        dep_raise: Callable[..., None] | None = None,
+        signature: inspect.Signature | None = None,
     ) -> None:
         self._meta = meta
         self._dep_raise = dep_raise
         # FastAPI calls inspect.signature(dep) to resolve DI parameters.
         # Setting __signature__ on the instance is the canonical way to
         # override this without subclassing.
-        self.__signature__ = _REQUEST_SIGNATURE
+        self.__signature__ = signature or _REQUEST_SIGNATURE
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Dispatch to decorator path or dependency path based on argument type.
@@ -230,7 +249,11 @@ class _ShieldCallable:
             # live request.  Raise HTTPException to block; return None to
             # allow (fail-open when dep_raise is absent).
             if self._dep_raise is not None:
-                self._dep_raise(func_or_request)
+                response = kwargs.get("response")
+                if response is not None:
+                    self._dep_raise(func_or_request, response)
+                else:
+                    self._dep_raise(func_or_request)
             return None
 
         # Decorator path — func_or_request is the function being decorated.
@@ -447,7 +470,7 @@ def disabled(
 def deprecated(
     sunset: str,
     use_instead: str = "",
-) -> Callable[[F], F]:
+) -> _ShieldCallable:
     """Mark a route as deprecated.
 
     The route still serves requests but:
@@ -456,6 +479,9 @@ def deprecated(
       optionally ``Link`` response headers on every response.
     - The OpenAPI schema marks the route as ``deprecated: true``.
     - ``ShieldRouter`` registers the route with status ``DEPRECATED``.
+
+    Also works as a ``Depends()`` dependency — when used without middleware,
+    the dep injects the same RFC-compliant headers directly on the response.
 
     Parameters
     ----------
@@ -467,25 +493,42 @@ def deprecated(
         Path of the successor route.  Injected as a
         ``Link: <path>; rel="successor-version"`` header when set.
 
-    Note
-    ----
-    ``@deprecated`` is a decorator-only construct.  It does not block
-    requests — it injects headers.  Header injection is handled by the
-    middleware, so there is no dependency variant.
-    """
+    Examples
+    --------
+    Decorator (middleware handles header injection automatically)::
 
-    def decorator(func: F) -> F:
-        wrapper = _make_wrapper(func)
-        return _stamp(
-            wrapper,
-            {
-                "status": "deprecated",
-                "sunset_date": sunset,
-                "successor_path": use_instead or None,
-            },
+        @router.get("/v1/users")
+        @deprecated(sunset="Sat, 01 Jan 2027 00:00:00 GMT", use_instead="/v2/users")
+        async def v1_users(): ...
+
+    Dependency (injects headers even without middleware)::
+
+        @router.get(
+            "/v1/users",
+            dependencies=[Depends(deprecated(
+                sunset="Sat, 01 Jan 2027 00:00:00 GMT",
+                use_instead="/v2/users",
+            ))],
         )
+        async def v1_users(): ...
+    """
+    meta: dict[str, Any] = {
+        "status": "deprecated",
+        "sunset_date": sunset,
+        "successor_path": use_instead or None,
+    }
 
-    return decorator
+    def dep_raise(request: Request, response: Response) -> None:  # noqa: ARG001
+        response.headers["Deprecation"] = "true"
+        response.headers["Sunset"] = sunset
+        if use_instead:
+            response.headers["Link"] = f'<{use_instead}>; rel="successor-version"'
+
+    return _ShieldCallable(
+        meta=meta,
+        dep_raise=dep_raise,
+        signature=_REQUEST_RESPONSE_SIGNATURE,
+    )
 
 
 def force_active(func: F) -> F:
@@ -496,8 +539,13 @@ def force_active(func: F) -> F:
 
     Note
     ----
-    ``@force_active`` is a decorator-only construct.  Using it as a FastAPI
-    dependency would be a no-op (routes are ACTIVE by default).
+    ``@force_active`` is a decorator-only construct and cannot be used as a
+    ``Depends()`` dependency.  Shield checks are enforced by the middleware,
+    which runs *before* any dependency is resolved.  A dependency has no way
+    to signal to the already-completed middleware that it should have skipped
+    the check.  If you need a route to always be reachable, apply
+    ``@force_active`` as a decorator — that is the only place where it takes
+    effect.
     """
     wrapper = _make_wrapper(func)
     return _stamp(wrapper, {"force_active": True})

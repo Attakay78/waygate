@@ -22,7 +22,7 @@ from shield.fastapi.decorators import disabled, env_only, maintenance
 from shield.fastapi.dependencies import ShieldGuard, configure_shield
 
 
-def _engine(env: str = "production") -> ShieldEngine:
+def _engine(env: str = "dev") -> ShieldEngine:
     return ShieldEngine(backend=MemoryBackend(), current_env=env)
 
 

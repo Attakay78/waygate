@@ -70,13 +70,11 @@ class FileBackend(ShieldBackend):
 
     The file format is auto-detected from the extension:
 
-    =================== =================== ============================
-    Extension           Format              Extra dependency
-    =================== =================== ============================
-    ``.json``           JSON                *(none — stdlib)*
-    ``.yaml`` / ``.yml`` YAML              ``pip install pyyaml``
-    ``.toml``           TOML               ``pip install tomli-w``
-    =================== =================== ============================
+    | Extension | Format | Extra dependency |
+    |---|---|---|
+    | `.json` | JSON | *(none — stdlib)* |
+    | `.yaml` / `.yml` | YAML | `pip install pyyaml` |
+    | `.toml` | TOML | `pip install tomli-w` |
 
     Data structure (shown as JSON — equivalent across all formats)::
 

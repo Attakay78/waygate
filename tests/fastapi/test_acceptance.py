@@ -29,7 +29,9 @@ from shield.fastapi import (
 @pytest.fixture
 async def acceptance_app():
     """Build the exact app from the CLAUDE.md acceptance example."""
-    engine = ShieldEngine()  # defaults: MemoryBackend, env="production"
+    engine = ShieldEngine(
+        current_env="production"
+    )  # explicit: acceptance scenario tests env-gating in production
     router = ShieldRouter(engine=engine)
 
     @router.get("/payments")

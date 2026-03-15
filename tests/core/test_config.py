@@ -69,7 +69,7 @@ def test_make_backend_unknown_raises():
 def test_make_engine_default_env(monkeypatch):
     monkeypatch.delenv("SHIELD_ENV", raising=False)
     engine = make_engine(backend_type="memory")
-    assert engine.current_env == "production"
+    assert engine.current_env == "dev"
 
 
 def test_make_engine_env_from_arg():

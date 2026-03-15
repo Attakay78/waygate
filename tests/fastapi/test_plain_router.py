@@ -20,7 +20,7 @@ from shield.fastapi.decorators import deprecated, disabled, env_only, maintenanc
 from shield.fastapi.middleware import ShieldMiddleware
 
 
-def _make_app(env: str = "production") -> tuple[FastAPI, ShieldEngine]:
+def _make_app(env: str = "dev") -> tuple[FastAPI, ShieldEngine]:
     engine = ShieldEngine(backend=MemoryBackend(), current_env=env)
     app = FastAPI()
     app.add_middleware(ShieldMiddleware, engine=engine)

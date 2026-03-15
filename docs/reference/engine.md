@@ -6,7 +6,7 @@
 from shield.core.engine import ShieldEngine
 from shield.core.backends.memory import MemoryBackend
 
-engine = ShieldEngine(backend=MemoryBackend(), current_env="production")
+engine = ShieldEngine(backend=MemoryBackend(), current_env="dev")
 ```
 
 Or use `make_engine()` to read configuration from environment variables and the `.shield` file:
@@ -24,7 +24,7 @@ engine = make_engine()
 ```python
 ShieldEngine(
     backend: ShieldBackend | None = None,
-    current_env: str = "production",
+    current_env: str = "dev",
     webhooks: list[str] | None = None,
 )
 ```
@@ -32,7 +32,7 @@ ShieldEngine(
 | Parameter | Default | Description |
 |---|---|---|
 | `backend` | `MemoryBackend()` | Storage backend for route state and audit log |
-| `current_env` | `"production"` | Current environment name — used by `@env_only` checks |
+| `current_env` | `"dev"` | Current environment name — used by `@env_only` checks |
 | `webhooks` | `[]` | List of webhook URLs to notify on state changes |
 
 ---

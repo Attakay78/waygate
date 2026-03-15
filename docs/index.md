@@ -70,7 +70,7 @@ That's it. Routes respond immediately:
 ```
 GET /payments  → 503  {"error": {"code": "MAINTENANCE_MODE", ...}}
 GET /health    → 200  always
-GET /debug     → 404  in production, 200 in dev/staging
+GET /debug     → 200  in dev (default), 404 in production/staging
 GET /v1/users  → 200  + Deprecation / Sunset / Link headers
 ```
 
@@ -117,7 +117,7 @@ shield enable GET:/payments
 
 ## Next steps
 
-- [**Tutorial: Installation**](tutorial/installation.md) — get up and running in 5 minutes
+- [**Tutorial: Installation**](tutorial/installation.md) — get up and running in seconds
 - [**Tutorial: First Decorator**](tutorial/first-decorator.md) — put your first route in maintenance mode
 - [**Reference: Decorators**](reference/decorators.md) — full decorator API
 - [**Reference: ShieldEngine**](reference/engine.md) — programmatic control

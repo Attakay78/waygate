@@ -52,7 +52,7 @@ engine = ShieldEngine(backend=FileBackend(path="shield-state.json"))
 - File lock (`asyncio.Lock`) prevents concurrent write corruption.
 - `subscribe()` raises `NotImplementedError` — dashboard falls back to polling.
 
-File format:
+**File format:**
 
 ```json
 {
