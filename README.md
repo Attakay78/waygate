@@ -15,6 +15,24 @@
 
 ---
 
+## Key features
+
+| Feature | Description |
+|---|---|
+| 🎨 **Decorator-first DX** | Route state lives next to the route definition, not in a separate config file |
+| ⚡ **Zero-restart control** | State changes take effect immediately — no redeployment or server restart needed |
+| 🛡️ **Fail-open by default** | If the backend is unreachable, requests pass through. Shield never takes down your API |
+| 🔌 **Pluggable backends** | In-memory (default), file-based JSON, or Redis for multi-instance deployments |
+| 🖥️ **Admin dashboard** | HTMX-powered UI with live SSE updates — no JS framework required |
+| 🖱️ **REST API + CLI** | Full programmatic control from the terminal or CI pipelines — works over HTTPS remotely |
+| 📄 **OpenAPI integration** | Disabled / env-gated routes hidden from `/docs`; deprecated routes flagged automatically |
+| 📋 **Audit log** | Every state change is recorded: who, when, what route, old status → new status |
+| ⏰ **Scheduled windows** | `asyncio`-native scheduler — maintenance windows activate and deactivate automatically |
+| 🔔 **Webhooks** | Fire HTTP POST on every state change — built-in Slack formatter and custom formatters supported |
+| 🎨 **Custom responses** | Return HTML, redirects, or any response shape for blocked routes — per-route or app-wide default |
+
+---
+
 ## Install
 
 ```bash

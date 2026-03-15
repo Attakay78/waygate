@@ -19,8 +19,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `ResponseFactory` type alias exported from `shield.fastapi` for use in type annotations
 - `examples/fastapi/custom_responses.py` — runnable example demonstrating per-route and global response patterns
 
+#### Webhooks
+- `examples/fastapi/webhooks.py` — fully self-contained runnable example demonstrating all three webhook formatters (`default_formatter`, `SlackWebhookFormatter`, and a custom formatter) with in-app receivers and a live `/webhook-log` HTML viewer that auto-refreshes every 5 seconds
+
 #### Documentation & Communication
 - Early Access notice added to README and docs homepage — communicates that the library is fully functional and actively developed, and invites community feedback via GitHub Issues
+- Webhooks and Custom Responses added to the Key Features table in the docs homepage
+- Key Features section added to `README.md`
 
 ---
 
