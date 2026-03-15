@@ -63,7 +63,7 @@ api-shield can be configured through environment variables so no code changes ar
 | Variable | Default | Description |
 |---|---|---|
 | `SHIELD_BACKEND` | `memory` | Backend type: `memory`, `file`, or `redis` |
-| `SHIELD_ENV` | `production` | Current environment name (used by `@env_only`) |
+| `SHIELD_ENV` | `dev` | Current environment name (used by `@env_only`) |
 | `SHIELD_FILE_PATH` | `shield-state.json` | Path for `FileBackend` |
 | `SHIELD_REDIS_URL` | `redis://localhost:6379/0` | URL for `RedisBackend` |
 
@@ -73,7 +73,7 @@ Or commit a `.shield` file in your project root — both the app and the CLI dis
 # .shield
 SHIELD_BACKEND=file
 SHIELD_FILE_PATH=shield-state.json
-SHIELD_ENV=production
+SHIELD_ENV=dev
 SHIELD_SERVER_URL=http://localhost:8000/shield
 ```
 

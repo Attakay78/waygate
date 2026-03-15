@@ -120,11 +120,11 @@ Accepts one or more positional `str` arguments — the environment names where t
 ### Setting the current environment
 
 ```python
-engine = ShieldEngine(current_env="production")
+engine = ShieldEngine(current_env="dev")
 # or
 engine = make_engine(current_env="staging")
 # or via env var:
-# SHIELD_ENV=production
+# SHIELD_ENV=dev
 ```
 
 ### Response (wrong environment)

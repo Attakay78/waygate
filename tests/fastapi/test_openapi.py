@@ -12,7 +12,7 @@ from shield.fastapi.openapi import apply_shield_to_openapi
 from shield.fastapi.router import ShieldRouter
 
 
-def _make_full_app(env: str = "production"):
+def _make_full_app(env: str = "dev"):
     engine = ShieldEngine(backend=MemoryBackend(), current_env=env)
     router = ShieldRouter(engine=engine)
     app = FastAPI()

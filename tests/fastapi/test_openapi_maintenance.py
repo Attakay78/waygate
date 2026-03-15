@@ -14,7 +14,7 @@ from shield.fastapi.openapi import apply_shield_to_openapi, setup_shield_docs
 from shield.fastapi.router import ShieldRouter
 
 
-def _build(env: str = "production") -> tuple[FastAPI, ShieldEngine, ShieldRouter]:
+def _build(env: str = "dev") -> tuple[FastAPI, ShieldEngine, ShieldRouter]:
     engine = ShieldEngine(backend=MemoryBackend(), current_env=env)
     router = ShieldRouter(engine=engine)
     app = FastAPI(title="Test API")

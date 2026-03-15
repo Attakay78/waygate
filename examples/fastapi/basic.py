@@ -17,10 +17,10 @@ CLI quick-start (auto-discovers the server URL):
     shield disable /payments --reason "hotfix"
     shield enable /payments
 
-Expected behaviour (production env):
+Expected behaviour (dev env — set APP_ENV=production to see /debug return 404):
     GET /health          → 200 always          (@force_active)
     GET /payments        → 503 MAINTENANCE_MODE (@maintenance)
-    GET /debug           → 404 silent           (@env_only("dev"))
+    GET /debug           → 200                 (@env_only("dev"), allowed in dev)
     GET /old-endpoint    → 503 ROUTE_DISABLED   (@disabled)
     GET /v1/users        → 200 + deprecation headers (@deprecated)
 
@@ -45,7 +45,7 @@ from shield.fastapi import (
     maintenance,
 )
 
-CURRENT_ENV = os.getenv("APP_ENV", "production")
+CURRENT_ENV = os.getenv("APP_ENV", "dev")
 engine = make_engine(current_env=CURRENT_ENV)
 
 router = ShieldRouter(engine=engine)

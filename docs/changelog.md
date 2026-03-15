@@ -22,10 +22,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 #### Webhooks
 - `examples/fastapi/webhooks.py` — fully self-contained runnable example demonstrating all three webhook formatters (`default_formatter`, `SlackWebhookFormatter`, and a custom formatter) with in-app receivers and a live `/webhook-log` HTML viewer that auto-refreshes every 5 seconds
 
+#### Dependency Injection
+- `@deprecated` now works as a `Depends()` dependency — injects `Deprecation`, `Sunset`, and `Link` response headers directly without requiring the middleware, using FastAPI's `Response` injection
+- `_REQUEST_RESPONSE_SIGNATURE` added internally so FastAPI correctly injects both `Request` and `Response` into the deprecated dep
+- `_ShieldCallable` extended with an optional `signature=` override and updated `__call__` to forward the `response` kwarg to `dep_raise` when present — fully backward compatible with all existing decorators
+- `examples/fastapi/dependency_injection.py` updated to include `@deprecated` as a `Depends()` example and a clear explanation of why `@force_active` cannot be used as a dependency
+
 #### Documentation & Communication
 - Early Access notice added to README and docs homepage — communicates that the library is fully functional and actively developed, and invites community feedback via GitHub Issues
 - Webhooks and Custom Responses added to the Key Features table in the docs homepage
 - Key Features section added to `README.md`
+
+### Changed
+- `@deprecated` docstring updated — no longer described as decorator-only; documents the `Depends()` usage pattern
+- `@force_active` docstring updated — clearly explains *why* it cannot be a `Depends()` (middleware completes before dependencies are resolved)
+- **Default `SHIELD_ENV` changed from `"production"` to `"dev"`** — `ShieldEngine`, `make_engine()`, and all examples now default to the `dev` environment. Set `SHIELD_ENV=production` (or pass `current_env=` explicitly) in production deployments. This makes the out-of-the-box experience work correctly for local development where `@env_only("dev")` routes should be accessible by default.
 
 ---
 

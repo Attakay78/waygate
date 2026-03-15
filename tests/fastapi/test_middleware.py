@@ -20,7 +20,7 @@ from shield.fastapi.middleware import ShieldMiddleware
 from shield.fastapi.router import ShieldRouter
 
 
-def _build_app(env: str = "production") -> tuple[FastAPI, ShieldEngine]:
+def _build_app(env: str = "dev") -> tuple[FastAPI, ShieldEngine]:
     """Return a bare (app, engine) pair — routes added by the caller."""
     engine = ShieldEngine(backend=MemoryBackend(), current_env=env)
     app = FastAPI()

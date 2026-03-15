@@ -46,14 +46,14 @@ class ShieldEngine:
     backend:
         Storage backend. Defaults to ``MemoryBackend``.
     current_env:
-        Name of the current runtime environment (e.g. ``"production"``).
+        Name of the current runtime environment (e.g. ``"dev"``).
         Used to evaluate ``ENV_GATED`` route restrictions.
     """
 
     def __init__(
         self,
         backend: ShieldBackend | None = None,
-        current_env: str = "production",
+        current_env: str = "dev",
     ) -> None:
         self.backend: ShieldBackend = backend or MemoryBackend()
         self.current_env = current_env

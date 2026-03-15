@@ -55,7 +55,7 @@ from shield.fastapi import (
 # Engine & router
 # ---------------------------------------------------------------------------
 
-CURRENT_ENV = os.getenv("APP_ENV", "production")
+CURRENT_ENV = os.getenv("APP_ENV", "dev")
 engine = make_engine(current_env=CURRENT_ENV)
 router = ShieldRouter(engine=engine)
 
