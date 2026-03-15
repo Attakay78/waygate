@@ -61,7 +61,7 @@ async def auth_client(admin_with_auth: object) -> AsyncClient:
         resp = await c.post("/api/auth/login", json={"username": "admin", "password": "secret"})
         assert resp.status_code == 200
         token = resp.json()["token"]
-        c.headers.update({"Authorization": f"Bearer {token}"})
+        c.headers.update({"X-Shield-Token": token})
         yield c
 
 
@@ -137,7 +137,7 @@ async def test_logout_revokes_token(admin_with_auth: object) -> None:
         # Login.
         resp = await c.post("/api/auth/login", json={"username": "admin", "password": "secret"})
         token = resp.json()["token"]
-        c.headers.update({"Authorization": f"Bearer {token}"})
+        c.headers.update({"X-Shield-Token": token})
 
         # Verify it works.
         resp = await c.get("/api/auth/me")

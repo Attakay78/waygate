@@ -156,7 +156,7 @@ class TokenManager:
     """
 
     COOKIE_NAME = "shield_session"
-    BEARER_PREFIX = "Bearer "
+    TOKEN_HEADER = "X-Shield-Token"
 
     def __init__(
         self,
@@ -238,11 +238,9 @@ class TokenManager:
         """Mark *token* as revoked (in-memory; cleared on restart)."""
         self._revoked.add(token)
 
-    def extract_bearer(self, authorization: str) -> str | None:
-        """Pull raw token from an ``Authorization: Bearer …`` header value."""
-        if authorization.startswith(self.BEARER_PREFIX):
-            return authorization[len(self.BEARER_PREFIX) :]
-        return None
+    def extract_token(self, token_header_value: str) -> str | None:
+        """Pull raw token from the ``X-Shield-Token`` header value."""
+        return token_header_value.strip() or None
 
     def extract_cookie(self, cookies: dict[str, str]) -> str | None:
         """Pull raw token from the session cookie dict."""

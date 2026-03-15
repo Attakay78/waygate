@@ -5,7 +5,7 @@ JSON responses.  The CLI uses these endpoints as its back-end.
 
 Auth
 ----
-Requests must carry a valid ``Authorization: Bearer <token>`` header.
+Requests must carry a valid ``X-Shield-Token: <token>`` header.
 When auth is not configured on the server every request is accepted and
 the actor defaults to ``"anonymous"``.
 
@@ -75,9 +75,9 @@ def _err_ambiguous(exc: AmbiguousRouteError) -> JSONResponse:
     )
 
 
-def _extract_bearer(request: Request) -> str | None:
-    auth = request.headers.get("Authorization", "")
-    return auth[7:] if auth.startswith("Bearer ") else None
+def _extract_token(request: Request) -> str | None:
+    value = request.headers.get("X-Shield-Token", "").strip()
+    return value or None
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +119,7 @@ async def auth_login(request: Request) -> JSONResponse:
 
 async def auth_logout(request: Request) -> JSONResponse:
     """POST /api/auth/logout — revoke the current bearer token."""
-    token = _extract_bearer(request)
+    token = _extract_token(request)
     if token:
         request.app.state.token_manager.revoke(token)
     return JSONResponse({"ok": True})
