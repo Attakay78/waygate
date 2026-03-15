@@ -105,6 +105,11 @@ Monkey-patches `app.openapi()` to filter the schema based on current route state
 
 Schema is re-computed on every `/openapi.json` request — runtime state changes reflect immediately without restart.
 
+<figure class="screenshot" markdown>
+  ![OpenAPI schema — normal view](../assets/openapi.png)
+  <figcaption>Standard OpenAPI schema view — disabled and env-gated routes are hidden from the list.</figcaption>
+</figure>
+
 ### `setup_shield_docs`
 
 ```python
@@ -119,3 +124,8 @@ Replaces the `/docs` and `/redoc` endpoints with enhanced versions:
 - **Global maintenance ON**: full-width pulsing red sticky banner with reason text and exempt paths; auto-refreshes every 15 seconds.
 - **Global maintenance OFF**: small green "All systems operational" chip in the bottom-right corner.
 - **Per-route maintenance**: orange left-border on the operation block with a `🔧 MAINTENANCE` badge.
+
+<figure class="screenshot" markdown>
+  ![OpenAPI schema — maintenance banners](../assets/openapi-maintenance.png)
+  <figcaption>Enhanced docs UI showing per-route maintenance badges injected by <code>setup_shield_docs</code>.</figcaption>
+</figure>

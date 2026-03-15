@@ -3,7 +3,7 @@
 
   <p><strong>Route lifecycle management for Python web frameworks — maintenance mode, environment gating, deprecation, admin panels, and more. No restarts required.</strong></p>
 
-  <a href="https://pypi.org/project/api-shield"><img src="https://img.shields.io/pypi/v/api-shield?color=F59E0B&label=pypi" alt="PyPI"></a>
+  <a href="https://pypi.org/project/api-shield"><img src="https://img.shields.io/pypi/v/api-shield?color=F59E0B&label=pypi&cacheSeconds=300" alt="PyPI"></a>
   <a href="https://pypi.org/project/api-shield"><img src="https://img.shields.io/pypi/pyversions/api-shield?color=F59E0B" alt="Python versions"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Attakay78/api-shield?color=F59E0B" alt="License"></a>
 </div>

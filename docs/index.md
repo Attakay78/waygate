@@ -3,7 +3,7 @@
 
 [:fontawesome-brands-github: View on GitHub](https://github.com/Attakay78/api-shield){ .md-button }
 
-[![PyPI](https://img.shields.io/pypi/v/api-shield?color=F59E0B&label=pypi)](https://pypi.org/project/api-shield)
+[![PyPI](https://img.shields.io/pypi/v/api-shield?color=F59E0B&label=pypi&cacheSeconds=300)](https://pypi.org/project/api-shield)
 [![Python versions](https://img.shields.io/pypi/pyversions/api-shield?color=F59E0B)](https://pypi.org/project/api-shield)
 [![License](https://img.shields.io/github/license/Attakay78/api-shield?color=F59E0B)](https://github.com/Attakay78/api-shield/blob/main/LICENSE)
 </div>

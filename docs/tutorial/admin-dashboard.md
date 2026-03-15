@@ -77,6 +77,11 @@ After starting the server:
 
 ## Dashboard UI
 
+<figure class="screenshot" markdown>
+  ![Shield Admin Dashboard](../assets/dashboard.png)
+  <figcaption>The admin dashboard showing route states, status badges, and per-route actions.</figcaption>
+</figure>
+
 The dashboard renders all registered routes with live status badges:
 
 | Status | Colour | Description |

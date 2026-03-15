@@ -40,6 +40,29 @@
   margin: 0 auto;
 }
 
+/* Doc screenshots */
+.screenshot {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.screenshot img {
+  display: block;
+  max-width: 100%;
+  width: 860px;
+  margin: 0 auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.screenshot figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+}
+
 /* Badges — linked images only, inline, small */
 .hero p a img {
   display: inline;
