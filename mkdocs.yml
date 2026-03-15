@@ -1,0 +1,123 @@
+site_name: api-shield
+site_description: Route lifecycle management for FastAPI — maintenance mode, env gating, deprecation, and more
+site_url: https://attakay78.github.io/api-shield
+repo_url: https://github.com/Attakay78/api-shield
+repo_name: Attakay78/api-shield
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: amber
+      accent: orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: amber
+      accent: orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotate
+    - content.code.copy
+    - toc.follow
+    - toc.integrate
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            members_order: source
+            separate_signature: true
+            merge_init_into_class: true
+  - git-revision-date-localized:
+      enable_creation_date: false
+      enable_git_follow: false
+      fallback_to_build_date: false
+      locale: en
+      exclude:
+        - "*"
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Tutorial:
+      - Installation: tutorial/installation.md
+      - First Decorator: tutorial/first-decorator.md
+      - Adding Middleware: tutorial/middleware.md
+      - Backends: tutorial/backends.md
+      - Admin Dashboard: tutorial/admin-dashboard.md
+      - CLI: tutorial/cli.md
+  - Reference:
+      - Decorators: reference/decorators.md
+      - ShieldEngine: reference/engine.md
+      - Backends: reference/backends.md
+      - Middleware: reference/middleware.md
+      - Models: reference/models.md
+      - Exceptions: reference/exceptions.md
+      - CLI Commands: reference/cli.md
+  - Guides:
+      - Production Monitoring & Deployment: guides/production.md
+  - Adapters:
+      - FastAPI: adapters/fastapi.md
+      - Building Your Own: adapters/custom.md
+  - Changelog: changelog.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Attakay78/api-shield
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/api-shield
+
+extra_css:
+  - stylesheets/extra.css

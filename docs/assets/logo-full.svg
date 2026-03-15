@@ -1,0 +1,56 @@
+<svg width="900" height="260" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Shield Icon -->
+  <g transform="translate(40,0)">
+
+    <!-- Shield -->
+    <path
+      d="
+      M110 40
+      L170 75
+      L170 130
+      C170 180 140 210 110 225
+      C80 210 50 180 50 130
+      L50 75
+      Z"
+      fill="#F59E0B"/>
+
+    <!-- Routing lines -->
+    <g stroke="white" stroke-width="6" stroke-linecap="round">
+
+      <!-- main route -->
+      <line x1="110" y1="85" x2="110" y2="125"/>
+
+      <!-- branch left -->
+      <line x1="110" y1="125" x2="80" y2="155"/>
+
+      <!-- branch right -->
+      <line x1="110" y1="125" x2="140" y2="155"/>
+
+    </g>
+
+    <!-- nodes -->
+    <g fill="white">
+      <circle cx="110" cy="80" r="7"/>
+      <circle cx="110" cy="125" r="7"/>
+      <circle cx="80" cy="155" r="7"/>
+      <circle cx="140" cy="155" r="7"/>
+    </g>
+
+  </g>
+
+  <!-- Wordmark -->
+  <text
+    x="240"
+    y="158"
+    font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+    font-size="98"
+    font-weight="600"
+    fill="#F59E0B"
+    letter-spacing="0.5">
+
+    API-Shield
+
+  </text>
+
+</svg>

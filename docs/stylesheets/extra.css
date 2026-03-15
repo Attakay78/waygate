@@ -1,0 +1,51 @@
+/* api-shield docs custom styles */
+
+:root {
+  --shield-green: #10b981;
+  --shield-yellow: #f59e0b;
+  --shield-red: #ef4444;
+  --shield-blue: #3b82f6;
+  --shield-grey: #6b7280;
+}
+
+/* Status badge colours used in inline code */
+.md-typeset .status-active  { color: var(--shield-green); font-weight: bold; }
+.md-typeset .status-maintenance { color: var(--shield-yellow); font-weight: bold; }
+.md-typeset .status-disabled { color: var(--shield-red); font-weight: bold; }
+.md-typeset .status-env-gated { color: var(--shield-blue); font-weight: bold; }
+.md-typeset .status-deprecated { color: var(--shield-grey); font-weight: bold; }
+
+/* Make admonitions a bit more compact */
+.md-typeset .admonition {
+  font-size: 0.85rem;
+}
+
+/* Header logo size */
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 48px;
+  width: auto;
+}
+
+/* Hero section on home page */
+.hero {
+  text-align: center;
+  padding: 2rem 0 1rem;
+}
+
+.hero img {
+  max-width: 560px;
+  width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Badges — linked images only, inline, small */
+.hero p a img {
+  display: inline;
+  width: auto;
+  max-width: none;
+  height: 20px;
+  vertical-align: middle;
+  margin: 0 3px;
+}
