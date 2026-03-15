@@ -107,6 +107,7 @@ nav:
       - CLI Commands: reference/cli.md
   - Guides:
       - Production Monitoring & Deployment: guides/production.md
+      - Distributed Deployments: guides/distributed.md
   - Adapters:
       - FastAPI: adapters/fastapi.md
       - Building Your Own: adapters/custom.md

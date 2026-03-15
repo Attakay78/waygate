@@ -167,8 +167,13 @@ class ShieldRouter(APIRouter):
         call discovers all already-persisted routes, then only the truly new
         routes are written.  For ``FileBackend`` this means one file read and
         one debounced file write instead of N reads and N writes.
+
+        Also calls ``engine.start()`` to launch any background tasks needed
+        for distributed operation (e.g. the global config cache-invalidation
+        listener when using ``RedisBackend``).
         """
         await self._shield_engine.register_batch(list(self._shield_routes))
+        await self._shield_engine.start()
 
     # ------------------------------------------------------------------
     # Hook into include_router so startup fires automatically

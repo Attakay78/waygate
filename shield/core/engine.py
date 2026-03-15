@@ -7,6 +7,8 @@ layers that call into the engine. They never make state decisions themselves.
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import hashlib
 import logging
 import uuid
 from collections.abc import Callable
@@ -64,10 +66,13 @@ class ShieldEngine:
         # Webhook registry: list of (url, formatter) pairs.
         self._webhooks: list[tuple[str, WebhookFormatter]] = []
         # Global config cache — avoids a backend round-trip on every request.
-        # Invalidated whenever the global config is written in this process.
-        # Acceptable stale window for multi-instance deployments: until the
-        # next write in this process (usually a human-initiated action).
+        # Invalidated locally whenever this process writes a new config, and
+        # invalidated remotely by the background listener task when another
+        # instance publishes a change (RedisBackend only).
         self._global_config_cache: GlobalMaintenanceConfig | None = None
+        # Background task that listens for cross-instance global config
+        # invalidation signals (started by start(), cancelled by stop()).
+        self._global_listener_task: asyncio.Task[None] | None = None
         # Monotonic counter bumped on every state change.  Used by the OpenAPI
         # filter to detect when the cached schema needs to be rebuilt.
         self._schema_version: int = 0
@@ -77,7 +82,7 @@ class ShieldEngine:
     # ------------------------------------------------------------------
 
     async def __aenter__(self) -> ShieldEngine:
-        """Call ``backend.startup()`` and return *self*.
+        """Call ``backend.startup()``, start background tasks, and return *self*.
 
         Use ``async with ShieldEngine(...) as engine:`` to ensure the
         backend is initialised before use and cleanly shut down afterwards.
@@ -85,11 +90,76 @@ class ShieldEngine:
         that require async setup (e.g. opening a database connection).
         """
         await self.backend.startup()
+        await self.start()
         return self
 
     async def __aexit__(self, *_: object) -> None:
-        """Call ``backend.shutdown()`` regardless of whether an exception occurred."""
+        """Stop background tasks and call ``backend.shutdown()``."""
+        await self.stop()
         await self.backend.shutdown()
+
+    # ------------------------------------------------------------------
+    # Distributed lifecycle — start / stop background tasks
+    # ------------------------------------------------------------------
+
+    async def start(self) -> None:
+        """Start background tasks required for distributed operation.
+
+        Currently starts the global config cache-invalidation listener
+        when the backend supports ``subscribe_global_config()``
+        (i.e. ``RedisBackend``).  When using ``MemoryBackend`` or
+        ``FileBackend`` the method is a no-op — the backend raises
+        ``NotImplementedError`` on the first iteration and the task
+        completes immediately.
+
+        Safe to call multiple times — a second call is a no-op if the
+        listener is already running.
+        """
+        if self._global_listener_task is not None and not self._global_listener_task.done():
+            return
+        self._global_listener_task = asyncio.create_task(
+            self._run_global_config_listener(),
+            name="shield-global-config-listener",
+        )
+
+    async def stop(self) -> None:
+        """Cancel the global config listener task and wait for it to finish.
+
+        Called automatically by ``__aexit__``.  Safe to call when no
+        task is running.
+        """
+        if self._global_listener_task is not None:
+            self._global_listener_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._global_listener_task
+            self._global_listener_task = None
+
+    async def _run_global_config_listener(self) -> None:
+        """Background coroutine: invalidate the global config cache on remote changes.
+
+        Iterates ``backend.subscribe_global_config()``.  Each ``None``
+        yielded by the backend means another instance has written a new
+        ``GlobalMaintenanceConfig`` to the shared store, so we drop the
+        in-process cache.  The next ``check()`` call will re-fetch the
+        authoritative value from the backend.
+
+        If the backend raises ``NotImplementedError`` (MemoryBackend,
+        FileBackend) the generator exits immediately and the task ends
+        silently — no distributed invalidation, cache behaves as before.
+        """
+        try:
+            async for _ in self.backend.subscribe_global_config():
+                self._invalidate_global_config_cache()
+                logger.debug("shield: global config cache invalidated by remote change")
+        except NotImplementedError:
+            pass  # backend doesn't support pub/sub — single-instance cache is fine
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception(
+                "shield: global config listener crashed — invalidating cache as a precaution"
+            )
+            self._invalidate_global_config_cache()
 
     # ------------------------------------------------------------------
     # Hot-path: check
@@ -637,16 +707,56 @@ class ShieldEngine:
         self._webhooks.append((url, formatter or default_formatter))
 
     def _fire_webhooks(self, event: str, path: str, state: RouteState) -> None:
-        """Schedule fire-and-forget POST to every registered webhook URL.
+        """Schedule a single fire-and-forget dispatch task for all webhooks.
+
+        Deduplication is handled inside ``_dispatch_webhooks``: the backend
+        is asked to claim exclusive dispatch rights via a deterministic key
+        before any HTTP POSTs are sent.  On single-instance backends
+        (MemoryBackend, FileBackend) the claim always succeeds.  On
+        RedisBackend only the first instance to win ``SET NX`` fires;
+        all others silently skip.
 
         Failures are logged and never propagated — a broken webhook must
         never affect the hot path.
         """
+        if not self._webhooks:
+            return
+        asyncio.create_task(
+            self._dispatch_webhooks(event, path, state),
+            name=f"shield-webhook:{event}:{path}",
+        )
+
+    async def _dispatch_webhooks(self, event: str, path: str, state: RouteState) -> None:
+        """Claim dispatch rights then POST to every registered webhook URL.
+
+        Uses ``backend.try_claim_webhook_dispatch()`` with a deterministic
+        dedup key derived from ``event``, ``path``, and the full serialised
+        ``RouteState``.  Because the scheduler produces identical
+        ``RouteState`` objects on all instances for the same window
+        activation, the dedup key is the same across the entire fleet and
+        only one instance wins the ``SET NX`` claim.
+        """
+        raw = f"{event}:{path}:{state.model_dump_json()}"
+        dedup_key = hashlib.sha256(raw.encode()).hexdigest()
+        try:
+            claimed = await self.backend.try_claim_webhook_dispatch(dedup_key)
+        except Exception:
+            logger.warning("shield: webhook dedup check raised unexpectedly — firing anyway")
+            claimed = True  # fail-open: over-deliver rather than miss
+
+        if not claimed:
+            logger.debug(
+                "shield: webhook dispatch for %r/%s already claimed by another instance — skipping",
+                event,
+                path,
+            )
+            return
+
         for url, formatter in self._webhooks:
             payload = formatter(event, path, state)
             asyncio.create_task(
                 self._post_webhook(url, payload),
-                name=f"shield-webhook:{event}:{path}",
+                name=f"shield-webhook-post:{event}:{path}",
             )
 
     @staticmethod

@@ -36,13 +36,19 @@ import redis.asyncio as aioredis
 from redis.asyncio import ConnectionPool
 
 from shield.core.backends.base import ShieldBackend
-from shield.core.models import AuditEntry, RouteState
+from shield.core.models import AuditEntry, GlobalMaintenanceConfig, RouteState
 
 logger = logging.getLogger(__name__)
 
 _AUDIT_KEY = "shield:audit"
 _ROUTE_INDEX_KEY = "shield:route-index"
 _CHANGES_CHANNEL = "shield:changes"
+# Lightweight pub/sub channel used exclusively for cross-instance global
+# config cache invalidation.  Publishing a signal here tells every other
+# instance to drop its in-process GlobalMaintenanceConfig cache and
+# re-fetch from Redis on the next request.  The payload is always "1" —
+# only the arrival of the message matters, not its content.
+_GLOBAL_INVALIDATE_CHANNEL = "shield:global_invalidate"
 _MAX_AUDIT_ENTRIES = 1000
 
 
@@ -215,3 +221,79 @@ class RedisBackend(ShieldBackend):
                         yield state
                     except Exception as exc:
                         logger.warning("shield: redis subscribe parse error: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Distributed global config — override for cross-instance cache invalidation
+    # ------------------------------------------------------------------
+
+    async def set_global_config(self, config: GlobalMaintenanceConfig) -> None:
+        """Persist *config* and broadcast a cache-invalidation signal.
+
+        Calls the base implementation (which stores the config via
+        ``set_state`` and publishes to ``shield:changes``), then
+        additionally publishes a lightweight ``"1"`` signal to
+        ``shield:global_invalidate``.  Any other instance running
+        ``subscribe_global_config()`` receives this signal and
+        immediately drops its in-process ``GlobalMaintenanceConfig``
+        cache so that the next ``check()`` call re-reads from Redis.
+
+        The extra publish is best-effort: a Redis error here is logged
+        and swallowed so that a transient Redis blip never prevents
+        a global maintenance toggle from taking effect locally.
+        """
+        await super().set_global_config(config)
+        try:
+            async with self._client() as r:
+                await r.publish(_GLOBAL_INVALIDATE_CHANNEL, "1")
+        except Exception as exc:
+            logger.warning("shield: failed to publish global config invalidation signal: %s", exc)
+
+    async def try_claim_webhook_dispatch(self, dedup_key: str, ttl_seconds: int = 60) -> bool:
+        """Use Redis ``SET NX`` to claim exclusive webhook dispatch rights.
+
+        The key ``shield:webhook:dedup:{dedup_key}`` is written with
+        ``NX`` (only if absent) and a TTL.  The instance that wins the
+        atomic write fires the webhooks; all others receive ``None`` from
+        Redis and skip dispatch.
+
+        Fails open: a Redis error logs a warning and returns ``True`` so
+        that webhooks are over-delivered rather than silently dropped.
+
+        Parameters
+        ----------
+        dedup_key:
+            Deterministic key identifying the event (hash of event + path
+            + serialised state — computed by ``ShieldEngine``).
+        ttl_seconds:
+            Key TTL.  After this window the key expires, allowing
+            re-delivery if the winning instance crashed mid-dispatch.
+        """
+        redis_key = f"shield:webhook:dedup:{dedup_key}"
+        try:
+            async with self._client() as r:
+                # SET NX returns the string "OK" when the key was written,
+                # None when the key already existed.
+                result = await r.set(redis_key, "1", nx=True, ex=ttl_seconds)
+            return result is not None
+        except Exception as exc:
+            logger.warning("shield: redis webhook dedup check failed (%s) — failing open", exc)
+            return True  # fail-open: over-deliver rather than miss
+
+    async def subscribe_global_config(self) -> AsyncIterator[None]:
+        """Yield ``None`` whenever the global maintenance config changes.
+
+        Subscribes to ``shield:global_invalidate``.  Each message
+        arrival means another instance has written a new
+        ``GlobalMaintenanceConfig`` to Redis and this instance should
+        drop its in-process cache.
+
+        The generator runs indefinitely — callers (``ShieldEngine``)
+        are expected to run it inside a cancellable ``asyncio.Task``.
+        """
+        async with self._client() as r:
+            async with r.pubsub() as pubsub:
+                await pubsub.subscribe(_GLOBAL_INVALIDATE_CHANNEL)
+                async for message in pubsub.listen():
+                    if message["type"] != "message":
+                        continue
+                    yield None

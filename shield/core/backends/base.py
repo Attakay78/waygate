@@ -119,3 +119,46 @@ class ShieldBackend(ABC):
         )
         # Unreachable — makes this an async generator so the return type is valid.
         yield
+
+    async def try_claim_webhook_dispatch(self, dedup_key: str, ttl_seconds: int = 60) -> bool:
+        """Attempt to claim exclusive webhook dispatch rights for *dedup_key*.
+
+        Called by ``ShieldEngine._fire_webhooks`` before dispatching to any
+        registered webhook URLs.  Returns ``True`` if this instance should
+        fire the webhooks, ``False`` if another instance has already claimed
+        the right for the same event.
+
+        The default implementation always returns ``True`` — single-instance
+        backends (``MemoryBackend``, ``FileBackend``) never have concurrent
+        instances so deduplication is unnecessary.
+
+        ``RedisBackend`` overrides this with a ``SET NX`` command to ensure
+        only one instance fires webhooks per unique event across an entire
+        multi-instance deployment.
+
+        Parameters
+        ----------
+        dedup_key:
+            A deterministic string that uniquely identifies this event
+            (derived from ``event + path + serialised RouteState``).
+        ttl_seconds:
+            How long the claim key lives in the backend.  After this window
+            the key expires, allowing re-delivery if the claiming instance
+            crashed before it could dispatch.  Defaults to 60 seconds.
+        """
+        return True
+
+    async def subscribe_global_config(self) -> AsyncIterator[None]:
+        """Stream a signal whenever the global maintenance config changes.
+
+        Yields ``None`` on each remote change so callers can invalidate their
+        in-process cache and re-fetch from the backend.
+
+        Backends that support this (e.g. ``RedisBackend``) override this
+        method.  Others raise ``NotImplementedError`` — ``ShieldEngine.start()``
+        checks for this and simply skips starting the listener, so the engine
+        falls back to the per-process cache behaviour without any error.
+        """
+        raise NotImplementedError(f"{type(self).__name__} does not support global config pub/sub.")
+        # Unreachable — makes this a valid async generator return type.
+        yield

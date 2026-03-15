@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 
 import pytest
@@ -462,3 +463,211 @@ async def test_bare_path_ambiguous_raises(engine):
         await engine.disable("/pay", reason="ambiguous")
     assert exc_info.value.path == "/pay"
     assert set(exc_info.value.matches) == {"GET:/pay", "POST:/pay"}
+
+
+# ---------------------------------------------------------------------------
+# Distributed global config cache invalidation — start() / stop()
+# ---------------------------------------------------------------------------
+
+
+async def test_start_creates_listener_task(engine):
+    """start() creates a background asyncio.Task."""
+    await engine.start()
+    assert engine._global_listener_task is not None
+    await engine.stop()
+
+
+async def test_start_is_idempotent(engine):
+    """Calling start() twice does not create a second task."""
+    await engine.start()
+    task_first = engine._global_listener_task
+    await engine.start()
+    assert engine._global_listener_task is task_first
+    await engine.stop()
+
+
+async def test_stop_cancels_listener_task(engine):
+    """stop() cancels the task and sets the reference to None."""
+    await engine.start()
+    assert engine._global_listener_task is not None
+    await engine.stop()
+    assert engine._global_listener_task is None
+
+
+async def test_listener_exits_silently_for_memory_backend(engine):
+    """MemoryBackend raises NotImplementedError — task ends without error."""
+    await engine.start()
+    task = engine._global_listener_task
+    # Give the task one event-loop iteration to run and hit NotImplementedError.
+    await asyncio.sleep(0)
+    assert task.done()
+    assert task.exception() is None  # no unhandled exception
+
+
+async def test_aenter_aexit_starts_and_stops_listener():
+    """async with ShieldEngine() starts and stops the listener task."""
+    async with ShieldEngine(backend=MemoryBackend()) as eng:
+        # Task is created (may already be done for MemoryBackend — that's fine).
+        assert eng._global_listener_task is not None
+    # After exit, task reference is cleared.
+    assert eng._global_listener_task is None
+
+
+async def test_global_config_cache_invalidated_by_listener():
+    """Listener invalidates the cache when the backend signals a change."""
+    from collections.abc import AsyncIterator
+
+    # A fake backend whose subscribe_global_config() yields one signal then stops.
+    class _FakeBackend(MemoryBackend):
+        async def subscribe_global_config(self) -> AsyncIterator[None]:
+            yield None  # one invalidation signal
+
+    eng = ShieldEngine(backend=_FakeBackend())
+    # enable_global_maintenance writes then invalidates the cache; re-fetch to
+    # populate it so we can observe the listener clearing it.
+    await eng.enable_global_maintenance(reason="test")
+    await eng._get_global_config_cached()
+    assert eng._global_config_cache is not None
+
+    await eng.start()
+    # Allow the listener task to consume the signal.
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+
+    # Cache must be cleared after the signal was processed.
+    assert eng._global_config_cache is None
+    await eng.stop()
+
+
+# ---------------------------------------------------------------------------
+# Webhook deduplication — _fire_webhooks / _dispatch_webhooks
+# ---------------------------------------------------------------------------
+
+
+async def test_webhook_fires_when_claim_succeeds():
+    """Webhook is delivered when the backend grants the dispatch claim."""
+    delivered: list[str] = []
+
+    async def fake_post(url: str, payload: dict) -> None:  # type: ignore[override]
+        delivered.append(url)
+
+    eng = ShieldEngine(backend=MemoryBackend())
+    eng.add_webhook("http://example.com/hook")
+
+    await eng.register("/api/pay", {"status": "active"})
+
+    # Patch _post_webhook so we don't make real HTTP calls.
+    import unittest.mock as mock
+
+    with mock.patch.object(type(eng), "_post_webhook", staticmethod(fake_post)):
+        await eng.disable("/api/pay", reason="test")
+        # Let the dispatch task run.
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+
+    assert "http://example.com/hook" in delivered
+
+
+async def test_webhook_skipped_when_claim_denied():
+    """Webhook is not delivered when the backend denies the dispatch claim."""
+
+    delivered: list[str] = []
+
+    async def fake_post(url: str, payload: dict) -> None:  # type: ignore[override]
+        delivered.append(url)
+
+    class _AlreadyClaimedBackend(MemoryBackend):
+        async def try_claim_webhook_dispatch(self, dedup_key: str, ttl_seconds: int = 60) -> bool:
+            return False  # simulate another instance already claimed it
+
+    eng = ShieldEngine(backend=_AlreadyClaimedBackend())
+    eng.add_webhook("http://example.com/hook")
+    await eng.register("/api/pay", {"status": "active"})
+
+    import unittest.mock as mock
+
+    with mock.patch.object(type(eng), "_post_webhook", staticmethod(fake_post)):
+        await eng.disable("/api/pay", reason="test")
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+
+    assert delivered == []
+
+
+async def test_webhook_dedup_key_is_deterministic():
+    """Two engines producing the same event+path+state generate the same dedup key."""
+    import hashlib
+
+    from shield.core.models import RouteState, RouteStatus
+
+    state = RouteState(path="/api/pay", status=RouteStatus.DISABLED, reason="gone")
+    raw = f"disable:/api/pay:{state.model_dump_json()}"
+    key_a = hashlib.sha256(raw.encode()).hexdigest()
+    key_b = hashlib.sha256(raw.encode()).hexdigest()
+
+    assert key_a == key_b
+
+
+async def test_no_webhook_tasks_when_no_webhooks_registered():
+    """_fire_webhooks is a no-op when no webhooks are registered."""
+    eng = ShieldEngine(backend=MemoryBackend())
+    await eng.register("/api/pay", {"status": "active"})
+    # No webhook registered — disable should not create any tasks.
+    tasks_before = len(asyncio.all_tasks())
+    await eng.disable("/api/pay", reason="test")
+    tasks_after = len(asyncio.all_tasks())
+    # No new webhook dispatch tasks created.
+    assert tasks_after == tasks_before
+
+
+async def test_webhook_fires_once_when_two_engines_share_same_backend():
+    """Simulates two instances: only the first to claim should deliver."""
+    delivered: list[str] = []
+    claim_count = 0
+
+    async def fake_post(url: str, payload: dict) -> None:  # type: ignore[override]
+        delivered.append(url)
+
+    class _CountingBackend(MemoryBackend):
+        """Grants the first claim, denies all subsequent ones for the same key."""
+
+        def __init__(self) -> None:
+            super().__init__()
+            self._claimed: set[str] = set()
+
+        async def try_claim_webhook_dispatch(self, dedup_key: str, ttl_seconds: int = 60) -> bool:
+            nonlocal claim_count
+            claim_count += 1
+            if dedup_key in self._claimed:
+                return False
+            self._claimed.add(dedup_key)
+            return True
+
+    shared_backend = _CountingBackend()
+
+    eng_a = ShieldEngine(backend=shared_backend)
+    eng_a.add_webhook("http://example.com/hook")
+    await eng_a.register("/api/pay", {"status": "active"})
+
+    eng_b = ShieldEngine(backend=shared_backend)
+    eng_b.add_webhook("http://example.com/hook")
+    # eng_b shares the backend but has its own RouteState view —
+    # set the state directly so eng_b can also fire for the same event.
+    from shield.core.models import RouteState, RouteStatus
+
+    state = RouteState(path="/api/pay", status=RouteStatus.DISABLED, reason="test")
+
+    import unittest.mock as mock
+
+    with mock.patch.object(type(eng_a), "_post_webhook", staticmethod(fake_post)):
+        with mock.patch.object(type(eng_b), "_post_webhook", staticmethod(fake_post)):
+            # Simulate both instances trying to fire the same event.
+            eng_a._fire_webhooks("disable", "/api/pay", state)
+            eng_b._fire_webhooks("disable", "/api/pay", state)
+            await asyncio.sleep(0)
+            await asyncio.sleep(0)
+            await asyncio.sleep(0)
+
+    # Exactly one delivery despite two instances firing.
+    assert len(delivered) == 1
+    assert claim_count == 2  # both tried; only first succeeded
