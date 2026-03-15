@@ -10,6 +10,11 @@
 
 ---
 
+> [!WARNING]
+> **Early Access** — `api-shield` is fully functional and ready to use. We are actively building on top of a solid foundation and your real-world experience is invaluable at this stage. If you have feedback, feature ideas, or suggestions, please [open an issue](https://github.com/Attakay78/api-shield/issues) — every voice helps shape the roadmap.
+
+---
+
 ## Install
 
 ```bash

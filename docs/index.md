@@ -10,6 +10,9 @@
 
 # api-shield
 
+!!! warning "Early Access — your feedback shapes the roadmap"
+    `api-shield` is fully functional and ready to use. We are actively building on a solid foundation and would love to hear from you. If you have feedback, feature ideas, or suggestions, **[open an issue on GitHub](https://github.com/Attakay78/api-shield/issues)** — every voice helps make the library better for everyone.
+
 **Route lifecycle management for Python web frameworks — maintenance mode, environment gating, deprecation, admin panels, and more. No restarts required.**
 
 Most "maintenance mode" tools are blunt instruments: shut everything down or nothing at all. `api-shield` treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through middleware — no redeployment, no server restart.
