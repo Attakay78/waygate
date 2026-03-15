@@ -39,7 +39,7 @@ CLI tokens
 ----------
 ``POST /api/auth/login`` returns a bearer token the CLI stores in
 ``~/.shield/config.json``.  All subsequent CLI requests send
-``Authorization: Bearer <token>``; the actor is the authenticated username
+``X-Shield-Token: <token>``; the actor is the authenticated username
 and platform is ``"cli"``.
 
 No-auth mode
@@ -88,7 +88,7 @@ class _AuthMiddleware(BaseHTTPMiddleware):
       ``"anonymous"``.
     * If auth **is** configured:
 
-      1. Try ``Authorization: Bearer <token>`` (CLI / programmatic access).
+      1. Try ``X-Shield-Token: <token>`` (CLI / programmatic access).
       2. Try ``shield_session`` cookie (dashboard browser session).
       3. If neither valid → API paths return 401 JSON; HTML paths redirect
          to ``/login``.
@@ -123,8 +123,8 @@ class _AuthMiddleware(BaseHTTPMiddleware):
             request.state.shield_platform = "anonymous"
             return await call_next(request)
 
-        # Try Bearer token first (CLI).
-        token = self._tm.extract_bearer(request.headers.get("Authorization", ""))
+        # Try X-Shield-Token header first (CLI / programmatic access).
+        token = self._tm.extract_token(request.headers.get("X-Shield-Token", ""))
         # Fall back to session cookie (dashboard).
         if not token:
             token = self._tm.extract_cookie(dict(request.cookies))

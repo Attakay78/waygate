@@ -205,11 +205,11 @@ def test_token_dashboard_platform() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_extract_bearer_from_auth_header() -> None:
+def test_extract_token_from_header() -> None:
     tm = TokenManager()
-    assert tm.extract_bearer("Bearer mytoken") == "mytoken"
-    assert tm.extract_bearer("Basic dXNlcjpwYXNz") is None
-    assert tm.extract_bearer("") is None
+    assert tm.extract_token("mytoken") == "mytoken"
+    assert tm.extract_token("  mytoken  ") == "mytoken"
+    assert tm.extract_token("") is None
 
 
 def test_extract_cookie() -> None:

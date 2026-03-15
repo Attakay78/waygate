@@ -67,7 +67,7 @@ class ShieldClient:
     def _headers(self) -> dict[str, str]:
         headers: dict[str, str] = {"X-Shield-Platform": "cli"}
         if self._token:
-            headers["Authorization"] = f"Bearer {self._token}"
+            headers["X-Shield-Token"] = self._token
         return headers
 
     def _make_client(self) -> httpx.AsyncClient:
