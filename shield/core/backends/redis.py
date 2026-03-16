@@ -31,6 +31,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING, Any
 
 import redis.asyncio as aioredis
 from redis.asyncio import ConnectionPool
@@ -38,9 +39,13 @@ from redis.asyncio import ConnectionPool
 from shield.core.backends.base import ShieldBackend
 from shield.core.models import AuditEntry, GlobalMaintenanceConfig, RouteState
 
+if TYPE_CHECKING:
+    from shield.core.rate_limit.models import RateLimitHit
+
 logger = logging.getLogger(__name__)
 
 _AUDIT_KEY = "shield:audit"
+_RATE_LIMIT_HITS_KEY = "shield:ratelimit:hits"
 _ROUTE_INDEX_KEY = "shield:route-index"
 _CHANGES_CHANNEL = "shield:changes"
 # Lightweight pub/sub channel used exclusively for cross-instance global
@@ -74,8 +79,13 @@ class RedisBackend(ShieldBackend):
         Redis connection URL (e.g. ``"redis://localhost:6379/0"``).
     """
 
-    def __init__(self, url: str = "redis://localhost:6379/0") -> None:
+    def __init__(
+        self,
+        url: str = "redis://localhost:6379/0",
+        max_rl_hit_entries: int = 10_000,
+    ) -> None:
         self._pool = ConnectionPool.from_url(url, decode_responses=True)
+        self._max_rl_hit_entries = max_rl_hit_entries
 
     def _client(self) -> aioredis.Redis:
         """Return a Redis client using the shared connection pool."""
@@ -278,6 +288,97 @@ class RedisBackend(ShieldBackend):
         except Exception as exc:
             logger.warning("shield: redis webhook dedup check failed (%s) — failing open", exc)
             return True  # fail-open: over-deliver rather than miss
+
+    async def write_rate_limit_hit(self, hit: RateLimitHit) -> None:
+        """Append a rate limit hit record, evicting the oldest when the cap is reached."""
+        payload = hit.model_dump_json()
+        try:
+            async with self._client() as r:
+                pipe = r.pipeline()
+                pipe.lpush(_RATE_LIMIT_HITS_KEY, payload)
+                pipe.ltrim(_RATE_LIMIT_HITS_KEY, 0, self._max_rl_hit_entries - 1)
+                await pipe.execute()
+        except Exception as exc:
+            logger.warning("shield: redis write_rate_limit_hit error: %s", exc)
+
+    async def get_rate_limit_hits(
+        self,
+        path: str | None = None,
+        limit: int = 100,
+    ) -> list[RateLimitHit]:
+        """Return rate limit hits, newest first, optionally filtered by *path*."""
+        from shield.core.rate_limit.models import RateLimitHit as RLHit
+
+        try:
+            async with self._client() as r:
+                raws: list[str] = await r.lrange(_RATE_LIMIT_HITS_KEY, 0, -1)  # type: ignore[misc]
+        except Exception as exc:
+            logger.warning("shield: redis get_rate_limit_hits error: %s", exc)
+            return []
+
+        hits: list[RLHit] = []
+        for raw in raws:
+            try:
+                hit = RLHit.model_validate(json.loads(raw))
+                if path is None or hit.path == path:
+                    hits.append(hit)
+                    if len(hits) >= limit:
+                        break
+            except Exception:
+                continue
+        return hits
+
+    async def set_rate_limit_policy(
+        self, path: str, method: str, policy_data: dict[str, Any]
+    ) -> None:
+        """Persist *policy_data* for *path*/*method* in Redis."""
+        key = f"{method.upper()}:{path}"
+        redis_key = f"shield:rlpolicy:{key}"
+        index_key = "shield:rl-policy-index"
+        try:
+            async with self._client() as r:
+                pipe = r.pipeline()
+                pipe.set(redis_key, json.dumps(policy_data))
+                pipe.sadd(index_key, key)
+                await pipe.execute()
+        except Exception as exc:
+            logger.warning("shield: redis set_rate_limit_policy error: %s", exc)
+
+    async def get_rate_limit_policies(self) -> list[dict[str, Any]]:
+        """Return all persisted rate limit policies from Redis."""
+        index_key = "shield:rl-policy-index"
+        try:
+            async with self._client() as r:
+                keys: set[str] = await r.smembers(index_key)  # type: ignore[misc]
+                if not keys:
+                    return []
+                redis_keys = [f"shield:rlpolicy:{k}" for k in keys]
+                raws: list[str | None] = await r.mget(*redis_keys)
+            policies = []
+            for raw in raws:
+                if raw is not None:
+                    try:
+                        policies.append(json.loads(raw))
+                    except Exception:
+                        continue
+            return policies
+        except Exception as exc:
+            logger.warning("shield: redis get_rate_limit_policies error: %s", exc)
+            return []
+
+    async def delete_rate_limit_policy(self, path: str, method: str) -> None:
+        """Remove the persisted rate limit policy for *path*/*method* from Redis."""
+        key = f"{method.upper()}:{path}"
+        redis_key = f"shield:rlpolicy:{key}"
+        index_key = "shield:rl-policy-index"
+        try:
+            async with self._client() as r:
+                pipe = r.pipeline()
+                pipe.delete(redis_key)
+                pipe.srem(index_key, key)
+                await pipe.execute()
+        except Exception as exc:
+            logger.warning("shield: redis delete_rate_limit_policy error: %s", exc)
 
     async def subscribe_global_config(self) -> AsyncIterator[None]:
         """Yield ``None`` whenever the global maintenance config changes.

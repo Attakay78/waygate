@@ -19,7 +19,10 @@ uv add "api-shield[fastapi]"
 # FastAPI + CLI
 uv add "api-shield[fastapi,cli]"
 
-# Everything (FastAPI, Redis, dashboard, CLI, admin)
+# FastAPI + rate limiting
+uv add "api-shield[fastapi,rate-limit]"
+
+# Everything (FastAPI, Redis, dashboard, CLI, admin, rate limiting)
 uv add "api-shield[all]"
 ```
 
@@ -40,6 +43,7 @@ pip install "api-shield[all]"
 | `dashboard` | Jinja2 + aiofiles for the HTMX dashboard | When mounting the admin UI |
 | `admin` | Unified `ShieldAdmin` (dashboard + REST API) | Recommended for CLI support |
 | `cli` | `shield` command-line tool + httpx client | Operators managing routes from the terminal |
+| `rate-limit` | `limits` library for `@rate_limit` enforcement | Any app using rate limiting |
 | `all` | All of the above | Easiest option for most projects |
 
 ---

@@ -94,6 +94,7 @@ async def get_payments():
 | `@env_only("dev", "staging")` | 404 in other environments |
 | `@deprecated(sunset, use_instead)` | 200 + deprecation headers |
 | `@force_active` | Always 200, bypasses all checks |
+| `@rate_limit("100/minute")` | 429 when the limit is exceeded; requires `api-shield[rate-limit]` |
 
 ---
 

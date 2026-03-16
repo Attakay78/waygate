@@ -393,6 +393,88 @@ Read more in [AuditEntry](models.md#auditentry).
 
 ## Webhooks
 
+## Rate limiting
+
+### `set_rate_limit_policy`
+
+```python
+async def set_rate_limit_policy(
+    path: str,
+    method: str,
+    limit: str,
+    algorithm: str = "fixed_window",
+    key_strategy: str = "ip",
+    burst: int = 0,
+    actor: str = "system",
+) -> RateLimitPolicy
+```
+
+Register or update a rate limit policy at runtime. Persists to the backend so restarts and other instances pick it up. Logged in the audit log as `rl_policy_set` (new) or `rl_policy_updated` (existing policy replaced).
+
+```python title="example"
+await engine.set_rate_limit_policy(
+    "/public/posts", "GET", "20/minute", actor="alice"
+)
+```
+
+---
+
+### `delete_rate_limit_policy`
+
+```python
+async def delete_rate_limit_policy(path: str, method: str, actor: str = "system") -> None
+```
+
+Remove a persisted rate limit policy override. Logged as `rl_policy_deleted`.
+
+```python title="example"
+await engine.delete_rate_limit_policy("/public/posts", "GET", actor="alice")
+```
+
+---
+
+### `reset_rate_limit`
+
+```python
+async def reset_rate_limit(path: str, method: str | None = None, actor: str = "system") -> None
+```
+
+Clear rate limit counters for a route immediately. When `method` is `None`, counters for all methods on the path are cleared. Logged as `rl_reset`.
+
+```python title="example"
+await engine.reset_rate_limit("/public/posts", "GET", actor="alice")
+await engine.reset_rate_limit("/public/posts")   # all methods
+```
+
+---
+
+### `get_rate_limit_hits`
+
+```python
+async def get_rate_limit_hits(path: str | None = None, limit: int = 100) -> list[RateLimitHit]
+```
+
+Return blocked request records, newest first.
+
+```python title="example"
+hits = await engine.get_rate_limit_hits(limit=50)
+hits = await engine.get_rate_limit_hits(path="/public/posts")
+```
+
+---
+
+### `list_rate_limit_policies`
+
+```python
+async def list_rate_limit_policies() -> list[RateLimitPolicy]
+```
+
+Return all registered rate limit policies.
+
+---
+
+## Webhooks
+
 ### `add_webhook`
 
 ```python

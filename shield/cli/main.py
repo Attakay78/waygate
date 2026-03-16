@@ -678,5 +678,217 @@ def global_exempt_remove(
     _run(_run_er)
 
 
+# ---------------------------------------------------------------------------
+# Rate limits command group  (shield rate-limits ...)
+# ---------------------------------------------------------------------------
+
+rl_app = typer.Typer(
+    name="rate-limits",
+    help="Inspect rate limit policies and recent blocked requests.",
+    no_args_is_help=True,
+)
+cli.add_typer(rl_app, name="rate-limits")
+cli.add_typer(rl_app, name="rl")
+
+
+@rl_app.command("list")
+def rl_list() -> None:
+    """List all registered rate limit policies."""
+
+    async def _run_rl_list() -> None:
+        policies = await make_client().list_rate_limits()
+        if not policies:
+            console.print("[dim]No rate limit policies registered.[/dim]")
+            return
+
+        table = Table(box=box.ROUNDED, show_header=True, header_style="bold")
+        table.add_column("Route", style="cyan")
+        table.add_column("Method", style="dim")
+        table.add_column("Limit")
+        table.add_column("Algorithm", style="dim")
+        table.add_column("Key Strategy", style="dim")
+        table.add_column("Tiers", justify="right")
+
+        for p in sorted(policies, key=lambda x: x["path"]):
+            tiers = len(p.get("tiers") or [])
+            table.add_row(
+                p["path"],
+                p.get("method", "*"),
+                f"[magenta]{p['limit']}[/magenta]",
+                p.get("algorithm", "—"),
+                p.get("key_strategy", "—"),
+                str(tiers) if tiers else "—",
+            )
+
+        console.print(table)
+
+    _run(_run_rl_list)
+
+
+@rl_app.command("hits")
+def rl_hits(
+    route: str | None = typer.Option(None, "--route", "-r", help="Filter by route path."),
+    limit: int = typer.Option(20, "--limit", "-n", help="Number of entries to show."),
+) -> None:
+    """Show recent rate-limited (blocked) requests."""
+
+    async def _run_rl_hits() -> None:
+        hits = await make_client().rate_limit_hits(route=route, limit=limit)
+        if not hits:
+            console.print("[dim]No rate limit hits found.[/dim]")
+            return
+
+        table = Table(box=box.ROUNDED, show_header=True, header_style="bold")
+        table.add_column("Time", style="dim")
+        table.add_column("Route", style="cyan")
+        table.add_column("Method", style="dim")
+        table.add_column("Key", style="dim")
+        table.add_column("Limit", style="red")
+
+        for h in hits:
+            ts = h.get("timestamp", "")
+            try:
+                ts = datetime.fromisoformat(ts).strftime("%H:%M:%S")
+            except Exception:
+                pass
+            table.add_row(
+                ts,
+                h.get("path", "—"),
+                h.get("method", "—"),
+                h.get("key", "—"),
+                h.get("limit", "—"),
+            )
+
+        console.print(table)
+
+    _run(_run_rl_hits)
+
+
+@rl_app.command("reset")
+def rl_reset(
+    route: str = typer.Argument(..., help="Route: /path or METHOD:/path to reset counters for."),
+) -> None:
+    """Reset rate limit counters for a route.
+
+    Pass METHOD:/path to reset only a specific method, or /path to reset
+    all methods.  Examples:
+
+    \b
+      shield rl reset GET:/api/items
+      shield rl reset /api/items        (resets all methods)
+    """
+    import base64
+
+    key = _parse_route(route)
+    if ":" in key and not key.startswith("/"):
+        reset_method, _, reset_path = key.partition(":")
+    else:
+        reset_method, reset_path = None, key
+
+    async def _run_rl_reset() -> None:
+        client = make_client()
+        path_key = base64.urlsafe_b64encode(reset_path.encode()).decode().rstrip("=")
+        result = await client.reset_rate_limit(path_key, method=reset_method)
+        scope = (
+            f"[cyan]{reset_method} {reset_path}[/cyan]"
+            if reset_method
+            else f"[cyan]{reset_path}[/cyan] (all methods)"
+        )
+        if result.get("ok"):
+            console.print(f"[green]✓[/green] Rate limit counters reset for {scope}")
+        else:
+            console.print(f"[yellow]?[/yellow] {result}")
+
+    _run(_run_rl_reset)
+
+
+@rl_app.command("set")
+def rl_set(
+    route: str = typer.Argument(..., help="Route: /path or METHOD:/path, e.g. GET:/api/items"),
+    limit: str = typer.Argument(..., help="Rate limit string, e.g. 100/minute"),
+    algorithm: str | None = typer.Option(
+        None,
+        "--algorithm",
+        "-a",
+        help="Algorithm: fixed_window, sliding_window, moving_window, token_bucket.",
+    ),
+    key_strategy: str | None = typer.Option(
+        None,
+        "--key",
+        "-k",
+        help="Key strategy: ip, user, api_key, global, custom.",
+    ),
+    burst: int = typer.Option(0, "--burst", "-b", help="Burst allowance (extra requests)."),
+) -> None:
+    """Set or update a rate limit policy for a route.
+
+    The policy is persisted to the backend so it survives restarts and
+    is visible to all instances.  Examples:
+
+    \b
+      shield rl set GET:/api/items 100/minute
+      shield rl set POST:/api/pay 10/second --algorithm fixed_window --key ip
+    """
+    key = _parse_route(route)
+    if ":" in key and not key.startswith("/"):
+        parsed_method, _, parsed_path = key.partition(":")
+    else:
+        parsed_method, parsed_path = "GET", key
+
+    async def _run_rl_set() -> None:
+        client = make_client()
+        result = await client.set_rate_limit_policy(
+            path=parsed_path,
+            method=parsed_method,
+            limit=limit,
+            algorithm=algorithm,
+            key_strategy=key_strategy,
+            burst=burst,
+        )
+        algo = result.get("algorithm", "")
+        key_strat = result.get("key_strategy", "ip")
+        console.print(
+            f"[green]✓[/green] Rate limit set: "
+            f"[cyan]{parsed_method.upper()} {result.get('path')}[/cyan] "
+            f"→ [bold]{result.get('limit')}[/bold] ({algo}, key={key_strat})"
+        )
+
+    _run(_run_rl_set)
+
+
+@rl_app.command("delete")
+def rl_delete(
+    route: str = typer.Argument(..., help="Route: /path or METHOD:/path, e.g. GET:/api/items"),
+) -> None:
+    """Delete a persisted rate limit policy for a route.
+
+    Removes the policy from the backend so it will not be re-applied after
+    a restart.  Running in-process counters are unaffected — use
+    ``rl reset`` to clear them.  Examples:
+
+    \b
+      shield rl delete GET:/api/items
+      shield rl delete /api/items       (defaults to GET)
+    """
+    key = _parse_route(route)
+    if ":" in key and not key.startswith("/"):
+        del_method, _, del_path = key.partition(":")
+    else:
+        del_method, del_path = "GET", key
+
+    async def _run_rl_delete() -> None:
+        client = make_client()
+        result = await client.delete_rate_limit_policy(path=del_path, method=del_method)
+        if result.get("ok"):
+            console.print(
+                f"[green]✓[/green] Rate limit policy deleted: "
+                f"[cyan]{del_method.upper()} {del_path}[/cyan]"
+            )
+        else:
+            console.print(f"[yellow]?[/yellow] {result}")
+
+    _run(_run_rl_delete)
+
+
 if __name__ == "__main__":
     cli()

@@ -7,7 +7,8 @@
     <div>
         <h1 class="text-xl font-semibold text-slate-900">Audit Log</h1>
         <p class="text-sm text-slate-500 mt-0.5">
-            Most recent {{ entries | length }} state change{{ 's' if entries | length != 1 else '' }}
+            {{ pagination.total }} state change{{ 's' if pagination.total != 1 else '' }} total
+            {% if pagination.total_pages > 1 %}· page {{ pagination.page }} of {{ pagination.total_pages }}{% endif %}
         </p>
     </div>
     <div class="flex items-center gap-2 self-start sm:self-auto">
@@ -67,6 +68,7 @@
             </tbody>
         </table>
     </div>
+    {% include "partials/pagination.html" %}
 </div>
 
 {% else %}

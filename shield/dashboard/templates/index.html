@@ -81,11 +81,13 @@
             <tbody id="routes-table-body" class="divide-y divide-slate-100">
                 {% for state in states %}
                 {% set path_slug = path_slug(state.path) %}
+                {% set rate_limit_policy = rate_limit_policies.get(state.path) %}
                 {% include "partials/route_row.html" with context %}
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    {% include "partials/pagination.html" %}
 </div>
 
 {% else %}

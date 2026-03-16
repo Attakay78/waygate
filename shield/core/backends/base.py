@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING, Any
 
 from shield.core.models import (
     AuditEntry,
@@ -11,6 +12,9 @@ from shield.core.models import (
     RouteState,
     RouteStatus,
 )
+
+if TYPE_CHECKING:
+    from shield.core.rate_limit.models import RateLimitHit
 
 # Reserved backend key used to persist global maintenance configuration.
 # Hidden from user-facing ``list_states()`` results by the engine layer.
@@ -162,3 +166,60 @@ class ShieldBackend(ABC):
         raise NotImplementedError(f"{type(self).__name__} does not support global config pub/sub.")
         # Unreachable — makes this a valid async generator return type.
         yield
+
+    # ------------------------------------------------------------------
+    # Rate limit hit log — concrete default implementations
+    # ------------------------------------------------------------------
+
+    async def write_rate_limit_hit(self, hit: RateLimitHit) -> None:
+        """Append a rate limit hit record to the backend log.
+
+        Default implementation is a no-op — backends that support persistent
+        hit logs (``FileBackend``, ``RedisBackend``) override this.
+        ``MemoryBackend`` provides an in-memory list implementation.
+        """
+
+    async def get_rate_limit_hits(
+        self,
+        path: str | None = None,
+        limit: int = 100,
+    ) -> list[RateLimitHit]:
+        """Return recent rate limit hits, newest first.
+
+        When *path* is given, return only hits for that route.
+        Default implementation returns an empty list — override in backends
+        that store hits persistently.
+        """
+        return []
+
+    # ------------------------------------------------------------------
+    # Rate limit policy persistence — concrete default implementations
+    # ------------------------------------------------------------------
+
+    async def set_rate_limit_policy(
+        self, path: str, method: str, policy_data: dict[str, Any]
+    ) -> None:
+        """Persist a rate limit policy for *path*/*method*.
+
+        *policy_data* is a JSON-serialisable dict matching the
+        ``RateLimitPolicy`` schema.  Overwrites any existing policy for
+        the same path/method pair.
+
+        Default is a no-op.  ``MemoryBackend``, ``FileBackend``, and
+        ``RedisBackend`` override this to provide real persistence.
+        """
+
+    async def get_rate_limit_policies(self) -> list[dict[str, Any]]:
+        """Return all persisted rate limit policies.
+
+        Each item is a JSON-serialisable dict matching the
+        ``RateLimitPolicy`` schema.  Returns an empty list by default.
+        """
+        return []
+
+    async def delete_rate_limit_policy(self, path: str, method: str) -> None:
+        """Remove the persisted rate limit policy for *path*/*method*.
+
+        No-op if no policy is stored for that pair.
+        Default implementation is a no-op.
+        """

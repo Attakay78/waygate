@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import logging
 from datetime import UTC, datetime
+from typing import Any
 
 import anyio
 from starlette.requests import Request
@@ -90,6 +91,40 @@ def _decode_path(encoded: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Pagination helper
+# ---------------------------------------------------------------------------
+
+_DEFAULT_PAGE_SIZE = 20
+
+
+def _paginate(items: list[Any], page: int, page_size: int = _DEFAULT_PAGE_SIZE) -> dict[str, Any]:
+    """Slice *items* for the requested *page* and return pagination metadata.
+
+    Returns a dict with:
+    - ``items``       — the slice for the current page
+    - ``page``        — current page number (1-based, clamped to valid range)
+    - ``page_size``   — items per page
+    - ``total``       — total number of items
+    - ``total_pages`` — total number of pages (minimum 1)
+    - ``has_prev``    — True when a previous page exists
+    - ``has_next``    — True when a next page exists
+    """
+    total = len(items)
+    total_pages = max(1, (total + page_size - 1) // page_size)
+    page = max(1, min(page, total_pages))
+    start = (page - 1) * page_size
+    return {
+        "items": items[start : start + page_size],
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+        "total_pages": total_pages,
+        "has_prev": page > 1,
+        "has_next": page < total_pages,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Template rendering helper
 # ---------------------------------------------------------------------------
 
@@ -114,14 +149,25 @@ async def index(request: Request) -> Response:
     tpl = _templates(request)
     prefix = _prefix(request)
 
+    page = int(request.query_params.get("page", 1))
     states = await engine.list_states()
     global_config = await engine.get_global_maintenance()
+    # Build a path → policy dict for the rate limit badge column.
+    # Policies are keyed "METHOD:/path" so we index by path only (first match wins).
+    rl_by_path: dict[str, object] = {}
+    for key, policy in engine._rate_limit_policies.items():
+        path_key = key.split(":", 1)[1] if ":" in key else key
+        if path_key not in rl_by_path:
+            rl_by_path[path_key] = policy
+    paged = _paginate(states, page)
     return tpl.TemplateResponse(
         request,
         "index.html",
         {
-            "states": states,
+            "states": paged["items"],
+            "pagination": paged,
             "global_config": global_config,
+            "rate_limit_policies": rl_by_path,
             "prefix": prefix,
             "active_tab": "routes",
             "version": request.app.state.version,
@@ -269,12 +315,15 @@ async def audit_page(request: Request) -> Response:
     tpl = _templates(request)
     prefix = _prefix(request)
 
-    entries = await engine.get_audit_log(limit=50)
+    page = int(request.query_params.get("page", 1))
+    entries = await engine.get_audit_log(limit=1000)
+    paged = _paginate(entries, page)
     return tpl.TemplateResponse(
         request,
         "audit.html",
         {
-            "entries": entries,
+            "entries": paged["items"],
+            "pagination": paged,
             "prefix": prefix,
             "active_tab": "audit",
             "version": request.app.state.version,
@@ -394,6 +443,211 @@ async def action_modal(request: Request) -> HTMLResponse:
         prefix=prefix,
     )
     return HTMLResponse(html)
+
+
+async def rate_limits_page(request: Request) -> Response:
+    """Render the rate limits page (full page)."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+
+    page = int(request.query_params.get("page", 1))
+    policies = list(engine._rate_limit_policies.values())
+    paged = _paginate(policies, page)
+    return tpl.TemplateResponse(
+        request,
+        "rate_limits.html",
+        {
+            "policies": paged["items"],
+            "pagination": paged,
+            "prefix": prefix,
+            "active_tab": "rate_limits",
+            "version": request.app.state.version,
+            "shield_actor": _actor(request),
+        },
+    )
+
+
+async def rl_hits_page(request: Request) -> Response:
+    """Render the blocked requests page (full page)."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+
+    page = int(request.query_params.get("page", 1))
+    hits = await engine.get_rate_limit_hits(limit=10_000)
+    paged = _paginate(hits, page)
+    return tpl.TemplateResponse(
+        request,
+        "rl_hits.html",
+        {
+            "hits": paged["items"],
+            "pagination": paged,
+            "prefix": prefix,
+            "active_tab": "rl_hits",
+            "version": request.app.state.version,
+            "shield_actor": _actor(request),
+        },
+    )
+
+
+async def rate_limits_rows_partial(request: Request) -> Response:
+    """Return only the rate limit policies table rows (HTMX auto-refresh)."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+
+    page = int(request.query_params.get("page", 1))
+    policies = list(engine._rate_limit_policies.values())
+    paged = _paginate(policies, page)
+    return tpl.TemplateResponse(
+        request,
+        "partials/rate_limit_rows.html",
+        {"policies": paged["items"], "prefix": prefix},
+    )
+
+
+def _render_rl_row(tpl: Jinja2Templates, policy: Any, prefix: str) -> str:
+    """Render the rate_limit_rows.html partial for a single policy."""
+    return tpl.env.get_template("partials/rate_limit_rows.html").render(
+        policies=[policy],
+        prefix=prefix,
+    )
+
+
+# ------------------------------------------------------------------
+# Rate limit modal GET handlers
+# ------------------------------------------------------------------
+
+
+async def modal_rl_reset(request: Request) -> HTMLResponse:
+    """Return the reset-counters confirmation modal."""
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    composite = _decode_path(request.path_params["path_key"])
+    method, _, route_path = composite.partition(":")
+    slug = path_slug(composite)
+    html = tpl.env.get_template("partials/modal_rl_reset.html").render(
+        method=method,
+        route_path=route_path,
+        path_slug=slug,
+        submit_path=f"{prefix}/rl/reset/{request.path_params['path_key']}",
+    )
+    return HTMLResponse(html)
+
+
+async def modal_rl_edit(request: Request) -> HTMLResponse:
+    """Return the edit-policy modal pre-filled with current values."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    composite = _decode_path(request.path_params["path_key"])
+    method, _, route_path = composite.partition(":")
+    slug = path_slug(composite)
+    policy = engine._rate_limit_policies.get(composite)
+    html = tpl.env.get_template("partials/modal_rl_edit.html").render(
+        method=method,
+        route_path=route_path,
+        path_slug=slug,
+        submit_path=f"{prefix}/rl/edit/{request.path_params['path_key']}",
+        current_limit=policy.limit if policy else "",
+        current_algorithm=policy.algorithm if policy else "sliding_window",
+        current_key_strategy=policy.key_strategy if policy else "ip",
+    )
+    return HTMLResponse(html)
+
+
+async def modal_rl_delete(request: Request) -> HTMLResponse:
+    """Return the delete-policy confirmation modal."""
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    composite = _decode_path(request.path_params["path_key"])
+    method, _, route_path = composite.partition(":")
+    slug = path_slug(composite)
+    html = tpl.env.get_template("partials/modal_rl_delete.html").render(
+        method=method,
+        route_path=route_path,
+        path_slug=slug,
+        submit_path=f"{prefix}/rl/delete/{request.path_params['path_key']}",
+    )
+    return HTMLResponse(html)
+
+
+# ------------------------------------------------------------------
+# Rate limit action POST handlers
+# ------------------------------------------------------------------
+
+
+async def rl_reset(request: Request) -> HTMLResponse:
+    """Reset counters for the policy and return the unchanged row."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    composite = _decode_path(request.path_params["path_key"])
+    method, _, route_path = composite.partition(":")
+    await engine.reset_rate_limit(
+        route_path, method=method, actor=_actor(request), platform=_platform(request)
+    )
+    policy = engine._rate_limit_policies.get(composite)
+    if policy is None:
+        return HTMLResponse("")
+    return HTMLResponse(_render_rl_row(tpl, policy, prefix))
+
+
+async def rl_edit(request: Request) -> HTMLResponse:
+    """Update the policy from form data and return the refreshed row."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    composite = _decode_path(request.path_params["path_key"])
+    method, _, route_path = composite.partition(":")
+    form = await request.form()
+    limit = str(form.get("limit", "")).strip()
+    algorithm = str(form.get("algorithm", "sliding_window")).strip()
+    key_strategy = str(form.get("key_strategy", "ip")).strip()
+    if not limit:
+        policy = engine._rate_limit_policies.get(composite)
+        if policy is None:
+            return HTMLResponse("")
+        return HTMLResponse(_render_rl_row(tpl, policy, prefix))
+    await engine.set_rate_limit_policy(
+        route_path,
+        method,
+        limit,
+        algorithm=algorithm,
+        key_strategy=key_strategy,
+        actor=_actor(request),
+        platform=_platform(request),
+    )
+    policy = engine._rate_limit_policies.get(composite)
+    if policy is None:
+        return HTMLResponse("")
+    return HTMLResponse(_render_rl_row(tpl, policy, prefix))
+
+
+async def rl_delete(request: Request) -> HTMLResponse:
+    """Delete the persisted policy and remove the row."""
+    engine = _engine(request)
+    composite = _decode_path(request.path_params["path_key"])
+    method, _, route_path = composite.partition(":")
+    await engine.delete_rate_limit_policy(
+        route_path, method, actor=_actor(request), platform=_platform(request)
+    )
+    # Return an empty string — HTMX outerHTML-swaps the row away.
+    return HTMLResponse("")
+
+
+async def rate_limits_hits_partial(request: Request) -> Response:
+    """Return only the recent blocked requests table rows (HTMX auto-refresh)."""
+    engine = _engine(request)
+    tpl = _templates(request)
+
+    hits = await engine.get_rate_limit_hits(limit=50)
+    return tpl.TemplateResponse(
+        request,
+        "partials/rate_limit_hits.html",
+        {"hits": hits},
+    )
 
 
 async def events(request: Request) -> StreamingResponse:

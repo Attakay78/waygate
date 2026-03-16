@@ -215,6 +215,81 @@ shield global exempt-remove /monitoring/ping
 
 ---
 
+## Rate limit commands
+
+`shield rl` and `shield rate-limits` are aliases for the same command group — use whichever you prefer. Requires `api-shield[rate-limit]` on the server.
+
+```bash
+shield rl list          # short form
+shield rate-limits list # identical
+```
+
+### `shield rl list`
+
+Show all registered rate limit policies.
+
+```bash
+shield rl list
+```
+
+---
+
+### `shield rl set`
+
+Register or update a rate limit policy at runtime. Changes take effect on the next request.
+
+```bash
+shield rl set <route> <limit>
+```
+
+```bash
+shield rl set GET:/public/posts 20/minute
+shield rl set GET:/public/posts 5/second --algorithm fixed_window
+shield rl set GET:/search 10/minute --key global
+```
+
+| Option | Description |
+|---|---|
+| `--algorithm TEXT` | Counting algorithm: `fixed_window`, `sliding_window`, `moving_window`, `token_bucket` |
+| `--key TEXT` | Key strategy: `ip`, `user`, `api_key`, `global` |
+
+---
+
+### `shield rl reset`
+
+Clear all counters for a route immediately. Clients get their full quota back on the next request.
+
+```bash
+shield rl reset GET:/public/posts
+```
+
+---
+
+### `shield rl delete`
+
+Remove a persisted policy override from the backend.
+
+```bash
+shield rl delete GET:/public/posts
+```
+
+---
+
+### `shield rl hits`
+
+Show the blocked requests log, newest first.
+
+```bash
+shield rl hits                    # last 20 entries
+shield rl hits --limit 50
+```
+
+| Option | Description |
+|---|---|
+| `--limit INT` | Maximum entries to display (default: 20) |
+
+---
+
 ## Audit log
 
 ### `shield log`

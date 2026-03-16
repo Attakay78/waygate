@@ -97,10 +97,12 @@ nav:
       - First Decorator: tutorial/first-decorator.md
       - Adding Middleware: tutorial/middleware.md
       - Backends: tutorial/backends.md
+      - Rate Limiting: tutorial/rate-limiting.md
       - Admin Dashboard: tutorial/admin-dashboard.md
       - CLI: tutorial/cli.md
   - Reference:
       - Decorators: reference/decorators.md
+      - Rate Limiting: reference/rate-limiting.md
       - ShieldEngine: reference/engine.md
       - Backends: reference/backends.md
       - Middleware: reference/middleware.md

@@ -7,8 +7,9 @@ The FastAPI adapter is the primary supported adapter. It provides middleware, de
 ## Installation
 
 ```bash
-uv add "api-shield[fastapi]"        # adapter only
-uv add "api-shield[all]"            # everything including CLI + admin
+uv add "api-shield[fastapi]"              # adapter only
+uv add "api-shield[fastapi,rate-limit]"   # with rate limiting
+uv add "api-shield[all]"                  # everything including CLI + admin
 ```
 
 ---
@@ -78,6 +79,7 @@ All decorators work with any router type (plain `APIRouter`, `ShieldRouter`, or 
 | `@env_only(*envs)` | `shield.fastapi` | 404 in other envs |
 | `@deprecated(sunset, use_instead)` | `shield.fastapi` | 200 + headers |
 | `@force_active` | `shield.fastapi` | Always 200 |
+| `@rate_limit("100/minute")` | `shield.fastapi.decorators` | 429 when exceeded |
 
 See [**Reference: Decorators**](../reference/decorators.md) for full details.
 
@@ -119,15 +121,82 @@ See [**Tutorial: Admin Dashboard**](../tutorial/admin-dashboard.md) for full det
 
 ---
 
+## Rate limiting
+
+Requires `api-shield[rate-limit]` on the server.
+
+```python
+from shield.fastapi.decorators import rate_limit
+
+@router.get("/public/posts")
+@rate_limit("10/minute")               # 10 req/min per IP
+async def list_posts():
+    return {"posts": []}
+
+@router.get("/users/me")
+@rate_limit("100/minute", key="user")  # per authenticated user
+async def get_current_user():
+    ...
+
+@router.get("/reports")
+@rate_limit(                           # tiered limits
+    {"free": "10/minute", "pro": "100/minute", "enterprise": "unlimited"},
+    key="user",
+)
+async def get_reports():
+    ...
+```
+
+Custom response on rate limit violations:
+
+```python
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from shield.core.exceptions import RateLimitExceededException
+
+def my_429(request: Request, exc: RateLimitExceededException) -> JSONResponse:
+    return JSONResponse(
+        {"ok": False, "retry_after": exc.retry_after_seconds},
+        status_code=429,
+        headers={"Retry-After": str(exc.retry_after_seconds)},
+    )
+
+@router.get("/posts")
+@rate_limit("10/minute", response=my_429)
+async def list_posts(): ...
+```
+
+Global default (applies to all rate-limited routes without a per-route factory):
+
+```python
+app.add_middleware(
+    ShieldMiddleware,
+    engine=engine,
+    responses={"rate_limited": my_429},
+)
+```
+
+Mutate policies at runtime without redeploying (`shield rl` and `shield rate-limits` are aliases):
+
+```bash
+shield rl set GET:/public/posts 20/minute
+shield rl reset GET:/public/posts
+shield rl hits
+```
+
+See [**Tutorial: Rate Limiting**](../tutorial/rate-limiting.md) and [**Reference: Rate Limiting**](../reference/rate-limiting.md) for full details.
+
+---
+
 ## Dependency injection
 
 Shield decorators work as FastAPI `Depends()` dependencies for per-handler enforcement without middleware.
 
-```python title="all three patterns"
+```python title="two patterns"
 from fastapi import Depends
 from shield.fastapi.decorators import disabled, maintenance
 
-# Pattern A — decorator only (relies on ShieldMiddleware to enforce)
+# Pattern A — decorator (relies on ShieldMiddleware to enforce)
 @router.get("/payments")
 @maintenance(reason="DB migration")
 async def get_payments():
@@ -138,21 +207,27 @@ async def get_payments():
 async def admin_report():
     return {}
 
-# Pattern C — both (works with or without middleware; most explicit)
-@router.get(
-    "/orders",
-    dependencies=[Depends(maintenance(reason="Order upgrade"))],
-)
-@maintenance(reason="Order upgrade")
+@router.get("/orders", dependencies=[Depends(maintenance(reason="Order upgrade"))])
 async def get_orders():
     return {"orders": []}
 ```
 
+`@rate_limit` also works as a `Depends()`:
+
+```python
+from shield.fastapi.decorators import rate_limit
+
+@router.get("/export", dependencies=[Depends(rate_limit("5/hour", key="user"))])
+async def export():
+    ...
+```
+
+Both the decorator path and the `Depends()` path share the same counter — they are equivalent in enforcement.
+
 | Pattern | Best for |
 |---|---|
-| Decorator only | Apps that always run `ShieldMiddleware` |
-| `Depends()` only | Serverless / edge runtimes without middleware |
-| Both | Library code or apps where callers may or may not use middleware |
+| Decorator | Apps that always run `ShieldMiddleware` |
+| `Depends()` | Serverless / edge runtimes without middleware, or when middleware is not used |
 
 ---
 
@@ -488,6 +563,51 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
     ```python title="examples/fastapi/webhooks.py"
     --8<-- "examples/fastapi/webhooks.py"
+    ```
+
+---
+
+### Rate limiting
+
+??? example "Per-IP, per-user, tiered limits, and custom 429 responses"
+
+    [:material-github: View on GitHub](https://github.com/Attakay78/api-shield/blob/main/examples/fastapi/rate_limiting.py){ .md-button }
+
+    Demonstrates IP-based, user-based, and tiered rate limiting with a custom 429 response factory. Requires `api-shield[rate-limit]`.
+
+    **Expected behavior:**
+
+    | Endpoint | Limit | Key |
+    |---|---|---|
+    | `GET /public/posts` | 5/minute | IP |
+    | `GET /users/me` | 20/minute | user |
+    | `GET /reports` | free: 5/min, pro: 30/min | user + tier |
+    | `GET /health` | unlimited | `@force_active` |
+
+    **Run:**
+
+    ```bash
+    uv add "api-shield[all,rate-limit]"
+    uv run uvicorn examples.fastapi.rate_limiting:app --reload
+    # Admin dashboard:  http://localhost:8000/shield/   (admin / secret)
+    # Rate limits tab:  http://localhost:8000/shield/rate-limits
+    # Blocked log:      http://localhost:8000/shield/blocked
+    ```
+
+    **CLI quick-start:**
+
+    ```bash
+    shield login admin
+    shield rl list
+    shield rl set GET:/public/posts 20/minute   # raise limit live
+    shield rl reset GET:/public/posts           # clear counters
+    shield rl hits                              # blocked requests log
+    ```
+
+    **Full source:**
+
+    ```python title="examples/fastapi/rate_limiting.py"
+    --8<-- "examples/fastapi/rate_limiting.py"
     ```
 
 ---

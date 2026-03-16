@@ -22,6 +22,7 @@ from shield.fastapi.decorators import (
     env_only,
     force_active,
     maintenance,
+    rate_limit,
 )
 from shield.fastapi.dependencies import ShieldGuard, configure_shield
 from shield.fastapi.middleware import ShieldMiddleware
@@ -43,4 +44,5 @@ __all__ = [
     "disabled",
     "deprecated",
     "force_active",
+    "rate_limit",
 ]

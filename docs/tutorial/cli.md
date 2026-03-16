@@ -96,6 +96,36 @@ shield global disable   # restore normal operation
 
 ---
 
+## Rate limits
+
+Manage rate limit policies and view blocked requests. Requires `api-shield[rate-limit]` on the server.
+
+`shield rl` and `shield rate-limits` are aliases — use whichever you prefer.
+
+```bash
+shield rl list                              # show all registered policies
+shield rl set GET:/public/posts 20/minute   # set or update a policy
+shield rl set GET:/search 5/minute --algorithm fixed_window --key global
+shield rl reset GET:/public/posts           # clear counters immediately
+shield rl delete GET:/public/posts          # remove persisted policy override
+shield rl hits                              # blocked requests log (last 20)
+shield rl hits --limit 50
+
+# identical — shield rate-limits is the full name
+shield rate-limits list
+shield rate-limits set GET:/public/posts 20/minute
+```
+
+??? example "Sample `shield rl list` output"
+
+    | Route | Limit | Algorithm | Key Strategy |
+    |---|---|---|---|
+    | GET /public/posts | 10/minute | fixed_window | ip |
+    | GET /search | 5/minute | fixed_window | global |
+    | GET /users/me | 100/minute | fixed_window | user |
+
+---
+
 ## Audit log
 
 ```bash

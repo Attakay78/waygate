@@ -531,6 +531,189 @@ def deprecated(
     )
 
 
+def rate_limit(
+    limit: str | dict[str, str],
+    *,
+    algorithm: Any = None,
+    key: Any = None,
+    on_missing_key: Any = None,
+    burst: int = 0,
+    exempt_ips: list[str] | None = None,
+    exempt_roles: list[str] | None = None,
+    tier_resolver: str = "plan",
+    response: ResponseFactory | None = None,
+) -> _ShieldCallable:
+    """Apply a rate limit to a route.
+
+    Works as both a decorator (stamps ``__shield_meta__``) and a FastAPI
+    dependency (enforces the limit at request time when the engine is
+    available via ``configure_shield``).
+
+    Parameters
+    ----------
+    limit:
+        Rate limit string in ``limits`` format, e.g. ``"100/minute"``, or a
+        dict mapping tier names to limits: ``{"free": "100/day", "pro": "10000/day"}``.
+    algorithm:
+        ``RateLimitAlgorithm`` enum value.  Defaults to ``FIXED_WINDOW``.
+    key:
+        ``RateLimitKeyStrategy`` enum value **or** an async callable
+        ``(Request) -> str | None`` for custom key extraction.
+        Defaults to ``RateLimitKeyStrategy.IP``.
+    on_missing_key:
+        ``OnMissingKey`` enum value.  When ``None``, the per-strategy
+        default is applied (see ``RateLimitKeyStrategy`` docstrings).
+    burst:
+        Extra requests allowed above the base limit.
+    exempt_ips:
+        List of IP addresses / CIDR networks exempt from this limit.
+    exempt_roles:
+        List of roles exempt from this limit (checked against
+        ``request.state.user_roles``).
+    tier_resolver:
+        Name of the ``request.state`` attribute used to look up the
+        caller's tier when *limit* is a dict.  Defaults to ``"plan"``.
+    response:
+        Optional custom response factory for rate limit violations — a
+        sync or async callable with signature
+        ``(request: Request, exc: Exception) -> Response``.
+        When provided, this factory is called instead of the default
+        429 JSON body.  Falls back to the middleware
+        ``responses["rate_limited"]`` global default if not set here.
+
+    Examples
+    --------
+    IP-based limit (safe default, never missing)::
+
+        @router.get("/search")
+        @rate_limit("100/minute")
+        async def search(): ...
+
+    Per-user limit (requires auth middleware to set ``request.state.user_id``)::
+
+        @router.get("/export")
+        @rate_limit("10/hour", key=RateLimitKeyStrategy.USER)
+        async def export(): ...
+
+    Tiered limits::
+
+        @router.get("/api/data")
+        @rate_limit({"free": "100/day", "pro": "10000/day", "enterprise": "unlimited"})
+        async def get_data(): ...
+
+    Custom key extractor::
+
+        async def by_org(request: Request) -> str | None:
+            return getattr(request.state, "org_id", None)
+
+        @router.get("/api/bulk")
+        @rate_limit("1000/hour", key=by_org)
+        async def bulk(): ...
+    """
+    # Resolve lazy imports to avoid circular imports at module load time.
+    from shield.core.rate_limit.models import (
+        RateLimitAlgorithm,
+        RateLimitKeyStrategy,
+        RateLimitTier,
+    )
+
+    # Default algorithm.
+    if algorithm is None:
+        algorithm = RateLimitAlgorithm.FIXED_WINDOW
+
+    # Resolve key strategy and optional custom callable.
+    custom_key_func: Any = None
+    if key is None:
+        resolved_strategy = RateLimitKeyStrategy.IP
+    elif callable(key) and not isinstance(key, RateLimitKeyStrategy):
+        resolved_strategy = RateLimitKeyStrategy.CUSTOM
+        custom_key_func = key
+    else:
+        resolved_strategy = RateLimitKeyStrategy(key)
+
+    # Normalise tiered limits.
+    tiers: list[RateLimitTier] = []
+    if isinstance(limit, dict):
+        tiers = [RateLimitTier(name=k, limit=v) for k, v in limit.items()]
+        limit_str = list(limit.values())[0]  # fallback limit = first tier value
+        # Tiered limits imply per-user limiting unless explicitly overridden.
+        if key is None:
+            resolved_strategy = RateLimitKeyStrategy.USER
+    else:
+        limit_str = limit
+
+    rate_limit_meta: dict[str, Any] = {
+        "limit": limit_str,
+        "algorithm": algorithm,
+        "key_strategy": resolved_strategy,
+        "on_missing_key": on_missing_key,
+        "burst": burst,
+        "tiers": [t.model_dump() for t in tiers],
+        "tier_resolver": tier_resolver,
+        "exempt_ips": exempt_ips or [],
+        "exempt_roles": exempt_roles or [],
+    }
+    if custom_key_func is not None:
+        rate_limit_meta["key_func"] = custom_key_func
+
+    meta: dict[str, Any] = {
+        "rate_limit": rate_limit_meta,
+        "rate_limit_response_factory": response,
+    }
+
+    def dep_raise(request: Request) -> None:
+        """Enforce rate limit as a FastAPI dependency."""
+        eff_engine = _resolve_engine(None, request)
+        if eff_engine is None:
+            return  # no engine — fail-open; rely on middleware
+
+        path = request.url.path
+        method = request.method
+        policy_key = f"{method.upper()}:{path}"
+        if eff_engine._rate_limiter is None:
+            return
+        policy = eff_engine._rate_limit_policies.get(policy_key)
+        if policy is None:
+            return
+        # Run the async check from a sync dep thread.
+        import anyio.from_thread as _aft
+
+        try:
+            result = _aft.run(
+                eff_engine._rate_limiter.check,
+                path,
+                method,
+                request,
+                policy,
+                custom_key_func,
+            )
+        except Exception:
+            return  # fail-open on any error
+
+        if not result.allowed:
+            from fastapi import HTTPException
+
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "code": "RATE_LIMIT_EXCEEDED",
+                    "message": "Too many requests",
+                    "limit": result.limit,
+                    "retry_after_seconds": result.retry_after_seconds,
+                    "reset_at": result.reset_at.isoformat(),
+                    "path": path,
+                },
+                headers={
+                    "Retry-After": str(result.retry_after_seconds),
+                    "X-RateLimit-Limit": result.limit,
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Reset": str(int(result.reset_at.timestamp())),
+                },
+            )
+
+    return _ShieldCallable(meta=meta, dep_raise=dep_raise)
+
+
 def force_active(func: F) -> F:
     """Force a route to bypass all shield checks.
 

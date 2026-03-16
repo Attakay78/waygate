@@ -291,6 +291,16 @@ def ShieldAdmin(
             Route("/schedule/{path_key}", _dash.cancel_schedule, methods=["DELETE"]),
             Route("/audit", _dash.audit_page),
             Route("/audit/rows", _dash.audit_rows),
+            Route("/rate-limits", _dash.rate_limits_page),
+            Route("/rate-limits/rows", _dash.rate_limits_rows_partial),
+            Route("/rate-limits/hits", _dash.rate_limits_hits_partial),
+            Route("/blocked", _dash.rl_hits_page),
+            Route("/modal/rl/reset/{path_key}", _dash.modal_rl_reset),
+            Route("/modal/rl/edit/{path_key}", _dash.modal_rl_edit),
+            Route("/modal/rl/delete/{path_key}", _dash.modal_rl_delete),
+            Route("/rl/reset/{path_key}", _dash.rl_reset, methods=["POST"]),
+            Route("/rl/edit/{path_key}", _dash.rl_edit, methods=["POST"]),
+            Route("/rl/delete/{path_key}", _dash.rl_delete, methods=["POST"]),
             Route("/events", _dash.events),
             # ── REST API (CLI) ────────────────────────────────────────────
             Route("/api/auth/login", _api.auth_login, methods=["POST"]),
@@ -316,6 +326,19 @@ def ShieldAdmin(
             Route("/api/global", _api.get_global, methods=["GET"]),
             Route("/api/global/enable", _api.global_enable_api, methods=["POST"]),
             Route("/api/global/disable", _api.global_disable_api, methods=["POST"]),
+            Route("/api/rate-limits", _api.list_rate_limits, methods=["GET"]),
+            Route("/api/rate-limits", _api.set_rate_limit_policy_api, methods=["POST"]),
+            Route("/api/rate-limits/hits", _api.get_rate_limit_hits, methods=["GET"]),
+            Route(
+                "/api/rate-limits/{path_key}/reset",
+                _api.reset_rate_limit,
+                methods=["DELETE"],
+            ),
+            Route(
+                "/api/rate-limits/{path_key}",
+                _api.delete_rate_limit_policy_api,
+                methods=["DELETE"],
+            ),
         ],
     )
 

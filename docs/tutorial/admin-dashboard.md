@@ -32,6 +32,8 @@ After starting the server:
 
 - **Dashboard UI**: `http://localhost:8000/shield/`
 - **Audit log**: `http://localhost:8000/shield/audit`
+- **Rate limits**: `http://localhost:8000/shield/rate-limits`
+- **Blocked requests**: `http://localhost:8000/shield/blocked`
 - **REST API**: `http://localhost:8000/shield/api/`
 
 ---
@@ -102,6 +104,20 @@ The dashboard renders all registered routes with live status badges:
 
 The dashboard connects to the `/shield/events` SSE endpoint. When state changes (from another browser tab, CLI command, or API call), the affected row updates in real time without a page reload.
 
+### Rate limits
+
+`http://localhost:8000/shield/rate-limits` shows all registered rate limit policies. Each row has three actions:
+
+- **Reset** — clear counters immediately so clients get their full quota back
+- **Edit** — update the limit, algorithm, or key strategy without redeploying
+- **Delete** — remove a persisted policy override
+
+Requires `api-shield[rate-limit]` installed on the server.
+
+### Blocked requests
+
+`http://localhost:8000/shield/blocked` shows a paginated log of every request that was rejected with a 429. The log is capped at 10,000 entries (configurable via `max_rl_hit_entries` on the engine).
+
 ### Audit log
 
 `http://localhost:8000/shield/audit` shows a paginated table of all state changes:
@@ -111,7 +127,7 @@ The dashboard connects to the `/shield/events` SSE endpoint. When state changes 
 - Action (enable / disable / maintenance / etc.)
 - Actor (authenticated username or "anonymous")
 - Platform (`cli` or `dashboard`)
-- Old status → New status
+- Status change — route status transitions shown as `old → new`; rate limit actions shown as coloured badges (`set`, `update`, `reset`, `delete`)
 - Reason
 
 ---
@@ -136,6 +152,9 @@ The same mount exposes a JSON API used by the `shield` CLI:
 | `GET` | `/api/global` | Global maintenance config |
 | `POST` | `/api/global/enable` | Enable global maintenance |
 | `POST` | `/api/global/disable` | Disable global maintenance |
+| `GET` | `/api/rate-limits` | List all rate limit policies |
+| `GET` | `/api/rate-limits/hits` | Blocked requests log |
+| `DELETE` | `/api/rate-limits/{key}/reset` | Clear counters for a route |
 
 ---
 

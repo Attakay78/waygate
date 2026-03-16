@@ -348,3 +348,85 @@ async def global_disable_api(request: Request) -> JSONResponse:
     await _engine(request).disable_global_maintenance(actor=actor, platform=_platform(request))
     cfg = await _engine(request).get_global_maintenance()
     return JSONResponse(cfg.model_dump(mode="json"))
+
+
+# ---------------------------------------------------------------------------
+# Rate limits
+# ---------------------------------------------------------------------------
+
+
+async def list_rate_limits(request: Request) -> JSONResponse:
+    """GET /api/rate-limits — list all registered rate limit policies."""
+    engine = _engine(request)
+    policies = [p.model_dump(mode="json") for p in engine._rate_limit_policies.values()]
+    return JSONResponse(policies)
+
+
+async def get_rate_limit_hits(request: Request) -> JSONResponse:
+    """GET /api/rate-limits/hits — return recent rate limit hits."""
+    engine = _engine(request)
+    route = request.query_params.get("route")
+    try:
+        limit = int(request.query_params.get("limit", "50"))
+    except ValueError:
+        limit = 50
+    hits = await engine.get_rate_limit_hits(path=route, limit=limit)
+    return JSONResponse([h.model_dump(mode="json") for h in hits])
+
+
+async def reset_rate_limit(request: Request) -> JSONResponse:
+    """DELETE /api/rate-limits/{path_key}/reset — reset counters for a route."""
+    engine = _engine(request)
+    path = _decode_path(request.path_params["path_key"])
+    method = request.query_params.get("method")
+    await engine.reset_rate_limit(path=path, method=method or None)
+    return JSONResponse({"ok": True, "path": path})
+
+
+async def set_rate_limit_policy_api(request: Request) -> JSONResponse:
+    """POST /api/rate-limits — create or update a rate limit policy."""
+    engine = _engine(request)
+    actor = _actor(request)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
+
+    path = body.get("path")
+    method = body.get("method", "GET")
+    limit = body.get("limit")
+    if not path or not limit:
+        return JSONResponse({"error": "path and limit are required"}, status_code=400)
+
+    try:
+        policy = await engine.set_rate_limit_policy(
+            path=path,
+            method=method,
+            limit=limit,
+            algorithm=body.get("algorithm"),
+            key_strategy=body.get("key_strategy"),
+            burst=int(body.get("burst", 0)),
+            actor=actor,
+        )
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+    return JSONResponse(policy.model_dump(mode="json"), status_code=201)
+
+
+async def delete_rate_limit_policy_api(request: Request) -> JSONResponse:
+    """DELETE /api/rate-limits/{path_key} — remove a rate limit policy.
+
+    ``path_key`` is a base64url-encoded string in the form ``METHOD:path``
+    (e.g. ``GET:/api/items``).  Use :func:`shield.cli.client._encode_path`
+    to produce the correct encoding.
+    """
+    engine = _engine(request)
+    actor = _actor(request)
+    # base64url-decode the composite key ("METHOD:/path")
+    raw_key = _decode_path(request.path_params["path_key"])
+    if ":" not in raw_key:
+        return JSONResponse({"error": "path_key must encode METHOD:path"}, status_code=400)
+    method, path = raw_key.split(":", 1)
+    await engine.delete_rate_limit_policy(path=path, method=method, actor=actor)
+    return JSONResponse({"ok": True, "path": path, "method": method})

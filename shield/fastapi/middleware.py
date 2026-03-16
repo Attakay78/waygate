@@ -41,6 +41,7 @@ from shield.core.engine import ShieldEngine
 from shield.core.exceptions import (
     EnvGatedException,
     MaintenanceException,
+    RateLimitExceededException,
     RouteDisabledException,
 )
 from shield.core.models import RouteStatus
@@ -114,9 +115,10 @@ class ShieldMiddleware(BaseHTTPMiddleware):
         # Pre-built route lookup cache — populated after scan_routes() completes.
         # Static paths (no path params) get an O(1) dict lookup.
         # Parameterised paths fall back to a short list scan (usually << total routes).
-        # Each entry stores (is_force_active, template_path, response_factory | None).
-        self._static_route_meta: dict[str, tuple[bool, str, Any]] = {}
-        self._param_routes: list[tuple[Route, bool, str, Any]] = []
+        # Each entry stores (is_force_active, template_path, response_factory | None,
+        #                    rate_limit_response_factory | None).
+        self._static_route_meta: dict[str, tuple[bool, str, Any, Any]] = {}
+        self._param_routes: list[tuple[Route, bool, str, Any, Any]] = []
         self._route_cache_built: bool = False
 
     # ------------------------------------------------------------------
@@ -195,8 +197,8 @@ class ShieldMiddleware(BaseHTTPMiddleware):
         The structure stores ``(is_force_active, template_path)`` per route
         so ``_resolve_route`` can answer both questions in a single pass.
         """
-        static: dict[str, tuple[bool, str, Any]] = {}
-        param: list[tuple[Route, bool, str, Any]] = []
+        static: dict[str, tuple[bool, str, Any, Any]] = {}
+        param: list[tuple[Route, bool, str, Any, Any]] = []
 
         for route in getattr(app, "routes", []):
             if not isinstance(route, Route):
@@ -205,15 +207,23 @@ class ShieldMiddleware(BaseHTTPMiddleware):
             meta = getattr(endpoint, "__shield_meta__", {}) if endpoint else {}
             is_force_active = bool(meta.get("force_active"))
             response_factory = meta.get("response_factory")
+            rl_response_factory = meta.get("rate_limit_response_factory")
             template = getattr(route, "path", None) or ""
 
             if "{" not in template:
                 # Static path — exact dict key match on every request.
-                static[template] = (is_force_active, template, response_factory)
+                static[template] = (
+                    is_force_active,
+                    template,
+                    response_factory,
+                    rl_response_factory,
+                )
             else:
                 # Parameterised path — requires regex matching per request
                 # but the list is usually a small fraction of total routes.
-                param.append((route, is_force_active, template, response_factory))
+                param.append(
+                    (route, is_force_active, template, response_factory, rl_response_factory)
+                )
 
         self._static_route_meta = static
         self._param_routes = param
@@ -243,8 +253,10 @@ class ShieldMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # Single route scan: resolves force_active flag, the template path,
-        # and the optional custom response factory in one pass.
-        is_force_active, template_path, response_factory = self._resolve_route(request)
+        # and the optional custom response factories in one pass.
+        is_force_active, template_path, response_factory, rl_response_factory = self._resolve_route(
+            request
+        )
 
         # Use the route template for engine lookups so parameterised routes
         # (e.g. /items/{item_id}) match their registered state key correctly.
@@ -264,8 +276,18 @@ class ShieldMiddleware(BaseHTTPMiddleware):
                 # Fail-open: backend unreachable → honour force_active.
                 return await call_next(request)
 
+        rate_limit_result: Any = None
         try:
-            await self.engine.check(check_path, method=request.method)
+            rate_limit_result = await self.engine.check(
+                check_path,
+                method=request.method,
+                context={
+                    "ip": request.client.host if request.client else "unknown",
+                    "headers": dict(request.headers),
+                    "method": request.method,
+                    "request": request,
+                },
+            )
         except MaintenanceException as exc:
             factory = response_factory or self._default_responses.get("maintenance")
             if factory:
@@ -282,29 +304,39 @@ class ShieldMiddleware(BaseHTTPMiddleware):
                 return await self._call_response_factory(factory, request, exc)
             # Silent 404 — do not reveal that the route exists.
             return Response(status_code=404)
+        except RateLimitExceededException as exc:
+            factory = rl_response_factory or self._default_responses.get("rate_limited")
+            if factory:
+                return await self._call_response_factory(factory, request, exc)
+            return self._rate_limit_response(path, exc)
 
         response = await call_next(request)
 
         # Inject deprecation headers for DEPRECATED routes (does not block).
         response = await self._inject_deprecation_headers(check_path, request.method, response)
+
+        # Inject rate limit headers on passing responses so well-behaved
+        # clients can back off before being blocked.
+        if rate_limit_result is not None:
+            self._inject_rate_limit_headers(response, rate_limit_result)
+
         return response
 
-    def _resolve_route(self, request: Request) -> tuple[bool, str | None, Any]:
+    def _resolve_route(self, request: Request) -> tuple[bool, str | None, Any, Any]:
         """Match the request against app routes using the pre-built cache.
 
-        Returns ``(is_force_active, template_path, response_factory)`` where:
+        Returns ``(is_force_active, template_path, response_factory, rl_response_factory)`` where:
 
-        - ``is_force_active`` is ``True`` when the matched endpoint carries
+        - ``is_force_active`` — ``True`` when the matched endpoint carries
           ``@force_active`` and should bypass all shield checks.
-        - ``template_path`` is the route's path *template* (e.g.
-          ``"/items/{item_id}"``), which is what the engine stores as its
-          state key.  Using the template instead of the concrete URL means
-          that parameterised routes (``/items/42`` → ``/items/{item_id}``)
-          are resolved correctly.
-        - ``response_factory`` is the callable stamped by ``@shield_response``,
-          or ``None`` when no custom response has been declared.
+        - ``template_path`` — the route's path template (e.g.
+          ``"/items/{item_id}"``), which is what the engine stores as its key.
+        - ``response_factory`` — per-route factory for lifecycle blocks
+          (maintenance/disabled/env_gated), or ``None``.
+        - ``rl_response_factory`` — per-route factory for rate limit 429s,
+          or ``None``.
 
-        Returns ``(False, None, None)`` when no route matches (unregistered path).
+        Returns ``(False, None, None, None)`` when no route matches.
 
         Performance
         -----------
@@ -315,9 +347,7 @@ class ShieldMiddleware(BaseHTTPMiddleware):
           all routes — rather than iterating the entire route list on every
           request.
 
-        Falls back to the original O(N) walk when the cache is not yet built
-        (e.g. in environments without ASGI lifespan support where the lazy
-        scan has not completed for the current request).
+        Falls back to the original O(N) walk when the cache is not yet built.
         """
         path = request.url.path
 
@@ -328,12 +358,12 @@ class ShieldMiddleware(BaseHTTPMiddleware):
                 return entry
 
             # Parameterised routes — scan only the short param-route list.
-            for route, is_force_active, template, response_factory in self._param_routes:
+            for route, is_force_active, template, response_factory, rl_rf in self._param_routes:
                 match, _ = route.matches(request.scope)
                 if match == Match.FULL:
-                    return is_force_active, template, response_factory
+                    return is_force_active, template, response_factory, rl_rf
 
-            return False, None, None
+            return False, None, None, None
 
         # Fallback: full O(N) walk used before the cache is ready.
         routes = getattr(request.app, "routes", [])
@@ -346,8 +376,9 @@ class ShieldMiddleware(BaseHTTPMiddleware):
                     bool(meta.get("force_active")),
                     getattr(route, "path", None),
                     meta.get("response_factory"),
+                    meta.get("rate_limit_response_factory"),
                 )
-        return False, None, None
+        return False, None, None, None
 
     async def _inject_deprecation_headers(
         self, path: str, method: str, response: Response
@@ -422,3 +453,40 @@ class ShieldMiddleware(BaseHTTPMiddleware):
                 }
             },
         )
+
+    @staticmethod
+    def _rate_limit_response(path: str, exc: RateLimitExceededException) -> JSONResponse:
+        """Build a 429 Too Many Requests response for a rate limit violation."""
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": {
+                    "code": "RATE_LIMIT_EXCEEDED",
+                    "message": "Too many requests",
+                    "limit": exc.limit,
+                    "retry_after_seconds": exc.retry_after_seconds,
+                    "reset_at": exc.reset_at.isoformat(),
+                    "path": path,
+                }
+            },
+            headers={
+                "Retry-After": str(exc.retry_after_seconds),
+                "X-RateLimit-Limit": exc.limit,
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(int(exc.reset_at.timestamp())),
+            },
+        )
+
+    @staticmethod
+    def _inject_rate_limit_headers(response: Response, result: Any) -> None:
+        """Add ``X-RateLimit-*`` headers to a passing response.
+
+        Injecting headers on every allowed response (not just 429s) lets
+        well-behaved clients back off before being blocked.
+        """
+        try:
+            response.headers["X-RateLimit-Limit"] = result.limit
+            response.headers["X-RateLimit-Remaining"] = str(result.remaining)
+            response.headers["X-RateLimit-Reset"] = str(int(result.reset_at.timestamp()))
+        except Exception:
+            pass  # header injection is best-effort — never break the response

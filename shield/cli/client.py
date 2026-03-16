@@ -230,6 +230,65 @@ class ShieldClient:
             resp = await c.post("/api/global/disable")
             return cast(dict[str, Any], self._check(resp))
 
+    async def list_rate_limits(self) -> list[dict[str, Any]]:
+        """GET /api/rate-limits — list all rate limit policies."""
+        async with self._make_client() as c:
+            resp = await c.get("/api/rate-limits")
+            return cast(list[dict[str, Any]], self._check(resp))
+
+    async def rate_limit_hits(
+        self, route: str | None = None, limit: int = 50
+    ) -> list[dict[str, Any]]:
+        """GET /api/rate-limits/hits — recent rate limit hits."""
+        params: dict[str, str | int] = {"limit": limit}
+        if route:
+            params["route"] = route
+        async with self._make_client() as c:
+            resp = await c.get("/api/rate-limits/hits", params=params)
+            return cast(list[dict[str, Any]], self._check(resp))
+
+    async def reset_rate_limit(self, path_key: str, method: str | None = None) -> dict[str, Any]:
+        """DELETE /api/rate-limits/{path_key}/reset — reset rate limit counters."""
+        params: dict[str, str] = {}
+        if method:
+            params["method"] = method
+        async with self._make_client() as c:
+            resp = await c.delete(f"/api/rate-limits/{path_key}/reset", params=params)
+            return cast(dict[str, Any], self._check(resp))
+
+    async def set_rate_limit_policy(
+        self,
+        path: str,
+        method: str,
+        limit: str,
+        *,
+        algorithm: str | None = None,
+        key_strategy: str | None = None,
+        burst: int = 0,
+    ) -> dict[str, Any]:
+        """POST /api/rate-limits — create or update a rate limit policy."""
+        payload: dict[str, Any] = {
+            "path": path,
+            "method": method.upper(),
+            "limit": limit,
+            "burst": burst,
+        }
+        if algorithm:
+            payload["algorithm"] = algorithm
+        if key_strategy:
+            payload["key_strategy"] = key_strategy
+        async with self._make_client() as c:
+            resp = await c.post("/api/rate-limits", json=payload)
+            return cast(dict[str, Any], self._check(resp))
+
+    async def delete_rate_limit_policy(self, path: str, method: str) -> dict[str, Any]:
+        """DELETE /api/rate-limits/{path_key} — remove a rate limit policy."""
+        composite = f"{method.upper()}:{path}"
+        path_key = _encode_path(composite)
+        async with self._make_client() as c:
+            resp = await c.delete(f"/api/rate-limits/{path_key}")
+            return cast(dict[str, Any], self._check(resp))
+
 
 def make_client(
     transport: httpx.AsyncBaseTransport | None = None,

@@ -7,11 +7,13 @@ Auth is tested both with and without credentials configured.
 from __future__ import annotations
 
 import pytest
+import pytest as _pytest
 from httpx import ASGITransport, AsyncClient
 
 from shield.admin.app import ShieldAdmin
 from shield.core.engine import ShieldEngine
 from shield.core.models import RouteState, RouteStatus
+from shield.core.rate_limit.storage import HAS_LIMITS
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -355,3 +357,91 @@ async def test_actor_recorded_in_audit_with_auth(
     await auth_client.post(f"/api/routes/{key}/disable", json={"reason": "auth-actor-test"})
     entries = await engine.get_audit_log(path="/health", limit=1)
     assert entries[0].actor == "admin"
+
+
+# ---------------------------------------------------------------------------
+# Rate limit policy API tests
+# ---------------------------------------------------------------------------
+
+_rl_mark = _pytest.mark.skipif(not HAS_LIMITS, reason="limits library not installed")
+
+
+@_rl_mark
+async def test_set_rate_limit_policy(open_client: AsyncClient, engine: ShieldEngine) -> None:
+    """POST /api/rate-limits creates a policy and returns 201."""
+    resp = await open_client.post(
+        "/api/rate-limits",
+        json={"path": "/payments", "method": "GET", "limit": "10/minute"},
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["limit"] == "10/minute"
+    assert body["path"] == "/payments"
+
+
+@_rl_mark
+async def test_set_rate_limit_policy_persists(
+    open_client: AsyncClient, engine: ShieldEngine
+) -> None:
+    """After POST, the policy is in engine._rate_limit_policies."""
+    await open_client.post(
+        "/api/rate-limits",
+        json={"path": "/payments", "method": "GET", "limit": "10/minute"},
+    )
+    assert "GET:/payments" in engine._rate_limit_policies
+
+
+@_rl_mark
+async def test_set_rate_limit_policy_missing_fields(open_client: AsyncClient) -> None:
+    """POST /api/rate-limits with missing required fields returns 400."""
+    resp = await open_client.post("/api/rate-limits", json={"path": "/payments"})
+    assert resp.status_code == 400
+
+
+@_rl_mark
+async def test_list_rate_limit_policies(open_client: AsyncClient, engine: ShieldEngine) -> None:
+    """GET /api/rate-limits returns all registered policies."""
+    await open_client.post(
+        "/api/rate-limits",
+        json={"path": "/payments", "method": "GET", "limit": "10/minute"},
+    )
+    resp = await open_client.get("/api/rate-limits")
+    assert resp.status_code == 200
+    policies = resp.json()
+    assert len(policies) >= 1
+    assert any(p["path"] == "/payments" for p in policies)
+
+
+@_rl_mark
+async def test_delete_rate_limit_policy(open_client: AsyncClient, engine: ShieldEngine) -> None:
+    """DELETE /api/rate-limits/{key} removes the policy."""
+    await open_client.post(
+        "/api/rate-limits",
+        json={"path": "/payments", "method": "GET", "limit": "10/minute"},
+    )
+    assert "GET:/payments" in engine._rate_limit_policies
+
+    import base64
+
+    path_key = base64.urlsafe_b64encode(b"GET:/payments").decode().rstrip("=")
+    resp = await open_client.delete(f"/api/rate-limits/{path_key}")
+    assert resp.status_code == 200
+    assert "GET:/payments" not in engine._rate_limit_policies
+
+
+@_rl_mark
+async def test_set_rate_limit_with_algorithm(
+    open_client: AsyncClient, engine: ShieldEngine
+) -> None:
+    """POST /api/rate-limits with algorithm kwarg stores correct algorithm."""
+    resp = await open_client.post(
+        "/api/rate-limits",
+        json={
+            "path": "/payments",
+            "method": "POST",
+            "limit": "5/second",
+            "algorithm": "fixed_window",
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["algorithm"] == "fixed_window"

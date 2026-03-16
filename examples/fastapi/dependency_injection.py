@@ -1,13 +1,18 @@
 """FastAPI — Dependency Injection Example.
 
 Shows how to use shield decorators as FastAPI ``Depends()`` dependencies
-instead of (or alongside) the middleware model.
+instead of (or alongside) the middleware model — but not both on the
+same route. Pick one: decorator (with ShieldMiddleware) or Depends()
+(without middleware).
 
 Call ``configure_shield(app, engine)`` once and all decorator deps find the
 engine automatically via ``request.app.state.shield_engine`` — no ``engine=``
 argument per route. ``ShieldMiddleware`` calls ``configure_shield``
 automatically at ASGI startup, so if you use middleware you don't need to
 call it manually.
+
+Use either the decorator (with ShieldMiddleware) or ``Depends()`` (without
+middleware) — not both on the same route.
 
 Decorator support as ``Depends()``:
 
@@ -98,14 +103,11 @@ async def list_users():
     return {"users": [{"id": 1, "name": "Alice"}]}
 
 
-# Pattern 1 — decorator stamps __shield_meta__; middleware enforces globally.
-# Pattern 2 — Depends() enforces at the handler level (works without middleware).
-# Both are present here so either approach can be stripped out independently.
+# Depends() — enforces at the handler level without requiring ShieldMiddleware.
 @router.get(
     "/payments",
     dependencies=[Depends(maintenance(reason="Scheduled DB migration"))],
 )
-@maintenance(reason="Scheduled DB migration")
 async def get_payments():
     """503 on startup; toggle off with: shield enable /payments"""
     return {"payments": []}
@@ -115,7 +117,6 @@ async def get_payments():
     "/old-endpoint",
     dependencies=[Depends(disabled(reason="Use /v2/endpoint instead"))],
 )
-@disabled(reason="Use /v2/endpoint instead")
 async def old_endpoint():
     """503 on startup; re-enable with: shield enable /old-endpoint"""
     return {}
@@ -125,16 +126,13 @@ async def old_endpoint():
     "/debug",
     dependencies=[Depends(env_only("dev", "staging"))],
 )
-@env_only("dev", "staging")
 async def debug():
     """404 in production; 200 in dev/staging."""
     return {"env": CURRENT_ENV}
 
 
 # @deprecated as a Depends() — injects Deprecation, Sunset, and Link headers
-# directly on the response without needing the middleware to do it.
-# Use this when you want header injection at the handler level rather than
-# globally via middleware.
+# directly on the response at the handler level.
 @router.get(
     "/v1/users",
     dependencies=[
@@ -146,7 +144,6 @@ async def debug():
         )
     ],
 )
-@deprecated(sunset="Sat, 01 Jan 2027 00:00:00 GMT", use_instead="/v2/users")
 async def v1_users():
     """200 always, but carries Deprecation + Sunset + Link response headers."""
     return {"users": [{"id": 1, "name": "Alice"}]}

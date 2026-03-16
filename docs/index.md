@@ -13,9 +13,9 @@
 !!! warning "Early Access: your feedback shapes the roadmap"
     `api-shield` is fully functional and ready to use. We are actively building on a solid foundation and would love to hear from you. If you have feedback, feature ideas, or suggestions, **[open an issue on GitHub](https://github.com/Attakay78/api-shield/issues)**. Every voice helps make the library better for everyone.
 
-**Route lifecycle management for Python web frameworks: maintenance mode, environment gating, deprecation, admin panels, and more. No restarts required.**
+**Route(API) lifecycle management for Python web frameworks: maintenance mode, environment gating, deprecation, rate limiting, admin panels, and more. No restarts required.**
 
-Most "maintenance mode" tools are blunt instruments: shut everything down or nothing at all. `api-shield` treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through middleware, with no redeployment and no server restart.
+Most "route lifecycle management" tools are blunt instruments: shut everything down or nothing at all. `api-shield` treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through middleware, with no redeployment and no server restart.
 
 ---
 
@@ -100,6 +100,7 @@ shield enable GET:/payments
 | ⏰ **Scheduled windows** | `asyncio`-native scheduler that activates and deactivates maintenance windows automatically |
 | 🔔 **Webhooks** | Fire HTTP POST on every state change, with a built-in Slack formatter and support for custom formatters |
 | 🎨 **Custom responses** | Return HTML, redirects, or any response shape for blocked routes, per-route or as an app-wide default |
+| 🚦 **Rate limiting** | Per-IP, per-user, per-API-key, or global counters with tiered limits, burst allowance, and runtime policy mutation |
 
 ---
 
@@ -112,6 +113,7 @@ shield enable GET:/payments
 | `@env_only("dev", "staging")` | Route restricted to named envs | 404 in other envs |
 | `@deprecated(sunset, use_instead)` | Route still works, but headers warn clients | 200 + deprecation headers |
 | `@force_active` | Route bypasses all shield checks | Always 200 |
+| `@rate_limit("100/minute")` | Cap requests per IP, user, API key, or globally | 429 when exceeded |
 
 ---
 
@@ -119,6 +121,8 @@ shield enable GET:/payments
 
 - [**Tutorial: Installation**](tutorial/installation.md): get up and running in seconds
 - [**Tutorial: First Decorator**](tutorial/first-decorator.md): put your first route in maintenance mode
+- [**Tutorial: Rate Limiting**](tutorial/rate-limiting.md): per-IP, per-user, tiered limits, and more
 - [**Reference: Decorators**](reference/decorators.md): full decorator API
+- [**Reference: Rate Limiting**](reference/rate-limiting.md): `@rate_limit` parameters, models, and CLI commands
 - [**Reference: ShieldEngine**](reference/engine.md): programmatic control
 - [**Reference: CLI**](reference/cli.md): all CLI commands

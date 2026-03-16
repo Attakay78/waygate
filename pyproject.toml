@@ -48,6 +48,7 @@ admin     = [
 ]
 yaml      = ["pyyaml>=6.0"]
 toml      = ["tomli-w>=1.0"]
+rate-limit = ["limits>=5.8.0"]
 all       = [
     "fastapi>=0.100",
     "redis[asyncio]>=5.0",
@@ -59,6 +60,7 @@ all       = [
     "pyyaml>=6.0",
     "tomli-w>=1.0",
     "python-multipart>=0.0.22",
+    "limits>=5.8.0",
 ]
 docs = [
     "mkdocs-material>=9.5",
@@ -77,6 +79,7 @@ dev = [
     "pre-commit>=3.7",
     "tomli-w>=1.0",
     "pyyaml>=6.0",
+    "limits>=5.8.0",
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.25",
     "mkdocs-git-revision-date-localized-plugin>=1.2",

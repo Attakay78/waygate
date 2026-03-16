@@ -80,7 +80,12 @@ class GlobalMaintenanceConfig(BaseModel):
 
 
 class AuditEntry(BaseModel):
-    """An immutable record of a route state change."""
+    """An immutable record of a state change.
+
+    Route lifecycle changes populate ``previous_status`` / ``new_status``.
+    Rate limit policy mutations (set, delete, reset) leave those fields
+    ``None`` and store relevant detail in ``reason``.
+    """
 
     id: str  # uuid4
     timestamp: datetime
@@ -89,5 +94,5 @@ class AuditEntry(BaseModel):
     actor: str = "system"
     platform: str = "system"  # "cli", "dashboard", or "system"
     reason: str = ""
-    previous_status: RouteStatus
-    new_status: RouteStatus
+    previous_status: RouteStatus | None = None
+    new_status: RouteStatus | None = None

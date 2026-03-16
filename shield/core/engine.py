@@ -21,6 +21,7 @@ from shield.core.exceptions import (
     AmbiguousRouteError,
     EnvGatedException,
     MaintenanceException,
+    RateLimitExceededException,
     RouteDisabledException,
     RouteNotFoundException,
     RouteProtectedException,
@@ -56,8 +57,14 @@ class ShieldEngine:
         self,
         backend: ShieldBackend | None = None,
         current_env: str = "dev",
+        rate_limit_backend: ShieldBackend | None = None,
+        default_rate_limit_algorithm: Any = None,
+        rate_limit_snapshot_interval: int = 10,
+        max_rl_hit_entries: int = 10_000,
     ) -> None:
-        self.backend: ShieldBackend = backend or MemoryBackend()
+        self.backend: ShieldBackend = backend or MemoryBackend(
+            max_rl_hit_entries=max_rl_hit_entries,
+        )
         self.current_env = current_env
         # Scheduler is lazily imported to avoid a circular reference.
         from shield.core.scheduler import MaintenanceScheduler
@@ -76,6 +83,13 @@ class ShieldEngine:
         # Monotonic counter bumped on every state change.  Used by the OpenAPI
         # filter to detect when the cached schema needs to be rebuilt.
         self._schema_version: int = 0
+        # Rate limiting — lazily initialised on first call to register_rate_limit().
+        self._rate_limit_backend: ShieldBackend | None = rate_limit_backend
+        self._rate_limit_snapshot_interval: int = rate_limit_snapshot_interval
+        # Lazily set to a RateLimitAlgorithm enum value on first use.
+        self._default_rate_limit_algorithm: Any = default_rate_limit_algorithm
+        self._rate_limiter: Any = None  # ShieldRateLimiter | None
+        self._rate_limit_policies: dict[str, Any] = {}  # "METHOD:/path" → RateLimitPolicy
 
     # ------------------------------------------------------------------
     # Async context manager — calls backend lifecycle hooks
@@ -170,7 +184,7 @@ class ShieldEngine:
         path: str,
         method: str | None = None,
         context: dict[str, Any] | None = None,
-    ) -> None:
+    ) -> Any:
         """Evaluate the lifecycle policy for *path* (and optionally *method*).
 
         This is the single chokepoint for every incoming request.
@@ -218,7 +232,7 @@ class ShieldEngine:
             return  # no state registered → effectively ACTIVE
 
         if state.status == RouteStatus.ACTIVE:
-            return
+            return await self._run_rate_limit_check(path, method or "", context)
 
         if state.status == RouteStatus.MAINTENANCE:
             retry_after = state.window.end if state.window else None
@@ -238,7 +252,51 @@ class ShieldEngine:
 
         if state.status == RouteStatus.DEPRECATED:
             # Deprecated routes still serve requests — headers injected by middleware.
-            return
+            # Rate limit check still runs for deprecated routes.
+            return await self._run_rate_limit_check(path, method or "", context)
+
+        # Rate limiting runs after all lifecycle checks so that maintenance /
+        # disabled routes short-circuit before touching counters.
+        await self._run_rate_limit_check(path, method or "", context)
+
+    async def _run_rate_limit_check(
+        self, path: str, method: str, context: dict[str, Any] | None
+    ) -> Any:
+        """Run the rate limit check for *path*/*method* if a policy is registered.
+
+        Returns the ``RateLimitResult`` (or ``None`` when no policy applies).
+        Raises ``RateLimitExceededException`` when the limit is exceeded.
+        """
+        if self._rate_limiter is None:
+            return None
+
+        policy_key = f"{method.upper()}:{path}" if method else f"ALL:{path}"
+        policy = self._rate_limit_policies.get(policy_key)
+        if policy is None:
+            return None
+
+        request = (context or {}).get("request")
+        custom_key_func = getattr(policy, "_custom_key_func", None)
+
+        result = await self._rate_limiter.check(
+            path=path,
+            method=method or "GET",
+            request=request,
+            policy=policy,
+            custom_key_func=custom_key_func,
+        )
+
+        if not result.allowed:
+            await self._record_rate_limit_hit(path, method or "GET", policy, result)
+            raise RateLimitExceededException(
+                limit=result.limit,
+                retry_after_seconds=result.retry_after_seconds,
+                reset_at=result.reset_at,
+                remaining=0,
+                key=result.key,
+            )
+
+        return result
 
     async def _resolve_state(self, path: str, method: str | None) -> RouteState | None:
         """Return the applicable ``RouteState`` for *path* / *method*.
@@ -381,6 +439,10 @@ class ShieldEngine:
 
             await self.backend.set_state(path, state)
 
+        # Restore persisted rate limit policies so CLI-set policies override
+        # decorator-registered ones, and so policies survive restarts.
+        await self.restore_rate_limit_policies()
+
     # ------------------------------------------------------------------
     # State mutation methods
     # ------------------------------------------------------------------
@@ -504,6 +566,14 @@ class ShieldEngine:
             new_status=RouteStatus.ACTIVE,
         )
         self._fire_webhooks("enable", actual_path, new_state)
+        # Reset rate limit counters so clients are not penalised for retrying
+        # during a maintenance window that has now ended.
+        if self._rate_limiter is not None:
+            for _method in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"):
+                try:
+                    await self._rate_limiter.reset(path=actual_path, method=_method)
+                except Exception:
+                    pass  # fail-open — counter reset is best-effort
         return new_state
 
     async def disable(
@@ -771,6 +841,235 @@ class ShieldEngine:
             logger.exception("shield: webhook POST to %r failed", url)
 
     # ------------------------------------------------------------------
+    # Rate limiting
+    # ------------------------------------------------------------------
+
+    async def register_rate_limit(
+        self,
+        path: str,
+        method: str,
+        policy: Any,
+    ) -> None:
+        """Register a rate limit policy for *path*/*method*.
+
+        Lazily initialises the rate limiter on the first call so that
+        importing ``shield`` without the ``limits`` library installed works
+        fine — the ``ImportError`` is only raised when rate limiting is
+        actually configured.
+
+        Parameters
+        ----------
+        path:
+            Route path template (e.g. ``"/api/payments"``).
+        method:
+            HTTP method (``"GET"``, ``"POST"``, …) or ``"ALL"`` for any method.
+        policy:
+            A ``RateLimitPolicy`` instance describing the limit.
+        """
+        if self._rate_limiter is None:
+            try:
+                from shield.core.rate_limit.limiter import ShieldRateLimiter
+                from shield.core.rate_limit.storage import create_rate_limit_storage
+
+                storage = create_rate_limit_storage(
+                    self.backend,
+                    self._rate_limit_backend,
+                    snapshot_interval_seconds=self._rate_limit_snapshot_interval,
+                )
+                from shield.core.rate_limit.models import RateLimitAlgorithm
+
+                algo = self._default_rate_limit_algorithm or RateLimitAlgorithm.FIXED_WINDOW
+                self._rate_limiter = ShieldRateLimiter(
+                    storage=storage,
+                    default_algorithm=algo,
+                )
+            except ImportError:
+                raise ImportError(
+                    "Rate limiting requires the 'limits' library. "
+                    "Install it with: pip install api-shield[rate-limit]"
+                ) from None
+
+        key = f"{method.upper()}:{path}"
+        self._rate_limit_policies[key] = policy
+
+    async def _record_rate_limit_hit(
+        self,
+        path: str,
+        method: str,
+        policy: Any,
+        result: Any,
+    ) -> None:
+        """Write a ``RateLimitHit`` record to the backend.
+
+        Errors are caught and logged — a failure to record a hit must never
+        affect the 429 response already being built.
+        """
+        try:
+            from shield.core.rate_limit.models import RateLimitHit
+
+            now = datetime.now(UTC)
+            hit = RateLimitHit(
+                id=str(uuid.uuid4()),
+                timestamp=now,
+                path=path,
+                method=method,
+                key=result.key,
+                limit=result.limit,
+                tier=result.tier,
+                reset_at=result.reset_at,
+            )
+            await self.backend.write_rate_limit_hit(hit)
+        except Exception:
+            logger.exception("shield: failed to record rate limit hit for %r", path)
+
+    async def get_rate_limit_hits(
+        self,
+        path: str | None = None,
+        limit: int = 100,
+    ) -> list[Any]:
+        """Return recent rate limit hits from the backend."""
+        return await self.backend.get_rate_limit_hits(path=path, limit=limit)
+
+    async def reset_rate_limit(
+        self,
+        path: str,
+        method: str | None = None,
+        *,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> None:
+        """Reset rate limit counters for *path*.
+
+        Parameters
+        ----------
+        path:
+            Route path template.
+        method:
+            When provided, only resets counters for this method.
+            When ``None``, resets all methods.
+        """
+        if self._rate_limiter is None:
+            return
+        await self._rate_limiter.reset(path=path, method=method)
+        composite = f"{method.upper()}:{path}" if method else path
+        await self._audit_rl(
+            path=composite,
+            action="rl_reset",
+            actor=actor,
+            platform=platform,
+        )
+
+    async def set_rate_limit_policy(
+        self,
+        path: str,
+        method: str,
+        limit: str,
+        *,
+        algorithm: str | None = None,
+        key_strategy: str | None = None,
+        burst: int = 0,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> Any:
+        """Persist a rate limit policy for *path*/*method* and register it live.
+
+        Persists to the backend so the policy survives restarts and is
+        visible to other instances.  Also registers the policy in-process
+        so it takes effect immediately without a restart.
+
+        Returns the ``RateLimitPolicy`` instance.
+        """
+        from shield.core.rate_limit.models import (
+            RateLimitAlgorithm,
+            RateLimitKeyStrategy,
+            RateLimitPolicy,
+        )
+
+        algo = RateLimitAlgorithm(algorithm) if algorithm else RateLimitAlgorithm.FIXED_WINDOW
+        key_strat = RateLimitKeyStrategy(key_strategy) if key_strategy else RateLimitKeyStrategy.IP
+        composite = f"{method.upper()}:{path}"
+        is_update = composite in self._rate_limit_policies
+        policy = RateLimitPolicy(
+            path=path,
+            method=method.upper(),
+            limit=limit,
+            algorithm=algo,
+            key_strategy=key_strat,
+            burst=burst,
+        )
+        # Register live in the rate limiter (initialises it if needed).
+        await self.register_rate_limit(path=path, method=method.upper(), policy=policy)
+        # Persist so other instances + restarts pick it up.
+        await self.backend.set_rate_limit_policy(path, method, policy.model_dump(mode="json"))
+        logger.info(
+            "shield: rate limit policy %s for %s %s (%s) by %s",
+            "updated" if is_update else "set",
+            method,
+            path,
+            limit,
+            actor,
+        )
+        await self._audit_rl(
+            path=composite,
+            action="rl_policy_updated" if is_update else "rl_policy_set",
+            actor=actor,
+            reason=f"{limit} · {algo} · {key_strat}",
+            platform=platform,
+        )
+        return policy
+
+    async def delete_rate_limit_policy(
+        self,
+        path: str,
+        method: str,
+        *,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> None:
+        """Remove a rate limit policy for *path*/*method*.
+
+        Removes from the in-process registry and from the backend so the
+        removal is permanent across restarts.
+        """
+        key = f"{method.upper()}:{path}"
+        self._rate_limit_policies.pop(key, None)
+        await self.backend.delete_rate_limit_policy(path, method)
+        logger.info("shield: rate limit policy deleted for %s %s by %s", method, path, actor)
+        await self._audit_rl(
+            path=key,
+            action="rl_policy_deleted",
+            actor=actor,
+            platform=platform,
+        )
+
+    async def restore_rate_limit_policies(self) -> None:
+        """Load persisted rate limit policies from the backend into memory.
+
+        Called at the end of ``register_batch()`` so that CLI-set policies
+        (which are persisted) override decorator-registered ones.  Also
+        useful for re-hydrating the in-process registry after a restart.
+        """
+        try:
+            policy_dicts = await self.backend.get_rate_limit_policies()
+        except Exception:
+            logger.exception("shield: failed to restore rate limit policies from backend")
+            return
+
+        if not policy_dicts:
+            return
+
+        for policy_data in policy_dicts:
+            try:
+                from shield.core.rate_limit.models import RateLimitPolicy
+
+                policy = RateLimitPolicy.model_validate(policy_data)
+                await self.register_rate_limit(
+                    path=policy.path, method=policy.method, policy=policy
+                )
+            except Exception:
+                logger.exception("shield: failed to restore rate limit policy %r", policy_data)
+
+    # ------------------------------------------------------------------
     # Read methods
     # ------------------------------------------------------------------
 
@@ -822,7 +1121,7 @@ class ShieldEngine:
         reason: str = "",
         platform: str = "system",
     ) -> None:
-        """Write an audit entry for a state change."""
+        """Write an audit entry for a route state change."""
         entry = AuditEntry(
             id=str(uuid.uuid4()),
             timestamp=datetime.now(UTC),
@@ -833,5 +1132,25 @@ class ShieldEngine:
             reason=reason,
             previous_status=previous_status,
             new_status=new_status,
+        )
+        await self.backend.write_audit(entry)
+
+    async def _audit_rl(
+        self,
+        path: str,
+        action: str,
+        actor: str = "system",
+        reason: str = "",
+        platform: str = "system",
+    ) -> None:
+        """Write an audit entry for a rate limit policy mutation."""
+        entry = AuditEntry(
+            id=str(uuid.uuid4()),
+            timestamp=datetime.now(UTC),
+            path=path,
+            action=action,
+            actor=actor,
+            platform=platform,
+            reason=reason,
         )
         await self.backend.write_audit(entry)

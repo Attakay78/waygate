@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from datetime import datetime
 
 
@@ -87,3 +88,58 @@ class RouteProtectedException(ShieldException):
             "have its state changed. Remove the decorator first if you need "
             "to control this route's lifecycle."
         )
+
+
+class RateLimitExceededException(ShieldException):
+    """Raised when a request exceeds the configured rate limit for a route.
+
+    Carries all metadata needed to build the 429 response and set the
+    RFC-compliant ``Retry-After``, ``X-RateLimit-*`` response headers.
+    """
+
+    def __init__(
+        self,
+        limit: str,
+        retry_after_seconds: int,
+        reset_at: datetime,
+        remaining: int,
+        key: str,
+    ) -> None:
+        self.limit = limit
+        self.retry_after_seconds = retry_after_seconds
+        self.reset_at = reset_at
+        self.remaining = remaining
+        self.key = key
+        super().__init__(f"Rate limit exceeded: {limit}")
+
+
+class ShieldProductionWarning(UserWarning):
+    """Emitted when a configuration is valid but has known limitations in
+    production multi-worker deployments.
+
+    The feature will work correctly for single-process deployments.
+
+    Suppress with ``warnings.filterwarnings("ignore",
+    category=ShieldProductionWarning)`` if you understand and accept the
+    limitation.
+    """
+
+    pass
+
+
+# Keep ``warnings`` importable without side effects — just expose the symbol.
+__all__ = [
+    "ShieldException",
+    "MaintenanceException",
+    "EnvGatedException",
+    "RouteDisabledException",
+    "RouteNotFoundException",
+    "AmbiguousRouteError",
+    "RouteProtectedException",
+    "RateLimitExceededException",
+    "ShieldProductionWarning",
+]
+
+# Silence "imported but unused" linter warning for the ``warnings`` stdlib
+# module that is imported at the top of this file.
+_ = warnings

@@ -5,11 +5,16 @@ from __future__ import annotations
 import asyncio
 from collections import defaultdict, deque
 from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING, Any
 
 from shield.core.backends.base import ShieldBackend
 from shield.core.models import AuditEntry, RouteState
 
+if TYPE_CHECKING:
+    from shield.core.rate_limit.models import RateLimitHit
+
 _MAX_AUDIT_ENTRIES = 1000
+_DEFAULT_MAX_RL_HIT_ENTRIES = 10_000
 
 
 class MemoryBackend(ShieldBackend):
@@ -22,15 +27,31 @@ class MemoryBackend(ShieldBackend):
     per-path index (``dict[path, list[AuditEntry]]``) so that filtered
     queries — ``get_audit_log(path=...)`` — are O(k) where k is the number
     of entries for that specific path, not O(total entries).
+
+    Rate limit hits are **aggregated**: consecutive blocks from the same
+    ``(path, method, key)`` are grouped into a single ``RateLimitHit``
+    entry whose ``count`` increments and ``last_hit_at`` advances on every
+    subsequent block.  A new group is started once ``max_rl_hits_per_group``
+    is reached.  This prevents a flood of 429s from a single client from
+    saturating the hit log.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        max_rl_hit_entries: int = _DEFAULT_MAX_RL_HIT_ENTRIES,
+    ) -> None:
         self._states: dict[str, RouteState] = {}
         # Ordered audit log — deque gives O(1) append and O(1) popleft eviction.
         self._audit: deque[AuditEntry] = deque()
         # Per-path index for O(1)-lookup filtered audit queries.
         self._audit_by_path: defaultdict[str, list[AuditEntry]] = defaultdict(list)
         self._subscribers: list[asyncio.Queue[RouteState]] = []
+        self._max_rl_hit_entries = max_rl_hit_entries
+        # Rate limit hit log — newest-first deque, capped at max_rl_hit_entries.
+        self._rate_limit_hits: deque[RateLimitHit] = deque()
+        self._rl_hits_by_path: defaultdict[str, list[RateLimitHit]] = defaultdict(list)
+        # Rate limit policy store — keyed "METHOD:/path" → policy dict.
+        self._rl_policies: dict[str, dict[str, Any]] = {}
 
     async def get_state(self, path: str) -> RouteState:
         """Return the current state for *path*.
@@ -98,3 +119,42 @@ class MemoryBackend(ShieldBackend):
                 yield state
         finally:
             self._subscribers.remove(queue)
+
+    async def write_rate_limit_hit(self, hit: RateLimitHit) -> None:
+        """Append a rate limit hit record, evicting the oldest when the cap is reached."""
+        if len(self._rate_limit_hits) >= self._max_rl_hit_entries:
+            evicted = self._rate_limit_hits.popleft()
+            path_list = self._rl_hits_by_path.get(evicted.path)
+            if path_list:
+                try:
+                    path_list.remove(evicted)
+                except ValueError:
+                    pass
+
+        self._rate_limit_hits.append(hit)
+        self._rl_hits_by_path[hit.path].append(hit)
+
+    async def get_rate_limit_hits(
+        self,
+        path: str | None = None,
+        limit: int = 100,
+    ) -> list[RateLimitHit]:
+        """Return rate limit hits, newest first, optionally filtered by *path*."""
+        if path is None:
+            return list(reversed(self._rate_limit_hits))[:limit]
+        path_entries = self._rl_hits_by_path.get(path, [])
+        return list(reversed(path_entries))[:limit]
+
+    async def set_rate_limit_policy(
+        self, path: str, method: str, policy_data: dict[str, Any]
+    ) -> None:
+        """Persist *policy_data* for *path*/*method*."""
+        self._rl_policies[f"{method.upper()}:{path}"] = policy_data
+
+    async def get_rate_limit_policies(self) -> list[dict[str, Any]]:
+        """Return all persisted rate limit policies."""
+        return list(self._rl_policies.values())
+
+    async def delete_rate_limit_policy(self, path: str, method: str) -> None:
+        """Remove the persisted rate limit policy for *path*/*method*."""
+        self._rl_policies.pop(f"{method.upper()}:{path}", None)

@@ -17,6 +17,7 @@ from unittest.mock import patch
 import anyio
 import httpx
 import pytest
+import pytest as _pytest
 from typer.testing import CliRunner
 
 from shield.admin.app import ShieldAdmin
@@ -25,6 +26,7 @@ from shield.cli.main import _parse_dt, _parse_route, _parse_until
 from shield.cli.main import cli as app
 from shield.core.engine import ShieldEngine
 from shield.core.models import RouteState, RouteStatus
+from shield.core.rate_limit.storage import HAS_LIMITS
 
 runner = CliRunner()
 
@@ -593,3 +595,83 @@ def test_invalid_method_raises_error() -> None:
     _open_client(e)
     result = runner.invoke(app, ["disable", "BREW:/payments"], catch_exceptions=False)
     assert result.exit_code != 0
+
+
+# ---------------------------------------------------------------------------
+# Rate limit CLI commands
+# ---------------------------------------------------------------------------
+
+_rl_skipif = _pytest.mark.skipif(not HAS_LIMITS, reason="limits library not installed")
+
+
+@_rl_skipif
+def test_rl_set_creates_policy() -> None:
+    """shield rl set GET:/api/items 10/minute — METHOD:/path form."""
+    e = _seed_engine("/api/items")
+    client = _open_client(e)
+    result = invoke_with_client(client, "rl", "set", "GET:/api/items", "10/minute")
+    assert result.exit_code == 0, result.output
+    assert "10/minute" in result.output
+
+
+@_rl_skipif
+def test_rl_set_path_only_defaults_to_get() -> None:
+    """shield rl set /api/items 10/minute — plain /path defaults to GET."""
+    e = _seed_engine("/api/items")
+    client = _open_client(e)
+    result = invoke_with_client(client, "rl", "set", "/api/items", "10/minute")
+    assert result.exit_code == 0, result.output
+    assert "10/minute" in result.output
+
+
+@_rl_skipif
+def test_rl_set_with_method_and_algorithm() -> None:
+    """shield rl set POST:/api/pay 5/second --algorithm fixed_window."""
+    e = _seed_engine("/api/pay")
+    client = _open_client(e)
+    result = invoke_with_client(
+        client,
+        "rl",
+        "set",
+        "POST:/api/pay",
+        "5/second",
+        "--algorithm",
+        "fixed_window",
+    )
+    assert result.exit_code == 0, result.output
+    assert "fixed_window" in result.output
+
+
+@_rl_skipif
+def test_rl_list_shows_policies() -> None:
+    e = _seed_engine("/api/items")
+    client = _open_client(e)
+    invoke_with_client(client, "rl", "set", "GET:/api/items", "100/hour")
+    result = invoke_with_client(client, "rate-limits", "list")  # both aliases work
+    assert result.exit_code == 0, result.output
+    assert "api" in result.output  # /api/items path shown
+
+
+@_rl_skipif
+def test_rl_delete_removes_policy() -> None:
+    """shield rl delete GET:/api/items — METHOD:/path form."""
+    e = _seed_engine("/api/items")
+    client = _open_client(e)
+    invoke_with_client(client, "rl", "set", "GET:/api/items", "10/minute")
+    result = invoke_with_client(client, "rl", "delete", "GET:/api/items")
+    assert result.exit_code == 0, result.output
+    assert "deleted" in result.output.lower()
+
+    policies = _do_async(lambda: e.backend.get_rate_limit_policies())
+    assert policies == []
+
+
+@_rl_skipif
+def test_rl_delete_path_only_defaults_to_get() -> None:
+    """shield rl delete /api/items — plain /path defaults to GET."""
+    e = _seed_engine("/api/items")
+    client = _open_client(e)
+    invoke_with_client(client, "rl", "set", "GET:/api/items", "10/minute")
+    result = invoke_with_client(client, "rl", "delete", "/api/items")
+    assert result.exit_code == 0, result.output
+    assert "deleted" in result.output.lower()

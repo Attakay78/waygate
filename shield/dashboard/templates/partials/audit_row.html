@@ -37,7 +37,24 @@
         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500 font-mono">{{ entry.platform }}</span>
         {% endif %}
     </td>
+    {% set rl_action_colors = {
+        "rl_policy_set":     "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+        "rl_policy_updated": "bg-amber-50 text-amber-700 ring-amber-600/20",
+        "rl_reset":          "bg-sky-50 text-sky-700 ring-sky-600/20",
+        "rl_policy_deleted": "bg-red-50 text-red-700 ring-red-600/20"
+    } %}
+    {% set rl_action_labels = {
+        "rl_policy_set":     "set",
+        "rl_policy_updated": "update",
+        "rl_reset":          "reset",
+        "rl_policy_deleted": "delete"
+    } %}
     <td class="px-4 py-3">
+        {% if entry.action in rl_action_labels %}
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ring-1 ring-inset {{ rl_action_colors.get(entry.action, 'bg-slate-100 text-slate-500 ring-slate-400/20') }}">
+            {{ rl_action_labels[entry.action] }}
+        </span>
+        {% elif entry.previous_status is not none and entry.new_status is not none %}
         <div class="flex items-center gap-1.5 flex-wrap">
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ring-1 ring-inset {{ status_colors.get(entry.previous_status, 'bg-slate-100 text-slate-500 ring-slate-400/20') }}">
                 {{ entry.previous_status }}
@@ -49,6 +66,9 @@
                 {{ entry.new_status }}
             </span>
         </div>
+        {% else %}
+        <span class="text-xs text-slate-400">—</span>
+        {% endif %}
     </td>
     <td class="px-4 py-3 text-xs text-slate-500 max-w-xs hidden md:table-cell">
         <span class="truncate block" title="{{ entry.reason }}">{{ entry.reason or "—" }}</span>

@@ -6,6 +6,7 @@ All decorators are importable from `shield.fastapi` or directly from `shield.fas
 
 ```python
 from shield.fastapi import maintenance, disabled, env_only, force_active, deprecated
+from shield.fastapi.decorators import rate_limit
 ```
 
 !!! tip "Decorator order"
@@ -347,6 +348,7 @@ app.add_middleware(
 | `"maintenance"` | `MaintenanceException` (per-route or global) | 503 JSON |
 | `"disabled"` | `RouteDisabledException` | 503 JSON |
 | `"env_gated"` | `EnvGatedException` | Silent 404 |
+| `"rate_limited"` | `RateLimitExceededException` | 429 JSON |
 
 ---
 
@@ -367,8 +369,64 @@ The `exc` argument carries useful context for building your response:
 | Maintenance | `MaintenanceException` | `exc.reason`, `exc.retry_after`, `exc.path` |
 | Disabled | `RouteDisabledException` | `exc.reason`, `exc.path` |
 | Env-gated | `EnvGatedException` | `exc.path`, `exc.current_env`, `exc.allowed_envs` |
+| Rate limited | `RateLimitExceededException` | `exc.limit`, `exc.retry_after_seconds`, `exc.reset_at`, `exc.remaining`, `exc.key` |
 
 Read more in [Exceptions](exceptions.md).
+
+---
+
+## `@rate_limit`
+
+Cap the number of requests a client can make in a given time window. Returns **429** with `Retry-After` and `X-RateLimit-*` headers when the limit is exceeded.
+
+```python
+from shield.fastapi.decorators import rate_limit
+
+@router.get("/public/posts")
+@rate_limit("10/minute")
+async def list_posts():
+    return {"posts": [...]}
+```
+
+### Basic parameters
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `limit` | `str \| dict` | required | `"100/minute"` or a tier dict `{"free": "10/minute", "pro": "100/minute"}` |
+| `algorithm` | `str` | `"fixed_window"` | `fixed_window`, `sliding_window`, `moving_window`, or `token_bucket` |
+| `key` | `str \| callable` | `"ip"` | `"ip"`, `"user"`, `"api_key"`, `"global"`, or an async callable |
+| `on_missing_key` | `str \| None` | strategy default | `"exempt"`, `"fallback_ip"`, or `"block"` |
+| `burst` | `int` | `0` | Extra requests above the base limit |
+| `exempt_ips` | `list[str] \| None` | `[]` | CIDR ranges that bypass the limit |
+| `exempt_roles` | `list[str] \| None` | `[]` | Roles that bypass the limit |
+
+### Key strategies
+
+```python
+@rate_limit("100/minute")                          # per IP (default)
+@rate_limit("100/minute", key="user")              # per request.state.user_id
+@rate_limit("50/minute",  key="api_key")           # per X-API-Key header
+@rate_limit("5/minute",   key="global")            # shared counter for all callers
+@rate_limit("100/minute", key=my_async_fn)         # custom extractor
+```
+
+### Tiered limits
+
+```python
+@rate_limit(
+    {"free": "10/minute", "pro": "100/minute", "enterprise": "unlimited"},
+    key="user",
+)
+```
+
+The tier is read from `request.state.plan` by default. Override with `tier_resolver="your_attr"`.
+
+!!! tip "Requires installation"
+    ```bash
+    uv add "api-shield[rate-limit]"
+    ```
+
+See [**Tutorial: Rate Limiting**](../tutorial/rate-limiting.md) and [**Reference: Rate Limiting**](rate-limiting.md) for the full API.
 
 ---
 

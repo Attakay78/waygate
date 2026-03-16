@@ -1,7 +1,7 @@
 <div align="center">
   <img src="api-shield-logo.svg" alt="API Shield" width="600"/>
 
-  <p><strong>Route lifecycle management for Python web frameworks — maintenance mode, environment gating, deprecation, admin panels, and more. No restarts required.</strong></p>
+  <p><strong>Route(API) lifecycle management for Python web frameworks — maintenance mode, environment gating, deprecation, rate limiting, admin panels, and more. No restarts required.</strong></p>
 
   <a href="https://pypi.org/project/api-shield"><img src="https://img.shields.io/pypi/v/api-shield?color=F59E0B&label=pypi&cacheSeconds=300" alt="PyPI"></a>
   <a href="https://pypi.org/project/api-shield"><img src="https://img.shields.io/pypi/pyversions/api-shield?color=F59E0B" alt="Python versions"></a>
@@ -30,6 +30,7 @@
 | ⏰ **Scheduled windows** | `asyncio`-native scheduler — maintenance windows activate and deactivate automatically |
 | 🔔 **Webhooks** | Fire HTTP POST on every state change — built-in Slack formatter and custom formatters supported |
 | 🎨 **Custom responses** | Return HTML, redirects, or any response shape for blocked routes — per-route or app-wide default |
+| 🚦 **Rate limiting** | Per-IP, per-user, per-API-key, or global counters — tiered limits, burst allowance, runtime mutation |
 
 ---
 
@@ -93,6 +94,7 @@ shield global enable --reason "Deploying v2" --exempt /health
 | `@env_only("dev", "staging")` | Restricted to named environments | 404 elsewhere |
 | `@deprecated(sunset, use_instead)` | Still works, injects deprecation headers | 200 |
 | `@force_active` | Bypasses all shield checks | Always 200 |
+| `@rate_limit("100/minute")` | Cap requests per IP, user, API key, or globally | 429 |
 ### Custom responses
 
 By default, blocked routes return a structured JSON error body. You can replace it with anything — HTML, a redirect, plain text, or your own JSON — in two ways:
@@ -137,6 +139,42 @@ app.add_middleware(
 
 Resolution order: **per-route `response=`** → **global `responses[...]`** → **built-in JSON**. The factory can be sync or async and receives the live `Request` and the `ShieldException` that triggered the block.
 
+## Rate limiting
+
+```python
+from shield.fastapi.decorators import rate_limit
+
+@router.get("/public/posts")
+@rate_limit("10/minute")               # 10 req/min per IP
+async def list_posts():
+    return {"posts": [...]}
+
+@router.get("/users/me")
+@rate_limit("100/minute", key="user")  # per authenticated user
+async def get_current_user():
+    ...
+
+@router.get("/reports")
+@rate_limit(                           # tiered limits
+    {"free": "10/minute", "pro": "100/minute", "enterprise": "unlimited"},
+    key="user",
+)
+async def get_reports():
+    ...
+```
+
+Policies can be mutated at runtime without redeploying (`shield rl` and `shield rate-limits` are aliases):
+
+```bash
+shield rl set GET:/public/posts 20/minute   # raise the limit live
+shield rl reset GET:/public/posts           # clear counters
+shield rl hits                              # blocked requests log
+```
+
+Requires `api-shield[rate-limit]`. Powered by [limits](https://limits.readthedocs.io/en/stable/).
+
+---
+
 ## Backends
 
 | Backend | Persistence | Multi-instance |
@@ -144,6 +182,8 @@ Resolution order: **per-route `response=`** → **global `responses[...]`** → 
 | `MemoryBackend` | No | No |
 | `FileBackend` | Yes | No |
 | `RedisBackend` | Yes | Yes |
+
+For rate limiting in multi-worker deployments, use `RedisBackend` — counters are atomic and shared across all processes.
 
 ---
 
@@ -155,6 +195,7 @@ Full documentation at **[attakay78.github.io/api-shield](https://attakay78.githu
 |---|---|
 | [Tutorial](https://attakay78.github.io/api-shield/tutorial/installation/) | Get started in 5 minutes |
 | [Decorators reference](https://attakay78.github.io/api-shield/reference/decorators/) | All decorator options |
+| [Rate limiting](https://attakay78.github.io/api-shield/tutorial/rate-limiting/) | Per-IP, per-user, tiered limits |
 | [ShieldEngine reference](https://attakay78.github.io/api-shield/reference/engine/) | Programmatic control |
 | [Backends](https://attakay78.github.io/api-shield/tutorial/backends/) | Memory, File, Redis, custom |
 | [Admin dashboard](https://attakay78.github.io/api-shield/tutorial/admin-dashboard/) | Mounting ShieldAdmin |

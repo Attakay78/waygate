@@ -176,6 +176,30 @@ app = FastAPI(lifespan=lifespan)
 
 ---
 
+---
+
+## Rate limit storage
+
+Rate limit counters live separately from route state. The storage is auto-selected based on your main backend — you do not need to configure it separately.
+
+| Backend | Rate limit storage | Multi-worker safe |
+|---|---|---|
+| `MemoryBackend` | In-process `MemoryRateLimitStorage` | No |
+| `FileBackend` | In-memory counters with periodic snapshot (`FileRateLimitStorage`) | No |
+| `RedisBackend` | Atomic Redis counters (`RedisRateLimitStorage`) | Yes |
+
+For production deployments with multiple workers, use `RedisBackend`. Redis counters are atomic and shared across all processes.
+
+```python
+# Rate limit counters automatically use Redis when the main backend is Redis
+engine = ShieldEngine(backend=RedisBackend("redis://localhost:6379/0"))
+```
+
+!!! warning "FileBackend and multi-worker"
+    `FileRateLimitStorage` uses in-memory counters. Each worker process maintains its own independent counter, so the effective limit per client is `limit * num_workers`. Use `RedisBackend` for any deployment with more than one worker.
+
+---
+
 ## Next step
 
-[**Tutorial: Admin dashboard →**](admin-dashboard.md)
+[**Tutorial: Rate Limiting →**](rate-limiting.md)

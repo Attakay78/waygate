@@ -20,6 +20,52 @@ from starlette.routing import Route
 from shield.core.engine import ShieldEngine
 
 
+async def _register_rate_limit_from_meta(
+    path: str, method: str, meta: dict[str, Any], engine: ShieldEngine
+) -> None:
+    """Register a rate limit policy from ``__shield_meta__`` if present.
+
+    Called during route scanning.  A missing ``limits`` library is silently
+    ignored here — the ImportError fires later when the first policy is
+    registered, giving a clear message about what to install.
+    """
+    rl_meta = meta.get("rate_limit")
+    if not rl_meta:
+        return
+    try:
+        from shield.core.rate_limit.models import (
+            OnMissingKey,
+            RateLimitAlgorithm,
+            RateLimitKeyStrategy,
+            RateLimitPolicy,
+            RateLimitTier,
+        )
+
+        tiers = [RateLimitTier(**t) for t in rl_meta.get("tiers", [])]
+        policy = RateLimitPolicy(
+            path=path,
+            method=method,
+            limit=rl_meta["limit"],
+            algorithm=RateLimitAlgorithm(rl_meta.get("algorithm", "sliding_window")),
+            key_strategy=RateLimitKeyStrategy(rl_meta.get("key_strategy", "ip")),
+            on_missing_key=(
+                OnMissingKey(rl_meta["on_missing_key"]) if rl_meta.get("on_missing_key") else None
+            ),
+            burst=rl_meta.get("burst", 0),
+            tiers=tiers,
+            tier_resolver=rl_meta.get("tier_resolver", "plan"),
+            exempt_ips=rl_meta.get("exempt_ips", []),
+            exempt_roles=rl_meta.get("exempt_roles", []),
+        )
+        await engine.register_rate_limit(path=path, method=method, policy=policy)
+    except Exception as exc:
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "shield: failed to register rate limit for %s %s: %s", method, path, exc
+        )
+
+
 async def scan_routes(app: Any, engine: ShieldEngine) -> None:
     """Scan *app*'s routes and register them with *engine*.
 
@@ -71,8 +117,11 @@ async def scan_routes(app: Any, engine: ShieldEngine) -> None:
         if methods:
             for method in sorted(methods):
                 routes_to_register.append((f"{method}:{route.path}", meta))
+                # Register rate limit policy if declared on the endpoint.
+                await _register_rate_limit_from_meta(route.path, method, meta, engine)
         else:
             routes_to_register.append((route.path, meta))
+            await _register_rate_limit_from_meta(route.path, "ALL", meta, engine)
 
     await engine.register_batch(routes_to_register)
 
@@ -96,6 +145,8 @@ class ShieldRouter(APIRouter):
         self._shield_engine = engine
         # Collect (path, meta) pairs discovered via add_api_route.
         self._shield_routes: list[tuple[str, dict[str, Any]]] = []
+        # Collect (path, method, meta) triples for rate limit registration.
+        self._shield_rl_routes: list[tuple[str, str, dict[str, Any]]] = []
         # Register the startup hook so FastAPI picks it up automatically.
         self.on_startup.append(self.register_shield_routes)
 
@@ -148,9 +199,14 @@ class ShieldRouter(APIRouter):
             # controlled independently: GET:/payments, POST:/payments, etc.
             for method in sorted(methods):
                 self._shield_routes.append((f"{method}:{full_path}", meta))
+                # Collect rate limit registrations for startup.
+                if meta.get("rate_limit"):
+                    self._shield_rl_routes.append((full_path, method, meta))
         else:
             # No methods known — fall back to path-level (all-methods) key.
             self._shield_routes.append((full_path, meta))
+            if meta.get("rate_limit"):
+                self._shield_rl_routes.append((full_path, "ALL", meta))
 
     # ------------------------------------------------------------------
     # Startup: register all discovered routes with the engine
@@ -173,6 +229,9 @@ class ShieldRouter(APIRouter):
         listener when using ``RedisBackend``).
         """
         await self._shield_engine.register_batch(list(self._shield_routes))
+        # Register rate limit policies after route state registration.
+        for path, method, meta in self._shield_rl_routes:
+            await _register_rate_limit_from_meta(path, method, meta, self._shield_engine)
         await self._shield_engine.start()
 
     # ------------------------------------------------------------------
