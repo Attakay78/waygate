@@ -52,9 +52,9 @@ ShieldMiddleware.dispatch()
 
 ## Route registration
 
-The middleware auto-registers routes on first startup by scanning for `__shield_meta__` on route handlers. This works with any router type — plain `APIRouter`, `ShieldRouter`, or routes added directly to the `FastAPI` app.
+The middleware auto-registers routes on first startup by scanning for `__shield_meta__` on route handlers. This works with any router type: plain `APIRouter`, `ShieldRouter`, or routes added directly to the `FastAPI` app.
 
-If a route already has persisted state in the backend (e.g. written by a previous CLI command), the decorator default is **ignored** and the persisted state wins. This means runtime changes survive restarts.
+If a route already has persisted state in the backend (for example, written by a previous CLI command), the decorator default is **ignored** and the persisted state wins. This means runtime changes survive restarts.
 
 ---
 
@@ -62,8 +62,8 @@ If a route already has persisted state in the backend (e.g. written by a previou
 
 The following paths always pass through regardless of shield state:
 
-- `/docs`, `/redoc`, `/openapi.json` — API documentation
-- `/shield/` — admin dashboard prefix
+- `/docs`, `/redoc`, `/openapi.json`: API documentation
+- `/shield/`: admin dashboard prefix
 
 You can exclude additional paths by using `@force_active` on those routes.
 
@@ -71,7 +71,7 @@ You can exclude additional paths by using `@force_active` on those routes.
 
 ## Global maintenance mode
 
-The middleware also enforces **global** maintenance mode — a single switch that blocks every route at once:
+The middleware also enforces **global** maintenance mode, a single switch that blocks every route at once:
 
 ```python
 # Block everything immediately
@@ -116,7 +116,7 @@ All error responses from the middleware use a consistent JSON structure:
 
 ## OpenAPI integration
 
-Add OpenAPI filtering to hide disabled/env-gated routes from `/docs` and `/redoc`:
+Add OpenAPI filtering to hide disabled and env-gated routes from `/docs` and `/redoc`:
 
 ```python
 from shield.fastapi.openapi import apply_shield_to_openapi

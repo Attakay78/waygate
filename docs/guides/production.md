@@ -8,7 +8,7 @@ This guide covers practical patterns for integrating api-shield into the scripts
 
 ### Poll route health via the REST API
 
-The `ShieldAdmin` REST API is JSON over HTTP — any monitoring tool that can make an HTTP request can query it. No `shield` CLI install needed on the monitoring host.
+The `ShieldAdmin` REST API is JSON over HTTP, so any monitoring tool that can make an HTTP request can query it. No `shield` CLI install needed on the monitoring host.
 
 ```bash
 #!/usr/bin/env bash
@@ -126,7 +126,7 @@ Webhook payload sent on every state change:
 }
 ```
 
-Webhook failures are non-blocking — they are logged and never affect the request path.
+Webhook failures are non-blocking; they are logged and never affect the request path.
 
 ---
 

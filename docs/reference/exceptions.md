@@ -1,14 +1,35 @@
 # Exceptions
 
-All shield exceptions are defined in `shield.core.exceptions`. They are raised by `engine.check()` and caught by `ShieldMiddleware` to produce structured error responses.
+All shield exceptions are defined in `shield.core.exceptions`. The engine raises them from `engine.check()`, and `ShieldMiddleware` catches them to produce the appropriate HTTP response.
 
-You generally do not need to import these unless you are building a custom middleware or adapter.
+```python
+from shield.core.exceptions import (
+    ShieldException,
+    MaintenanceException,
+    RouteDisabledException,
+    EnvGatedException,
+)
+```
+
+!!! note "You usually don't import these directly"
+    In a standard FastAPI setup, `ShieldMiddleware` handles all exceptions automatically. You only need to import them if you are building a custom adapter, custom response factory, or writing tests that inspect the raised exception.
+
+---
+
+## Exception hierarchy
+
+```
+ShieldException
+├── MaintenanceException
+├── RouteDisabledException
+└── EnvGatedException
+```
 
 ---
 
 ## ShieldException
 
-Base class for all shield exceptions.
+Base class for all api-shield exceptions. Catch this if you want a single handler for any shield-raised error.
 
 ```python
 from shield.core.exceptions import ShieldException
@@ -18,74 +39,108 @@ from shield.core.exceptions import ShieldException
 
 ## MaintenanceException
 
-Raised when a route is in maintenance mode.
+Raised by `engine.check()` when a route (or the entire system via global maintenance) is in maintenance mode.
 
 ```python
 from shield.core.exceptions import MaintenanceException
 ```
 
+### Attributes
+
 | Attribute | Type | Description |
 |---|---|---|
-| `reason` | `str` | Human-readable maintenance reason |
-| `retry_after` | `datetime \| None` | End of maintenance window (for `Retry-After` header) |
-| `path` | `str` | Route path |
+| `reason` | `str` | Human-readable maintenance reason, passed from the decorator or engine call |
+| `retry_after` | `datetime \| None` | End of the maintenance window. The middleware writes this to the `Retry-After` response header so clients know when to retry. `None` if no window was scheduled. |
+| `path` | `str` | The route key that triggered the exception |
+
+### In a custom response factory
+
+```python title="accessing exception attributes"
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
+from shield.core.exceptions import MaintenanceException
+
+def maintenance_page(request: Request, exc: MaintenanceException) -> HTMLResponse:
+    retry_msg = ""
+    if exc.retry_after:
+        retry_msg = f"<p>Back at {exc.retry_after.strftime('%H:%M UTC')}</p>"
+
+    return HTMLResponse(
+        f"<h1>Under Maintenance</h1><p>{exc.reason}</p>{retry_msg}",
+        status_code=503,
+    )
+```
 
 ---
 
 ## RouteDisabledException
 
-Raised when a route is permanently disabled.
+Raised by `engine.check()` when a route has been permanently disabled.
 
 ```python
 from shield.core.exceptions import RouteDisabledException
 ```
 
+### Attributes
+
 | Attribute | Type | Description |
 |---|---|---|
-| `reason` | `str` | Reason for disabling |
-| `path` | `str` | Route path |
+| `reason` | `str` | The reason the route was disabled |
+| `path` | `str` | The route key |
 
 ---
 
 ## EnvGatedException
 
-Raised when a route is restricted to specific environments and the current environment is not in the allowed list.
+Raised by `engine.check()` when a route is restricted to specific environments and the current environment is not in the allowed list.
 
 ```python
 from shield.core.exceptions import EnvGatedException
 ```
 
+### Attributes
+
 | Attribute | Type | Description |
 |---|---|---|
-| `path` | `str` | Route path |
-| `current_env` | `str` | The active environment |
-| `allowed_envs` | `list[str]` | Environments where the route is accessible |
+| `path` | `str` | The route key |
+| `current_env` | `str` | The active environment name (the value `ShieldEngine` was constructed with) |
+| `allowed_envs` | `list[str]` | The environments where the route is accessible |
 
-!!! note
-    `ShieldMiddleware` returns a **404 with no body** for `EnvGatedException` — intentionally silent to avoid revealing that the path exists.
+!!! note "ShieldMiddleware returns 404, not 403"
+    When `ShieldMiddleware` catches an `EnvGatedException`, it returns a 404 with **no response body**. This is intentional — a 403 would reveal that the route exists but is forbidden, leaking internal information.
 
 ---
 
 ## Using exceptions in custom adapters
 
-If you are building an adapter for a framework other than FastAPI, catch these exceptions in your middleware/handler:
+If you are building an adapter for a framework other than FastAPI, catch these exceptions in your middleware or request handler and map them to the appropriate HTTP responses.
 
-```python
-from shield.core.exceptions import (
-    MaintenanceException,
-    RouteDisabledException,
-    EnvGatedException,
-)
+??? example "Custom adapter middleware pattern"
 
-try:
-    await engine.check(path, method)
-except MaintenanceException as exc:
-    # Return 503 with Retry-After header
-    ...
-except RouteDisabledException as exc:
-    # Return 503
-    ...
-except EnvGatedException:
-    # Return 404 with no body
-    ...
-```
+    ```python
+    from shield.core.exceptions import (
+        MaintenanceException,
+        RouteDisabledException,
+        EnvGatedException,
+    )
+
+    try:
+        await engine.check(path, method)
+
+    except MaintenanceException as exc:
+        # 503 with Retry-After header
+        headers = {}
+        if exc.retry_after:
+            headers["Retry-After"] = exc.retry_after.isoformat()
+        return Response(503, body={"error": exc.reason}, headers=headers)
+
+    except RouteDisabledException as exc:
+        # 503, no Retry-After
+        return Response(503, body={"error": exc.reason})
+
+    except EnvGatedException:
+        # 404 with no body — intentionally silent
+        return Response(404)
+    ```
+
+See [Building your own adapter](../adapters/custom.md) for a complete working example.

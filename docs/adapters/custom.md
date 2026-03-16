@@ -1,6 +1,6 @@
 # Building Your Own Backend
 
-Any storage layer can be used as a backend by subclassing `ShieldBackend`. api-shield handles everything else — the engine, middleware, decorators, CLI, and audit log all work unchanged.
+Any storage layer can be used as a backend by subclassing `ShieldBackend`. api-shield handles everything else: the engine, middleware, decorators, CLI, and audit log all work unchanged.
 
 ---
 
@@ -45,10 +45,10 @@ class MyBackend(ShieldBackend):
 | Rule | Detail |
 |---|---|
 | `get_state()` must raise `KeyError` | Engine uses `KeyError` to distinguish "not registered" from "registered but active" |
-| Fail-open on errors | Let exceptions bubble up — `ShieldEngine` wraps every backend call and allows requests through on failure |
+| Fail-open on errors | Let exceptions bubble up; `ShieldEngine` wraps every backend call and allows requests through on failure |
 | Thread safety | All methods are async; use your storage library's async client where available |
 | `subscribe()` is optional | Default raises `NotImplementedError`; dashboard SSE falls back to polling |
-| Global maintenance | Inherited from `ShieldBackend` base — no extra work unless you want a dedicated storage path |
+| Global maintenance | Inherited from `ShieldBackend` base; no extra work unless you want a dedicated storage path |
 
 ---
 
@@ -215,13 +215,13 @@ app.add_middleware(ShieldMiddleware, engine=engine)
 app.mount("/shield", ShieldAdmin(engine=engine, auth=("admin", "secret")))
 ```
 
-Everything works from here — decorators, CLI, dashboard, audit log — with SQLite as the storage layer.
+Everything works from here (decorators, CLI, dashboard, audit log) with SQLite as the storage layer.
 
 ---
 
 ## Distributed support
 
-The six abstract methods give you persistence. To unlock full distributed behaviour — live dashboard updates, cross-instance global maintenance sync, and webhook deduplication — implement three additional optional methods. Each one has a default that works correctly for single-instance deployments, so you can add them incrementally.
+The six abstract methods give you persistence. To unlock full distributed behaviour (live dashboard updates, cross-instance global maintenance sync, and webhook deduplication), implement three additional optional methods. Each one has a default that works correctly for single-instance deployments, so you can add them incrementally.
 
 ---
 
@@ -290,13 +290,13 @@ All three raise `NotImplementedError` by default. The engine handles each gracef
 |---|---|
 | `subscribe()` | Dashboard SSE falls back to polling `list_states()` every few seconds |
 | `subscribe_global_config()` | Global maintenance cache is per-process; stale until the process writes its own update |
-| `try_claim_webhook_dispatch()` | Always returns `True` — every instance fires webhooks (over-delivery) |
+| `try_claim_webhook_dispatch()` | Always returns `True`; every instance fires webhooks (over-delivery) |
 
 ---
 
 ### PostgreSQL example
 
-PostgreSQL's `LISTEN` / `NOTIFY` is a built-in pub/sub mechanism that works across connections and processes — no extra broker needed.
+PostgreSQL's `LISTEN` / `NOTIFY` is a built-in pub/sub mechanism that works across connections and processes, with no extra broker needed.
 
 ```python
 """PostgreSQL distributed backend using asyncpg + LISTEN/NOTIFY.
@@ -504,8 +504,8 @@ class PostgresBackend(ShieldBackend):
 | Method | Minimum capability required |
 |---|---|
 | `subscribe()` | Pub/sub or change-data-capture (PostgreSQL `LISTEN/NOTIFY`, MySQL binlog, Kafka, NATS) |
-| `subscribe_global_config()` | Same pub/sub as above — just a separate channel/topic |
-| `try_claim_webhook_dispatch()` | Atomic conditional write — "insert only if absent" (SQL `INSERT … ON CONFLICT DO NOTHING`, DynamoDB `PutItem` with `attribute_not_exists`, etcd transactions, Zookeeper ephemeral nodes, Memcached `add`) |
+| `subscribe_global_config()` | Same pub/sub as above, just a separate channel/topic |
+| `try_claim_webhook_dispatch()` | Atomic conditional write: "insert only if absent" (SQL `INSERT … ON CONFLICT DO NOTHING`, DynamoDB `PutItem` with `attribute_not_exists`, etcd transactions, Zookeeper ephemeral nodes, Memcached `add`) |
 
 ---
 
@@ -513,8 +513,8 @@ class PostgresBackend(ShieldBackend):
 
 If you want to support a framework other than FastAPI, the pattern is:
 
-1. **Middleware** — catch `MaintenanceException`, `RouteDisabledException`, `EnvGatedException` from `engine.check()` and return appropriate responses.
-2. **Route scanning** — at startup, iterate the framework's route list, detect `__shield_meta__`, and call `engine.register()`.
-3. **Decorators** — reuse `shield.fastapi.decorators` as-is (they only stamp metadata; they are framework-agnostic).
+1. **Middleware**: catch `MaintenanceException`, `RouteDisabledException`, `EnvGatedException` from `engine.check()` and return appropriate responses.
+2. **Route scanning**: at startup, iterate the framework's route list, detect `__shield_meta__`, and call `engine.register()`.
+3. **Decorators**: reuse `shield.fastapi.decorators` as-is (they only stamp metadata; they are framework-agnostic).
 
 The shield decorators, engine, and backends have zero framework dependencies and can power any adapter.

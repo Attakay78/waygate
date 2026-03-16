@@ -77,11 +77,11 @@ async def get_payments():
     ...
 ```
 
-1. `@maintenance(...)` stamps `__shield_meta__ = {"status": "maintenance", "reason": "..."}` on the function. The function itself is **not modified** — it still runs normally if called directly.
+1. `@maintenance(...)` stamps `__shield_meta__ = {"status": "maintenance", "reason": "..."}` on the function. The function itself is **not modified**; it still runs normally if called directly.
 
 2. When `app.include_router(router)` is called, `ShieldRouter` scans all routes for `__shield_meta__` and calls `engine.register()` for each one.
 
-3. On every HTTP request, `ShieldMiddleware` calls `engine.check(path)`. If the route is in maintenance, the engine raises `MaintenanceException` and the middleware returns a 503 response — the route handler never executes.
+3. On every HTTP request, `ShieldMiddleware` calls `engine.check(path)`. If the route is in maintenance, the engine raises `MaintenanceException` and the middleware returns a 503 response. The route handler never executes.
 
 ---
 
@@ -89,17 +89,17 @@ async def get_payments():
 
 | Decorator | Behaviour |
 |---|---|
-| `@maintenance(reason, start, end)` | 503 — temporarily unavailable |
-| `@disabled(reason)` | 503 — permanently off |
+| `@maintenance(reason, start, end)` | 503, temporarily unavailable |
+| `@disabled(reason)` | 503, permanently off |
 | `@env_only("dev", "staging")` | 404 in other environments |
 | `@deprecated(sunset, use_instead)` | 200 + deprecation headers |
-| `@force_active` | Always 200 — bypasses all checks |
+| `@force_active` | Always 200, bypasses all checks |
 
 ---
 
 ## Runtime changes without restart
 
-Once the middleware is in place, you can change route state at runtime — no code changes, no restart:
+Once the middleware is in place, you can change route state at runtime with no code changes and no restart:
 
 ```python
 # Enable the route programmatically
@@ -109,7 +109,7 @@ await engine.enable("GET:/payments")
 await engine.set_maintenance("GET:/payments", reason="Second migration wave")
 ```
 
-Or via the CLI (requires `ShieldAdmin` mounted — see [Admin Dashboard](admin-dashboard.md)):
+Or via the CLI (requires `ShieldAdmin` mounted; see [Admin Dashboard](admin-dashboard.md)):
 
 ```bash
 shield enable GET:/payments

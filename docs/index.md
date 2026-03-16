@@ -10,12 +10,12 @@
 
 # api-shield
 
-!!! warning "Early Access — your feedback shapes the roadmap"
-    `api-shield` is fully functional and ready to use. We are actively building on a solid foundation and would love to hear from you. If you have feedback, feature ideas, or suggestions, **[open an issue on GitHub](https://github.com/Attakay78/api-shield/issues)** — every voice helps make the library better for everyone.
+!!! warning "Early Access: your feedback shapes the roadmap"
+    `api-shield` is fully functional and ready to use. We are actively building on a solid foundation and would love to hear from you. If you have feedback, feature ideas, or suggestions, **[open an issue on GitHub](https://github.com/Attakay78/api-shield/issues)**. Every voice helps make the library better for everyone.
 
-**Route lifecycle management for Python web frameworks — maintenance mode, environment gating, deprecation, admin panels, and more. No restarts required.**
+**Route lifecycle management for Python web frameworks: maintenance mode, environment gating, deprecation, admin panels, and more. No restarts required.**
 
-Most "maintenance mode" tools are blunt instruments: shut everything down or nothing at all. `api-shield` treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through middleware — no redeployment, no server restart.
+Most "maintenance mode" tools are blunt instruments: shut everything down or nothing at all. `api-shield` treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through middleware, with no redeployment and no server restart.
 
 ---
 
@@ -90,16 +90,16 @@ shield enable GET:/payments
 | Feature | Description |
 |---|---|
 | 🎨 **Decorator-first DX** | Route state lives next to the route definition, not in a separate config file |
-| ⚡ **Zero-restart control** | State changes are immediate — no redeployment needed |
+| ⚡ **Zero-restart control** | State changes are immediate, with no redeployment needed |
 | 🛡️ **Fail-open by default** | If the backend is unreachable, requests pass through. Shield never takes down your API |
 | 🔌 **Pluggable backends** | In-memory (default), file-based JSON, or Redis for multi-instance deployments |
-| 🖥️ **Admin dashboard** | HTMX-powered UI with live SSE updates — no JS framework required |
+| 🖥️ **Admin dashboard** | HTMX-powered UI with live SSE updates, no JS framework required |
 | 🖱️ **REST API + CLI** | Full programmatic control from the terminal or CI pipelines |
-| 📄 **OpenAPI integration** | Disabled / env-gated routes hidden from `/docs`; deprecated routes flagged automatically |
-| 📋 **Audit log** | Every state change is recorded: who, when, what route, old status → new status |
-| ⏰ **Scheduled windows** | `asyncio`-native scheduler — maintenance windows activate and deactivate automatically |
-| 🔔 **Webhooks** | Fire HTTP POST on every state change — built-in Slack formatter and custom formatters supported |
-| 🎨 **Custom responses** | Return HTML, redirects, or any response shape for blocked routes — per-route or app-wide default |
+| 📄 **OpenAPI integration** | Disabled and env-gated routes hidden from `/docs`; deprecated routes flagged automatically |
+| 📋 **Audit log** | Every state change is recorded: who, when, what route, old status, new status |
+| ⏰ **Scheduled windows** | `asyncio`-native scheduler that activates and deactivates maintenance windows automatically |
+| 🔔 **Webhooks** | Fire HTTP POST on every state change, with a built-in Slack formatter and support for custom formatters |
+| 🎨 **Custom responses** | Return HTML, redirects, or any response shape for blocked routes, per-route or as an app-wide default |
 
 ---
 
@@ -117,8 +117,8 @@ shield enable GET:/payments
 
 ## Next steps
 
-- [**Tutorial: Installation**](tutorial/installation.md) — get up and running in seconds
-- [**Tutorial: First Decorator**](tutorial/first-decorator.md) — put your first route in maintenance mode
-- [**Reference: Decorators**](reference/decorators.md) — full decorator API
-- [**Reference: ShieldEngine**](reference/engine.md) — programmatic control
-- [**Reference: CLI**](reference/cli.md) — all CLI commands
+- [**Tutorial: Installation**](tutorial/installation.md): get up and running in seconds
+- [**Tutorial: First Decorator**](tutorial/first-decorator.md): put your first route in maintenance mode
+- [**Reference: Decorators**](reference/decorators.md): full decorator API
+- [**Reference: ShieldEngine**](reference/engine.md): programmatic control
+- [**Reference: CLI**](reference/cli.md): all CLI commands

@@ -1,12 +1,12 @@
 # Distributed Deployments
 
-This guide explains how api-shield behaves when your application runs across multiple instances — load-balanced replicas, rolling deploys, or horizontally-scaled containers. It covers what each backend guarantees, where the boundaries are, and how to choose the right setup for your architecture.
+This guide explains how api-shield behaves when your application runs across multiple instances: load-balanced replicas, rolling deploys, or horizontally-scaled containers. It covers what each backend guarantees, where the boundaries are, and how to choose the right setup for your architecture.
 
 ---
 
 ## The core question: where does state live?
 
-Every request that hits api-shield goes through a single chokepoint — `engine.check()`. The engine reads route state from the backend, evaluates it against the request, and either allows it through or raises a `ShieldException`. In a single-instance deployment this is straightforward. In a multi-instance deployment the question becomes: **when Instance A changes the state of a route, how quickly does Instance B see that change?**
+Every request that hits api-shield goes through a single chokepoint: `engine.check()`. The engine reads route state from the backend, evaluates it against the request, and either allows it through or raises a `ShieldException`. In a single-instance deployment this is straightforward. In a multi-instance deployment the question becomes: **when Instance A changes the state of a route, how quickly does Instance B see that change?**
 
 The answer depends entirely on which backend you use.
 
@@ -34,7 +34,7 @@ State lives in a Python `dict` inside the `ShieldEngine` object. It is never wri
 
 **In a multi-instance deployment, each instance has its own isolated world.** A `shield disable` command that reaches Instance A through the admin API will disable the route on Instance A only. Instance B continues serving the route as if nothing happened.
 
-`subscribe()` is implemented using `asyncio.Queue`. This works correctly for the in-process dashboard SSE feed — the dashboard and the engine share the same Python process, so changes are visible immediately. It provides no cross-process benefit.
+`subscribe()` is implemented using `asyncio.Queue`. This works correctly for the in-process dashboard SSE feed, since the dashboard and the engine share the same Python process and changes are visible immediately. It provides no cross-process benefit.
 
 **Do not use `MemoryBackend` in any deployment where more than one process serves traffic.**
 
@@ -46,7 +46,7 @@ State is written to a JSON (or YAML/TOML) file on disk. The file survives restar
 
 ### How it works internally
 
-`FileBackend` maintains a **write-through in-memory cache**. All reads are served from `_states: dict[str, Any]` in memory — zero file I/O on the hot path. Writes update the dict immediately (O(1)) and schedule a **debounced flush** (50ms window) to disk. State mutations (`set_state`, `delete_state`) bypass the debounce and flush synchronously for durability.
+`FileBackend` maintains a **write-through in-memory cache**. All reads are served from `_states: dict[str, Any]` in memory, with zero file I/O on the hot path. Writes update the dict immediately (O(1)) and schedule a **debounced flush** (50ms window) to disk. State mutations (`set_state`, `delete_state`) bypass the debounce and flush synchronously for durability.
 
 ```
 Request path:                 Write path:
@@ -86,7 +86,7 @@ This is intentional. Adding a file watcher introduces serious problems:
                                     writes via REST API to app)
 ```
 
-The CLI talks to the app's `ShieldAdmin` REST API. The API writes to the in-memory cache (which flushes to disk). The file persists across restarts. This is the complete, correct workflow for `FileBackend` — no cross-instance sync is needed because there is only one instance.
+The CLI talks to the app's `ShieldAdmin` REST API. The API writes to the in-memory cache (which flushes to disk). The file persists across restarts. This is the complete, correct workflow for `FileBackend`. No cross-instance sync is needed because there is only one instance.
 
 **Do not use `FileBackend` across multiple instances that serve concurrent traffic.**
 
@@ -120,13 +120,13 @@ pipe.publish("shield:changes", payload)     # notify subscribers
 await pipe.execute()
 ```
 
-The write and the notification are atomic. Any instance subscribed to `shield:changes` (the dashboard SSE endpoint) receives the new `RouteState` immediately. The next `engine.check()` call on any instance reads fresh state from Redis — there is no in-process per-route state cache.
+The write and the notification are atomic. Any instance subscribed to `shield:changes` (the dashboard SSE endpoint) receives the new `RouteState` immediately. The next `engine.check()` call on any instance reads fresh state from Redis, as there is no in-process per-route state cache.
 
 ### Global maintenance: distributed cache invalidation
 
 Global maintenance (`engine.enable_global_maintenance()`) is applied to every request before per-route checks. Because it is checked on every single request, the engine caches the `GlobalMaintenanceConfig` in-process to avoid a Redis round-trip on the hot path.
 
-The risk in a multi-instance deployment: Instance A enables global maintenance and invalidates its local cache. Instance B's cache still holds the old (disabled) config — it will serve requests as if global maintenance is off until its cache is cleared.
+The risk in a multi-instance deployment: Instance A enables global maintenance and invalidates its local cache. Instance B's cache still holds the old (disabled) config, so it will serve requests as if global maintenance is off until its cache is cleared.
 
 This is solved through a dedicated invalidation channel:
 
@@ -145,14 +145,14 @@ engine.enable_global_maintenance()
                                                            GlobalMaintenanceConfig from Redis
 ```
 
-`ShieldEngine.start()` creates a background `asyncio.Task` that runs `_run_global_config_listener()`. This task iterates `backend.subscribe_global_config()` indefinitely — each message arrival from `shield:global_invalidate` triggers an immediate cache flush. The next `engine.check()` call re-fetches `GlobalMaintenanceConfig` from Redis, observing the change made by Instance A.
+`ShieldEngine.start()` creates a background `asyncio.Task` that runs `_run_global_config_listener()`. This task iterates `backend.subscribe_global_config()` indefinitely. Each message arrival from `shield:global_invalidate` triggers an immediate cache flush. The next `engine.check()` call re-fetches `GlobalMaintenanceConfig` from Redis, observing the change made by Instance A.
 
-For `MemoryBackend` and `FileBackend`, `subscribe_global_config()` raises `NotImplementedError`. The listener task catches this, exits immediately, and the engine falls back to per-process cache behaviour — no error, no performance impact.
+For `MemoryBackend` and `FileBackend`, `subscribe_global_config()` raises `NotImplementedError`. The listener task catches this, exits immediately, and the engine falls back to per-process cache behaviour with no error and no performance impact.
 
 `start()` is called automatically in two places:
 
-- `ShieldEngine.__aenter__` — for CLI scripts using `async with ShieldEngine(...) as engine:`
-- `ShieldRouter.register_shield_routes()` — at FastAPI application startup
+- `ShieldEngine.__aenter__`: for CLI scripts using `async with ShieldEngine(...) as engine:`
+- `ShieldRouter.register_shield_routes()`: at FastAPI application startup
 
 You do not need to call `start()` manually unless you are using the engine outside of these two contexts.
 
@@ -186,7 +186,7 @@ engine.set_maintenance("/api/payments")
                                                 ShieldMiddleware → 503 JSON response
 ```
 
-There is no in-process cache for per-route state. Every `engine.check()` call on `RedisBackend` is a single `GET` command. Round-trip latency on a local Redis is typically under 0.5ms — well within the < 2ms budget defined in the performance spec.
+There is no in-process cache for per-route state. Every `engine.check()` call on `RedisBackend` is a single `GET` command. Round-trip latency on a local Redis is typically under 0.5ms, well within the < 2ms budget defined in the performance spec.
 
 ### Scheduler behaviour across instances
 
@@ -196,7 +196,7 @@ When the window's `start` time arrives, every instance independently calls `engi
 
 ### Webhook deduplication
 
-Without deduplication, webhooks would fire once per instance per event — three instances means three `maintenance_on` deliveries for a single window activation. api-shield prevents this with a `SET NX` claim in Redis before any HTTP POST is sent.
+Without deduplication, webhooks would fire once per instance per event: three instances would mean three `maintenance_on` deliveries for a single window activation. api-shield prevents this with a `SET NX` claim in Redis before any HTTP POST is sent.
 
 ```
 Window activates simultaneously on all instances
@@ -214,15 +214,15 @@ Window activates simultaneously on all instances
 └── Instance C: same as B — skips
 ```
 
-The dedup key is a SHA-256 hash of `event + path + serialised RouteState`. Because the scheduler produces an identical `RouteState` on all instances for the same window activation (same path, same status, same window start/end), the key is fleet-wide deterministic — only the first instance to win the atomic `SET NX` fires.
+The dedup key is a SHA-256 hash of `event + path + serialised RouteState`. Because the scheduler produces an identical `RouteState` on all instances for the same window activation (same path, same status, same window start/end), the key is fleet-wide deterministic. Only the first instance to win the atomic `SET NX` fires.
 
 The dedup key expires after 60 seconds. If the winning instance crashes before completing delivery, the key expires and re-delivery is possible on the next scheduler poll cycle.
 
 ### OpenAPI schema staleness
 
-The OpenAPI schema filter (`apply_shield_to_openapi`) uses a monotonic `_schema_version` counter inside each `ShieldEngine` instance to decide when to rebuild the cached schema. This counter is incremented on every local state change — it is not shared across instances.
+The OpenAPI schema filter (`apply_shield_to_openapi`) uses a monotonic `_schema_version` counter inside each `ShieldEngine` instance to decide when to rebuild the cached schema. This counter is incremented on every local state change and is not shared across instances.
 
-**When Instance A disables a route, Instance B's `/docs` and `/openapi.json` will continue to show that route until Instance B's own schema cache is invalidated (by a local state change or a restart).** For most production deployments this is acceptable — developer-facing docs are not on the critical request path, and the actual request handling (via `engine.check()`) is always consistent thanks to Redis.
+**When Instance A disables a route, Instance B's `/docs` and `/openapi.json` will continue to show that route until Instance B's own schema cache is invalidated (by a local state change or a restart).** For most production deployments this is acceptable, as developer-facing docs are not on the critical request path and the actual request handling (via `engine.check()`) is always consistent thanks to Redis.
 
 If you need fully consistent OpenAPI schemas across instances, you can force a cache refresh by calling `app.openapi.cache_clear()` (or the equivalent for your schema caching setup) in response to `shield:changes` pub/sub messages.
 
@@ -260,7 +260,7 @@ except Exception:
     return None    # allow the request through
 ```
 
-If Redis goes down, all `engine.check()` calls fail-open — every request passes through as if all routes are `ACTIVE`. Shield logs the errors at `ERROR` level but never surfaces them as HTTP failures to your clients. Your API continues to serve traffic; you just lose the protection layer temporarily.
+If Redis goes down, all `engine.check()` calls fail-open: every request passes through as if all routes are `ACTIVE`. Shield logs the errors at `ERROR` level but never surfaces them as HTTP failures to your clients. Your API continues to serve traffic; you just lose the protection layer temporarily.
 
 The same applies to global maintenance: if reading `GlobalMaintenanceConfig` from the backend raises an exception, the exception is caught and the request is allowed through.
 
@@ -269,7 +269,7 @@ The same applies to global maintenance: if reading `GlobalMaintenanceConfig` fro
 ## Production checklist for multi-instance deployments
 
 - [ ] Use `RedisBackend` with a dedicated Redis instance (not shared with application cache)
-- [ ] Set `SHIELD_REDIS_URL` via environment variable — do not hardcode credentials
+- [ ] Set `SHIELD_REDIS_URL` via environment variable; do not hardcode credentials
 - [ ] Use Redis database `0` for application data, a separate DB (e.g. `15`) for tests
 - [ ] Mount `ShieldAdmin` behind authentication (`auth=("user", "pass")` or a custom `ShieldAuthBackend`)
 - [ ] Configure webhooks to a single endpoint (e.g. Slack, PagerDuty) rather than per-instance receivers to avoid duplicate alerts from the scheduler

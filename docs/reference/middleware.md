@@ -1,27 +1,40 @@
-# Middleware
+# Middleware & OpenAPI
+
+This page covers `ShieldMiddleware`, which enforces route state on every HTTP request, and the two OpenAPI helpers that keep your `/docs` accurate at runtime.
+
+---
 
 ## ShieldMiddleware
 
-`ShieldMiddleware` is a Starlette `BaseHTTPMiddleware` that intercepts every HTTP request and enforces route state by calling `engine.check()`.
+`ShieldMiddleware` is a Starlette `BaseHTTPMiddleware`. Add it once to your FastAPI app and it automatically intercepts every request, calls `engine.check()`, and returns the appropriate error response when a route is blocked.
 
 ```python
+from shield.fastapi import ShieldMiddleware
+```
+
+### Setup
+
+```python title="main.py"
 from fastapi import FastAPI
-from shield.fastapi.middleware import ShieldMiddleware
+from shield.fastapi import ShieldMiddleware
 from shield.core.engine import ShieldEngine
 
 engine = ShieldEngine()
-
 app = FastAPI()
+
 app.add_middleware(ShieldMiddleware, engine=engine)
 ```
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `engine` | `ShieldEngine` | The engine instance to delegate checks to |
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `engine` | `ShieldEngine` | required | The engine instance to delegate all `check()` calls to. Read more in [ShieldEngine](engine.md). |
+| `responses` | `dict \| None` | `None` | App-wide custom response factories, keyed by error type. Read more in [Custom responses](decorators.md#custom-responses). |
 
 ### Request flow
+
+Every incoming request passes through this sequence:
 
 ```
 Incoming HTTP request
@@ -29,28 +42,27 @@ Incoming HTTP request
         ▼
 ShieldMiddleware.dispatch()
         │
-        ├─ Path in (/docs, /redoc, /openapi.json)?  → pass through
-        ├─ Path starts with /shield/?               → pass through
+        ├─ Path is /docs, /redoc, or /openapi.json?  → pass through
+        ├─ Path starts with /shield/ (admin)?         → pass through
         │
-        ├─ Lazy-scan routes for __shield_meta__ (once on first request)
+        ├─ Lazy-scan routes for __shield_meta__ (once, on first request)
         │
-        ├─ Route has force_active=True?             → pass through
+        ├─ Route has force_active=True?               → pass through
         │
-        ├─ engine.check(path, method)
-        │       │
-        │       ├─ Global maintenance ON?           → 503 JSON
-        │       ├─ MAINTENANCE                      → 503 JSON + Retry-After
-        │       ├─ DISABLED                         → 503 JSON
-        │       ├─ ENV_GATED (wrong env)            → 404 (no body)
-        │       ├─ DEPRECATED                       → call_next + inject headers
-        │       └─ ACTIVE                           → call_next ✓
+        ▼
+engine.check(path, method)
         │
-        └─ call_next(request)
+        ├─ Global maintenance ON + path not exempt    → 503 JSON
+        ├─ MAINTENANCE                                → 503 JSON + Retry-After
+        ├─ DISABLED                                   → 503 JSON
+        ├─ ENV_GATED (wrong environment)              → 404, no body
+        ├─ DEPRECATED                                 → call_next + inject headers
+        └─ ACTIVE                                     → call_next ✓
 ```
 
 ### Error responses
 
-All error responses follow a consistent JSON structure:
+All error responses use a consistent JSON structure:
 
 ```json
 {
@@ -64,16 +76,16 @@ All error responses follow a consistent JSON structure:
 }
 ```
 
-| Scenario | HTTP status | `code` |
+| Scenario | HTTP status | `code` field |
 |---|---|---|
-| Maintenance mode | 503 | `MAINTENANCE_MODE` |
+| Route in maintenance | 503 | `MAINTENANCE_MODE` |
 | Route disabled | 503 | `ROUTE_DISABLED` |
-| Env-gated (wrong env) | 404 | *(no body)* |
-| Global maintenance | 503 | `MAINTENANCE_MODE` |
+| Global maintenance active | 503 | `MAINTENANCE_MODE` |
+| Env-gated (wrong environment) | 404 | *(no body)* |
 
 ### Deprecation headers
 
-For routes with status `DEPRECATED`, the middleware injects RFC-compliant response headers without blocking the request:
+For routes with status `DEPRECATED`, the middleware injects RFC-compliant headers without blocking the request. The response still reaches the client with a 200:
 
 ```http
 Deprecation: true
@@ -81,51 +93,81 @@ Sunset: Sat, 01 Jan 2027 00:00:00 GMT
 Link: </v2/users>; rel="successor-version"
 ```
 
+!!! note "Custom responses"
+    You can replace any of the default JSON error responses with HTML, redirects, or a different JSON shape — either per-route or globally on the middleware. Read more in [Custom responses](decorators.md#custom-responses).
+
 ---
 
-## OpenAPI integration
+## `apply_shield_to_openapi`
 
-### `apply_shield_to_openapi`
+Keep your OpenAPI schema accurate by filtering it based on the current route states at runtime. Disabled and env-gated routes are hidden. Maintenance routes are annotated. Deprecated routes are flagged.
 
 ```python
+from shield.fastapi.openapi import apply_shield_to_openapi
+```
+
+### Setup
+
+```python title="main.py"
 from shield.fastapi.openapi import apply_shield_to_openapi
 
 apply_shield_to_openapi(app, engine)
 ```
 
-Monkey-patches `app.openapi()` to filter the schema based on current route states. Effects:
+!!! warning "Call after `app.include_router()`"
+    `apply_shield_to_openapi` patches `app.openapi()`. Call it after all routers have been included so the full route list is available when the patch is applied.
 
-| Route status | Schema behaviour |
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `app` | `FastAPI` | The FastAPI application instance to patch |
+| `engine` | `ShieldEngine` | The engine whose current state is used to filter the schema |
+
+### Schema behavior by route status
+
+| Route status | OpenAPI schema behavior |
 |---|---|
-| `DISABLED` | Hidden from all schemas |
-| `ENV_GATED` (wrong env) | Hidden from all schemas |
-| `MAINTENANCE` | Summary prefixed with `🔧`; description shows warning; `x-shield-status` extension added |
-| `DEPRECATED` | Marked `deprecated: true`; successor path shown |
 | `ACTIVE` | No change |
+| `MAINTENANCE` | Summary prefixed with `🔧`; description block shows a warning; `x-shield-status` extension added |
+| `DISABLED` | Hidden from all schemas — not visible in `/docs`, `/redoc`, or `/openapi.json` |
+| `ENV_GATED` (wrong environment) | Hidden from all schemas |
+| `DEPRECATED` | Marked `deprecated: true`; successor path shown in description |
 
-Schema is re-computed on every `/openapi.json` request — runtime state changes reflect immediately without restart.
+The schema is re-computed on every request to `/openapi.json`, so runtime state changes reflect immediately without a restart.
 
-<figure class="screenshot" markdown>
-  ![OpenAPI schema — normal view](../assets/openapi.png)
-  <figcaption>Standard OpenAPI schema view — disabled and env-gated routes are hidden from the list.</figcaption>
-</figure>
+---
 
-### `setup_shield_docs`
+## `setup_shield_docs`
+
+Enhance `/docs` and `/redoc` with live status indicators that update automatically as route states change.
 
 ```python
 from shield.fastapi.openapi import apply_shield_to_openapi, setup_shield_docs
+```
 
-apply_shield_to_openapi(app, engine)  # must be called first
+### Setup
+
+```python title="main.py"
+# apply_shield_to_openapi must be called first
+apply_shield_to_openapi(app, engine)
 setup_shield_docs(app, engine)
 ```
 
-Replaces the `/docs` and `/redoc` endpoints with enhanced versions:
+### Parameters
 
-- **Global maintenance ON**: full-width pulsing red sticky banner with reason text and exempt paths; auto-refreshes every 15 seconds.
-- **Global maintenance OFF**: small green "All systems operational" chip in the bottom-right corner.
-- **Per-route maintenance**: orange left-border on the operation block with a `🔧 MAINTENANCE` badge.
+| Parameter | Type | Description |
+|---|---|---|
+| `app` | `FastAPI` | The FastAPI application instance |
+| `engine` | `ShieldEngine` | The engine whose state drives the UI indicators |
 
-<figure class="screenshot" markdown>
-  ![OpenAPI schema — maintenance banners](../assets/openapi-maintenance.png)
-  <figcaption>Enhanced docs UI showing per-route maintenance badges injected by <code>setup_shield_docs</code>.</figcaption>
-</figure>
+### What it adds to `/docs`
+
+| Condition | UI indicator |
+|---|---|
+| Global maintenance **ON** | Full-width pulsing red banner with the reason text and exempt paths; auto-refreshes every 15 seconds |
+| Global maintenance **OFF** | Small green "All systems operational" chip in the bottom-right corner |
+| Per-route maintenance | Orange left-border on the operation block with a `🔧 MAINTENANCE` badge |
+
+!!! tip "Use both together"
+    `apply_shield_to_openapi` keeps the schema accurate (hiding disabled routes, marking deprecated ones). `setup_shield_docs` adds the live status UI on top. They are independent — use one, both, or neither.

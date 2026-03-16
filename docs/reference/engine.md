@@ -1,21 +1,42 @@
 # ShieldEngine
 
-`ShieldEngine` is the central orchestrator. All state management logic lives here — middleware, decorators, the CLI, and the dashboard are all transport layers that delegate to the engine.
+`ShieldEngine` is the central orchestrator of api-shield. All state management logic lives here — middleware, decorators, the CLI, and the dashboard are transport layers that delegate to the engine. If you are building a custom adapter or automating route management, this is the class you interact with directly.
 
 ```python
 from shield.core.engine import ShieldEngine
-from shield.core.backends.memory import MemoryBackend
-
-engine = ShieldEngine(backend=MemoryBackend(), current_env="dev")
 ```
 
-Or use `make_engine()` to read configuration from environment variables and the `.shield` file:
+---
 
-```python
-from shield.core.config import make_engine
+## Quick start
 
-engine = make_engine()
-```
+=== "Default (in-memory)"
+
+    ```python title="main.py"
+    from shield.core.engine import ShieldEngine
+
+    engine = ShieldEngine()
+    ```
+
+=== "With a backend"
+
+    ```python title="main.py"
+    from shield.core.engine import ShieldEngine
+    from shield.core.backends.memory import MemoryBackend
+
+    engine = ShieldEngine(backend=MemoryBackend(), current_env="production")
+    ```
+
+=== "From config / env vars"
+
+    ```python title="main.py"
+    from shield.core.config import make_engine
+
+    engine = make_engine()  # reads SHIELD_BACKEND, SHIELD_ENV, etc.
+    ```
+
+!!! tip "Use `make_engine()` in production"
+    `make_engine()` reads configuration from environment variables and your `.shield` file, so you can swap backends without changing application code. See [Configuration](../guides/production.md) for details.
 
 ---
 
@@ -29,11 +50,34 @@ ShieldEngine(
 )
 ```
 
-| Parameter | Default | Description |
-|---|---|---|
-| `backend` | `MemoryBackend()` | Storage backend for route state and audit log |
-| `current_env` | `"dev"` | Current environment name — used by `@env_only` checks |
-| `webhooks` | `[]` | List of webhook URLs to notify on state changes |
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `backend` | `ShieldBackend \| None` | `MemoryBackend()` | Storage backend for route state and the audit log. Read more in [Backends](backends.md). |
+| `current_env` | `str` | `"dev"` | The current environment name. Used by `@env_only` to decide whether to allow or block a request. |
+| `webhooks` | `list[str] \| None` | `[]` | Webhook URLs notified on every state change. Read more in [add_webhook](#add_webhook). |
+
+---
+
+## Lifecycle
+
+### Using as an async context manager
+
+Wrap the engine in your FastAPI lifespan to ensure the backend connects and disconnects cleanly:
+
+```python title="main.py"
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine:  # calls backend.startup() / backend.shutdown()
+        yield
+
+app = FastAPI(lifespan=lifespan)
+```
+
+!!! warning "Always use the lifespan with Redis"
+    `RedisBackend` opens a connection pool on `startup()` and closes it on `shutdown()`. Without the lifespan wrapper, connections leak on shutdown.
 
 ---
 
@@ -45,13 +89,31 @@ ShieldEngine(
 async def check(path: str, method: str = "") -> None
 ```
 
-The single enforcement chokepoint. Called by `ShieldMiddleware` on every request. Raises an exception if the route is blocked; returns `None` if it should proceed.
+The single enforcement chokepoint. Called by `ShieldMiddleware` on every request. Raises a `ShieldException` subclass if the route is blocked; returns `None` if it may proceed.
 
-Raises:
-- `MaintenanceException` — route is in maintenance mode
-- `RouteDisabledException` — route is disabled
-- `EnvGatedException` — route is env-gated and current env is not allowed
-- Never raises on backend errors — fail-open, logs the error instead
+??? info "Resolution order"
+
+    1. Global maintenance enabled and path not exempt → raise `MaintenanceException`
+    2. Route has `force_active=True` → return immediately (always allow)
+    3. Route status is `MAINTENANCE` → raise `MaintenanceException`
+    4. Route status is `DISABLED` → raise `RouteDisabledException`
+    5. Route status is `ENV_GATED` and current env not allowed → raise `EnvGatedException`
+    6. Route status is `ACTIVE` or `DEPRECATED` → return `None`
+
+!!! note "Fail-open on backend errors"
+    If the backend raises any exception, `check()` logs the error and returns `None`, allowing the request through. api-shield never takes down your API because its own backend is unreachable.
+
+**Raises:**
+
+| Exception | When |
+|---|---|
+| `MaintenanceException` | Route (or global maintenance) is active |
+| `RouteDisabledException` | Route is permanently disabled |
+| `EnvGatedException` | Route is restricted and the current env is not in `allowed_envs` |
+
+Read more in [Exceptions](exceptions.md).
+
+---
 
 ### `register`
 
@@ -59,7 +121,11 @@ Raises:
 async def register(path: str, meta: dict) -> None
 ```
 
-Called by `ShieldRouter` at startup to register a route's initial state from `__shield_meta__`. If the backend already has a state for this path, the persisted state wins.
+Register a route's initial state from its `__shield_meta__` dictionary. Called by `ShieldRouter` at startup — you rarely need to call this directly.
+
+**Persistence-first semantics:** if the backend already has a saved state for this path (from a previous run), the persisted state wins over the decorator metadata. This means a route you manually disabled via the CLI stays disabled after a restart.
+
+---
 
 ### `enable`
 
@@ -67,11 +133,18 @@ Called by `ShieldRouter` at startup to register a route's initial state from `__
 async def enable(path: str, actor: str = "system") -> RouteState
 ```
 
-Set a route to `ACTIVE`. Works even if the route was disabled or in maintenance.
+Set a route to `ACTIVE`. Works regardless of the current status.
 
-```python
+```python title="example"
 await engine.enable("GET:/payments", actor="alice")
 ```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `path` | `str` | required | Route key, e.g. `"GET:/payments"` |
+| `actor` | `str` | `"system"` | Identity recorded in the audit log |
+
+---
 
 ### `disable`
 
@@ -79,11 +152,19 @@ await engine.enable("GET:/payments", actor="alice")
 async def disable(path: str, reason: str = "", actor: str = "system") -> RouteState
 ```
 
-Set a route to `DISABLED`.
+Set a route to `DISABLED`. Returns 503 to all callers.
 
-```python
+```python title="example"
 await engine.disable("GET:/payments", reason="Feature removed", actor="alice")
 ```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `path` | `str` | required | Route key |
+| `reason` | `str` | `""` | Shown in the 503 error response and recorded in the audit log |
+| `actor` | `str` | `"system"` | Identity recorded in the audit log |
+
+---
 
 ### `set_maintenance`
 
@@ -96,23 +177,34 @@ async def set_maintenance(
 ) -> RouteState
 ```
 
-Set a route to `MAINTENANCE`. If `window` is provided, the scheduler will auto-activate at `window.start` and auto-deactivate at `window.end`.
+Set a route to `MAINTENANCE`. If `window` is provided, the scheduler auto-activates at `window.start` and auto-deactivates at `window.end`.
 
-```python
-from shield.core.models import MaintenanceWindow
-from datetime import datetime, UTC
+??? example "Example: scheduled maintenance window"
 
-await engine.set_maintenance(
-    "GET:/payments",
-    reason="DB migration",
-    window=MaintenanceWindow(
-        start=datetime(2025, 6, 1, 2, 0, tzinfo=UTC),
-        end=datetime(2025, 6, 1, 4, 0, tzinfo=UTC),
-        reason="Planned migration window",
-    ),
-    actor="alice",
-)
-```
+    ```python
+    from shield.core.models import MaintenanceWindow
+    from datetime import datetime, UTC
+
+    await engine.set_maintenance(
+        "GET:/payments",
+        reason="DB migration",
+        window=MaintenanceWindow(
+            start=datetime(2025, 6, 1, 2, 0, tzinfo=UTC),
+            end=datetime(2025, 6, 1, 4, 0, tzinfo=UTC),
+            reason="Planned migration window",
+        ),
+        actor="alice",
+    )
+    ```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `path` | `str` | required | Route key |
+| `reason` | `str` | `""` | Shown in the 503 error response |
+| `window` | `MaintenanceWindow \| None` | `None` | Optional scheduled window. Read more in [MaintenanceWindow](models.md#maintenancewindow). |
+| `actor` | `str` | `"system"` | Identity recorded in the audit log |
+
+---
 
 ### `set_env_only`
 
@@ -124,11 +216,16 @@ async def set_env_only(
 ) -> RouteState
 ```
 
-Restrict a route to the given environments. Returns 404 in all other envs.
+Restrict a route to the listed environments. Returns a silent 404 in all other environments.
 
-```python
+```python title="example"
 await engine.set_env_only("GET:/debug", envs=["dev", "staging"])
 ```
+
+!!! note "404, not 403"
+    Env-gated routes return 404 with no response body to avoid revealing that the path exists at all.
+
+---
 
 ### `get_state`
 
@@ -136,7 +233,16 @@ await engine.set_env_only("GET:/debug", envs=["dev", "staging"])
 async def get_state(path: str) -> RouteState
 ```
 
-Retrieve the current state of a route. Raises `KeyError` if the path has not been registered.
+Retrieve the current state of a route.
+
+```python title="example"
+state = await engine.get_state("GET:/payments")
+print(state.status, state.reason)
+```
+
+Raises `KeyError` if the path has not been registered. Read more in [RouteState](models.md#routestate).
+
+---
 
 ### `list_states`
 
@@ -144,7 +250,13 @@ Retrieve the current state of a route. Raises `KeyError` if the path has not bee
 async def list_states() -> list[RouteState]
 ```
 
-Return all registered route states.
+Return all registered route states. Used by the CLI's `shield status` command and the admin dashboard.
+
+```python title="example"
+states = await engine.list_states()
+for s in states:
+    print(s.path, s.status)
+```
 
 ---
 
@@ -156,11 +268,15 @@ Return all registered route states.
 async def schedule_maintenance(path: str, window: MaintenanceWindow) -> None
 ```
 
-Schedule a future maintenance window. Creates an `asyncio.Task` that activates maintenance at `window.start` and restores `ACTIVE` at `window.end`.
+Schedule a future maintenance window without activating maintenance immediately. Creates an `asyncio.Task` that activates at `window.start` and restores `ACTIVE` at `window.end`.
 
-```python
+```python title="example"
 await engine.schedule_maintenance("GET:/payments", window=window)
 ```
+
+Scheduled windows survive restarts: they are persisted to the backend and restored when the engine starts up.
+
+---
 
 ### `cancel_schedule`
 
@@ -168,11 +284,13 @@ await engine.schedule_maintenance("GET:/payments", window=window)
 async def cancel_schedule(path: str) -> None
 ```
 
-Cancel any pending scheduled window for the given path.
+Cancel any pending scheduled window for the given path. No-op if no window is scheduled.
 
 ---
 
 ## Global maintenance
+
+Global maintenance blocks every route at once without requiring individual route changes. It is designed for emergency deployments, full-system downtime, or planned platform migrations.
 
 ### `enable_global_maintenance`
 
@@ -185,20 +303,29 @@ async def enable_global_maintenance(
 ) -> None
 ```
 
-Block every route at once. Exempt paths bypass the global check and respond normally.
+Block all routes immediately. Exempt paths bypass the global check and respond normally.
 
-```python
-await engine.enable_global_maintenance(
-    reason="Emergency patch — back in 15 minutes",
-    exempt_paths=["/health", "GET:/admin/status"],
-    include_force_active=False,
-)
-```
+??? example "Full example with exempt paths"
 
-Exempt path formats:
+    ```python
+    await engine.enable_global_maintenance(
+        reason="Emergency patch, back in 15 minutes",
+        exempt_paths=["/health", "GET:/admin/status"],
+        include_force_active=False,
+    )
+    ```
 
-- `/health` — matches the path for any HTTP method
-- `GET:/health` — matches only `GET /health`
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `reason` | `str` | `""` | Shown in every 503 response while global maintenance is active |
+| `exempt_paths` | `list[str] \| None` | `None` | Paths that bypass the global block. Use bare `/health` (all methods) or `GET:/health` (specific method). |
+| `include_force_active` | `bool` | `False` | When `True`, even `@force_active` routes are blocked. Use only for hard lockdowns. |
+| `actor` | `str` | `"system"` | Identity recorded in the audit log |
+
+!!! warning "Blocking `@force_active` routes"
+    Setting `include_force_active=True` will block health check and readiness probe endpoints. Make sure load balancers and orchestrators can tolerate this before enabling it.
+
+---
 
 ### `disable_global_maintenance`
 
@@ -206,7 +333,9 @@ Exempt path formats:
 async def disable_global_maintenance(actor: str = "system") -> None
 ```
 
-Restore all routes to their individual states.
+Restore all routes to their individual states. Each route resumes the status it had before global maintenance was enabled.
+
+---
 
 ### `get_global_maintenance`
 
@@ -214,7 +343,15 @@ Restore all routes to their individual states.
 async def get_global_maintenance() -> GlobalMaintenanceConfig
 ```
 
-Return the current global maintenance config (enabled state, reason, exempt paths).
+Return the current global maintenance configuration. Read more in [GlobalMaintenanceConfig](models.md#globalmaintenanceconfig).
+
+```python title="example"
+cfg = await engine.get_global_maintenance()
+if cfg.enabled:
+    print(f"Global maintenance ON: {cfg.reason}")
+```
+
+---
 
 ### `set_global_exempt_paths`
 
@@ -222,7 +359,7 @@ Return the current global maintenance config (enabled state, reason, exempt path
 async def set_global_exempt_paths(paths: list[str], actor: str = "system") -> None
 ```
 
-Update the exempt path list while global maintenance is active, without toggling the mode.
+Update the exempt path list while global maintenance is active, without toggling the mode on or off. Useful for adding emergency access to a monitoring endpoint mid-incident.
 
 ---
 
@@ -239,10 +376,18 @@ async def get_audit_log(
 
 Return audit entries newest-first. Optionally filter by route path.
 
-```python
+```python title="example"
+# Last 50 entries across all routes
 entries = await engine.get_audit_log(limit=50)
+
+# All entries for a specific route
 entries = await engine.get_audit_log(path="GET:/payments", limit=20)
+
+for e in entries:
+    print(e.timestamp, e.actor, e.action, e.previous_status, "→", e.new_status)
 ```
+
+Read more in [AuditEntry](models.md#auditentry).
 
 ---
 
@@ -254,48 +399,37 @@ entries = await engine.get_audit_log(path="GET:/payments", limit=20)
 def add_webhook(url: str, formatter=None) -> None
 ```
 
-Register a webhook URL to be notified on every state change. `formatter` can be `None` (default JSON) or `SlackWebhookFormatter()`.
+Register a URL to receive HTTP POST notifications on every state change.
 
-```python
-from shield.core.webhooks import SlackWebhookFormatter
-
-engine.add_webhook("https://hooks.slack.com/services/...", formatter=SlackWebhookFormatter())
+```python title="generic JSON webhook"
 engine.add_webhook("https://my-service.example.com/shield-events")
 ```
 
-Webhook payload (default formatter):
+```python title="Slack webhook"
+from shield.core.webhooks import SlackWebhookFormatter
 
-```json
-{
-  "event": "maintenance_on",
-  "path": "GET:/payments",
-  "reason": "DB migration",
-  "timestamp": "2025-06-01T02:00:00Z",
-  "state": { "path": "GET:/payments", "status": "maintenance", ... }
-}
+engine.add_webhook(
+    "https://hooks.slack.com/services/...",
+    formatter=SlackWebhookFormatter(),
+)
 ```
 
-Webhook failures are logged and never affect the request path.
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `url` | `str` | required | The HTTP endpoint that receives the POST |
+| `formatter` | `callable \| None` | `None` | A callable that returns the POST payload. `None` uses the default JSON formatter. Pass `SlackWebhookFormatter()` for Slack-compatible blocks. |
 
----
+??? info "Default JSON payload"
 
-## Lifecycle (async context manager)
+    ```json
+    {
+      "event": "maintenance_on",
+      "path": "GET:/payments",
+      "reason": "DB migration",
+      "timestamp": "2025-06-01T02:00:00Z",
+      "state": { "path": "GET:/payments", "status": "maintenance" }
+    }
+    ```
 
-Use `async with engine:` in your FastAPI lifespan to call `backend.startup()` and `backend.shutdown()` automatically:
-
-```python
-from contextlib import asynccontextmanager
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    async with engine:
-        yield
-
-app = FastAPI(lifespan=lifespan)
-```
-
----
-
-## Fail-open guarantee
-
-If the backend raises any exception during `engine.check()`, the error is logged and the request is **allowed through**. api-shield never takes down your API due to its own backend being unreachable.
+!!! note "Webhook failures are silent"
+    Webhook delivery runs in a background task. Errors are logged and never propagated to the request path or the caller.

@@ -1,6 +1,6 @@
 # Admin Dashboard
 
-`ShieldAdmin` is the unified admin interface — it mounts the HTMX dashboard UI and the REST API (used by the CLI) under a single path.
+`ShieldAdmin` is the unified admin interface. It mounts the HTMX dashboard UI and the REST API (used by the CLI) under a single path.
 
 ---
 
@@ -71,7 +71,7 @@ After starting the server:
     ```
 
 !!! tip "Token invalidation"
-    When you change `auth=` (new user, changed password), all previously issued tokens are automatically invalidated on restart — even if `secret_key` is stable. This is handled by mixing an auth fingerprint into the HMAC signing key.
+    When you change `auth=` (new user, changed password), all previously issued tokens are automatically invalidated on restart, even if `secret_key` is stable. This is handled by mixing an auth fingerprint into the HMAC signing key.
 
 ---
 
@@ -94,9 +94,9 @@ The dashboard renders all registered routes with live status badges:
 
 ### Actions per route
 
-- **Enable** — restore route to `ACTIVE`
-- **Maintenance** — put in maintenance with optional reason + window
-- **Disable** — permanently disable with reason
+- **Enable**: restore route to `ACTIVE`
+- **Maintenance**: put in maintenance with optional reason + window
+- **Disable**: permanently disable with reason
 
 ### Live updates (SSE)
 
@@ -154,9 +154,9 @@ ShieldAdmin(
 | Option | Default | Description |
 |---|---|---|
 | `engine` | required | The `ShieldEngine` instance |
-| `auth` | `None` (open) | Credentials — see forms above |
+| `auth` | `None` (open) | Credentials (see forms above) |
 | `prefix` | `"/shield"` | Mount path prefix (must match `app.mount()`) |
-| `secret_key` | random | HMAC signing key — set a stable value in production |
+| `secret_key` | random | HMAC signing key; set a stable value in production |
 | `token_expiry` | `86400` | Token lifetime in seconds |
 
 ---

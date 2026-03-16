@@ -15,7 +15,7 @@ uv add "api-shield[all]"            # everything including CLI + admin
 
 ## Quick setup
 
-```python
+```python title="main.py"
 from fastapi import FastAPI
 from shield.core.config import make_engine
 from shield.fastapi import (
@@ -73,11 +73,11 @@ All decorators work with any router type (plain `APIRouter`, `ShieldRouter`, or 
 
 | Decorator | Import | Behaviour |
 |---|---|---|
-| `@maintenance(reason, start, end)` | `shield.fastapi.decorators` | 503 temporarily |
-| `@disabled(reason)` | `shield.fastapi.decorators` | 503 permanently |
-| `@env_only(*envs)` | `shield.fastapi.decorators` | 404 in other envs |
-| `@deprecated(sunset, use_instead)` | `shield.fastapi.decorators` | 200 + headers |
-| `@force_active` | `shield.fastapi.decorators` | Always 200 |
+| `@maintenance(reason, start, end)` | `shield.fastapi` | 503 temporarily |
+| `@disabled(reason)` | `shield.fastapi` | 503 permanently |
+| `@env_only(*envs)` | `shield.fastapi` | 404 in other envs |
+| `@deprecated(sunset, use_instead)` | `shield.fastapi` | 200 + headers |
+| `@force_active` | `shield.fastapi` | Always 200 |
 
 See [**Reference: Decorators**](../reference/decorators.md) for full details.
 
@@ -123,22 +123,22 @@ See [**Tutorial: Admin Dashboard**](../tutorial/admin-dashboard.md) for full det
 
 Shield decorators work as FastAPI `Depends()` dependencies for per-handler enforcement without middleware.
 
-```python
+```python title="all three patterns"
 from fastapi import Depends
 from shield.fastapi.decorators import disabled, maintenance
 
-# Pattern A: Decorator only (relies on ShieldMiddleware)
+# Pattern A — decorator only (relies on ShieldMiddleware to enforce)
 @router.get("/payments")
 @maintenance(reason="DB migration")
 async def get_payments():
     return {"payments": []}
 
-# Pattern B: Depends() only (per-handler, no middleware required)
+# Pattern B — Depends() only (per-handler, no middleware required)
 @router.get("/admin/report", dependencies=[Depends(disabled(reason="Use /v2/report"))])
 async def admin_report():
     return {}
 
-# Pattern C: Both (most explicit; works with or without middleware)
+# Pattern C — both (works with or without middleware; most explicit)
 @router.get(
     "/orders",
     dependencies=[Depends(maintenance(reason="Order upgrade"))],
@@ -158,12 +158,12 @@ async def get_orders():
 
 ## Using with FastAPI lifespan
 
-```python
+```python title="main.py"
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine:   # → backend.startup() … backend.shutdown()
+    async with engine:   # calls backend.startup() then backend.shutdown()
         yield
 
 app = FastAPI(lifespan=lifespan)
@@ -174,7 +174,7 @@ app.add_middleware(ShieldMiddleware, engine=engine)
 
 ## Testing
 
-```python
+```python title="tests/test_payments.py"
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
@@ -230,15 +230,313 @@ asyncio_mode = "auto"   # all async tests work without @pytest.mark.asyncio
 
 ## Runnable examples
 
-| File | What it demonstrates |
-|---|---|
-| `examples/fastapi/basic.py` | Core decorators + `ShieldAdmin` |
-| `examples/fastapi/dependency_injection.py` | `Depends()` pattern |
-| `examples/fastapi/scheduled_maintenance.py` | Auto-activating maintenance windows |
-| `examples/fastapi/global_maintenance.py` | Blocking every route at once |
-| `examples/fastapi/custom_backend/sqlite_backend.py` | Full custom backend (SQLite) |
+Each example below is a complete, self-contained FastAPI app. Click to expand the full source, then copy and run it locally.
 
-```bash
-uv run uvicorn examples.fastapi.basic:app --reload
-# Dashboard: http://localhost:8000/shield/  (login: admin / secret)
-```
+---
+
+### Basic usage
+
+??? example "All core decorators + ShieldAdmin"
+
+    [:material-github: View on GitHub](https://github.com/Attakay78/api-shield/blob/main/examples/fastapi/basic.py){ .md-button }
+
+    Demonstrates every decorator (`@maintenance`, `@disabled`, `@env_only`, `@force_active`, `@deprecated`) together with the `ShieldAdmin` unified interface (dashboard + CLI REST API).
+
+    **Expected behavior:**
+
+    | Endpoint | Response | Why |
+    |---|---|---|
+    | `GET /health` | 200 always | `@force_active` |
+    | `GET /payments` | 503 `MAINTENANCE_MODE` | `@maintenance` |
+    | `GET /debug` | 200 in dev, 404 in production | `@env_only("dev")` |
+    | `GET /old-endpoint` | 503 `ROUTE_DISABLED` | `@disabled` |
+    | `GET /v1/users` | 200 + `Deprecation` headers | `@deprecated` |
+
+    **Run:**
+
+    ```bash
+    uv run uvicorn examples.fastapi.basic:app --reload
+    # Swagger UI:       http://localhost:8000/docs
+    # Admin dashboard:  http://localhost:8000/shield/   (admin / secret)
+    # Audit log:        http://localhost:8000/shield/audit
+    ```
+
+    **CLI quick-start:**
+
+    ```bash
+    shield login admin          # password: secret
+    shield status
+    shield disable GET:/payments --reason "hotfix"
+    shield enable  GET:/payments
+    ```
+
+    **Full source:**
+
+    ```python title="examples/fastapi/basic.py"
+    --8<-- "examples/fastapi/basic.py"
+    ```
+
+---
+
+### Dependency injection
+
+??? example "Shield decorators as FastAPI `Depends()`"
+
+    [:material-github: View on GitHub](https://github.com/Attakay78/api-shield/blob/main/examples/fastapi/dependency_injection.py){ .md-button }
+
+    Shows how to use shield decorators as `Depends()` instead of (or alongside) middleware. Once `configure_shield(app, engine)` is called — or `ShieldMiddleware` is added, which calls it automatically — all decorator dependencies find the engine via `request.app.state` without needing an explicit `engine=` argument per route.
+
+    **Expected behavior:**
+
+    | Endpoint | Response |
+    |---|---|
+    | `GET /payments` | 503 (maintenance) — toggle off with `shield enable GET:/payments` |
+    | `GET /old-endpoint` | 503 (disabled) |
+    | `GET /debug` | 404 in production, 200 in dev/staging |
+    | `GET /v1/users` | 200 + `Deprecation` / `Sunset` / `Link` headers |
+    | `GET /health` | 200 always |
+
+    **Run:**
+
+    ```bash
+    uv run uvicorn examples.fastapi.dependency_injection:app --reload
+    # Admin dashboard: http://localhost:8000/shield/   (admin / secret)
+    ```
+
+    **Try it:**
+
+    ```bash
+    curl -i http://localhost:8000/payments      # → 503
+    shield enable GET:/payments                 # toggle off without redeploy
+    curl -i http://localhost:8000/payments      # → 200
+    ```
+
+    **Full source:**
+
+    ```python title="examples/fastapi/dependency_injection.py"
+    --8<-- "examples/fastapi/dependency_injection.py"
+    ```
+
+---
+
+### Scheduled maintenance
+
+??? example "Auto-activating and auto-deactivating windows"
+
+    [:material-github: View on GitHub](https://github.com/Attakay78/api-shield/blob/main/examples/fastapi/scheduled_maintenance.py){ .md-button }
+
+    Demonstrates how to schedule a maintenance window that activates and deactivates automatically at the specified times — no manual intervention required.
+
+    **Endpoints:**
+
+    | Endpoint | Purpose |
+    |---|---|
+    | `GET /orders` | Normal route — enters maintenance during the window |
+    | `GET /admin/schedule` | Schedules a 10-second window starting 5 seconds from now |
+    | `GET /admin/status` | Current shield state for all routes |
+    | `GET /health` | Always 200 |
+
+    **Run:**
+
+    ```bash
+    uv run uvicorn examples.fastapi.scheduled_maintenance:app --reload
+    ```
+
+    **Quick demo:**
+
+    ```bash
+    # 1. Route is active
+    curl http://localhost:8000/orders            # → 200
+
+    # 2. Schedule the window (activates in 5 s, ends in 15 s)
+    curl http://localhost:8000/admin/schedule
+
+    # 3. Wait 5 seconds, then:
+    curl http://localhost:8000/orders            # → 503 MAINTENANCE_MODE
+
+    # 4. Wait 10 more seconds, then:
+    curl http://localhost:8000/orders            # → 200 again
+    ```
+
+    **Full source:**
+
+    ```python title="examples/fastapi/scheduled_maintenance.py"
+    --8<-- "examples/fastapi/scheduled_maintenance.py"
+    ```
+
+---
+
+### Global maintenance
+
+??? example "Blocking all routes at once"
+
+    [:material-github: View on GitHub](https://github.com/Attakay78/api-shield/blob/main/examples/fastapi/global_maintenance.py){ .md-button }
+
+    Demonstrates enabling and disabling global maintenance mode, which blocks every route in one call without per-route decorators. `@force_active` routes are exempt by default.
+
+    **Endpoints:**
+
+    | Endpoint | Purpose |
+    |---|---|
+    | `GET /payments` | Normal business route — blocked during global maintenance |
+    | `GET /orders` | Normal business route — blocked during global maintenance |
+    | `GET /health` | Always 200 (`@force_active` bypasses global maintenance) |
+    | `GET /admin/on` | Enable global maintenance |
+    | `GET /admin/off` | Disable global maintenance |
+    | `GET /admin/status` | Current global maintenance config |
+
+    **Run:**
+
+    ```bash
+    uv run uvicorn examples.fastapi.global_maintenance:app --reload
+    ```
+
+    **Quick demo:**
+
+    ```bash
+    curl http://localhost:8000/payments          # → 200
+    curl http://localhost:8000/admin/on          # enable global maintenance
+    curl http://localhost:8000/payments          # → 503 MAINTENANCE_MODE
+    curl http://localhost:8000/health            # → 200 (force_active, exempt)
+    curl http://localhost:8000/admin/off         # restore normal operation
+    curl http://localhost:8000/payments          # → 200
+    ```
+
+    **Full source:**
+
+    ```python title="examples/fastapi/global_maintenance.py"
+    --8<-- "examples/fastapi/global_maintenance.py"
+    ```
+
+---
+
+### Custom responses
+
+??? example "HTML pages, redirects, and branded JSON errors"
+
+    [:material-github: View on GitHub](https://github.com/Attakay78/api-shield/blob/main/examples/fastapi/custom_responses.py){ .md-button }
+
+    Shows how to replace the default JSON error body with any Starlette response — HTML maintenance pages, redirects, plain text, or a different JSON shape — either per-route or as an app-wide default on the middleware.
+
+    **Resolution order:** per-route `response=` → global `responses=` default → built-in JSON.
+
+    **Expected behavior:**
+
+    | Endpoint | Response | How |
+    |---|---|---|
+    | `GET /payments` | HTML maintenance page | Per-route factory on `@maintenance` |
+    | `GET /orders` | 302 redirect to `/status` | Per-route lambda on `@maintenance` |
+    | `GET /legacy` | Plain text 503 | Per-route lambda on `@disabled` |
+    | `GET /inventory` | HTML from global default | No per-route factory; falls back to middleware |
+    | `GET /reports` | HTML from global async factory | No per-route factory; async fallback |
+    | `GET /status` | 200 JSON | Redirect target (`@force_active`) |
+    | `GET /health` | 200 JSON | `@force_active` |
+
+    **Run:**
+
+    ```bash
+    uv run uvicorn examples.fastapi.custom_responses:app --reload
+    # Admin dashboard: http://localhost:8000/shield/   (admin / secret)
+    ```
+
+    **Full source:**
+
+    ```python title="examples/fastapi/custom_responses.py"
+    --8<-- "examples/fastapi/custom_responses.py"
+    ```
+
+---
+
+### Webhooks
+
+??? example "HTTP notifications on every state change"
+
+    [:material-github: View on GitHub](https://github.com/Attakay78/api-shield/blob/main/examples/fastapi/webhooks.py){ .md-button }
+
+    Fully self-contained webhook demo: three receivers (generic JSON, Slack-formatted, and a custom payload) are mounted on the same app — no external service needed. Change a route state via the CLI or dashboard and watch the events appear at `/webhook-log`.
+
+    **Webhook receivers (all `@force_active`):**
+
+    | Endpoint | Payload format |
+    |---|---|
+    | `POST /webhooks/generic` | Default JSON (`default_formatter`) |
+    | `POST /webhooks/slack` | Slack Incoming Webhook blocks (`SlackWebhookFormatter`) |
+    | `POST /webhooks/custom` | Bespoke minimal payload (custom formatter) |
+
+    **Run:**
+
+    ```bash
+    uv run uvicorn examples.fastapi.webhooks:app --reload
+    # Webhook log: http://localhost:8000/webhook-log  (auto-refreshes every 5 s)
+    # Admin:       http://localhost:8000/shield/       (admin / secret)
+    ```
+
+    **Trigger events:**
+
+    ```bash
+    shield config set-url http://localhost:8000/shield
+    shield login admin                                   # password: secret
+    shield disable GET:/payments --reason "hotfix"
+    shield enable  GET:/payments
+    shield maintenance GET:/orders --reason "stock sync"
+    shield enable  GET:/orders
+    ```
+
+    Then open `http://localhost:8000/webhook-log` to see all three receivers fire for each state change.
+
+    **Full source:**
+
+    ```python title="examples/fastapi/webhooks.py"
+    --8<-- "examples/fastapi/webhooks.py"
+    ```
+
+---
+
+### Custom backend (SQLite)
+
+??? example "Implementing `ShieldBackend` with aiosqlite"
+
+    [:material-github: View on GitHub](https://github.com/Attakay78/api-shield/blob/main/examples/fastapi/custom_backend/sqlite_backend.py){ .md-button }
+
+    A complete, working custom backend that stores all route state and audit log entries in a SQLite database via `aiosqlite`. Restart the server and the state survives. The same CLI workflow works unchanged — the CLI talks to the app's REST API, never to the database directly.
+
+    **Requirements:**
+
+    ```bash
+    uv add aiosqlite
+    ```
+
+    **Expected behavior:**
+
+    | Endpoint | Response |
+    |---|---|
+    | `GET /health` | 200 always — `backend: "sqlite"` in body |
+    | `GET /payments` | 503 `MAINTENANCE_MODE` (persisted in SQLite) |
+    | `GET /legacy` | 503 `ROUTE_DISABLED` (persisted in SQLite) |
+    | `GET /orders` | 200 active |
+
+    **Run:**
+
+    ```bash
+    uv run uvicorn examples.fastapi.custom_backend.sqlite_backend:app --reload
+    # Swagger UI:  http://localhost:8000/docs
+    # Admin:       http://localhost:8000/shield/   (admin / secret)
+    # Audit log:   http://localhost:8000/shield/audit
+    ```
+
+    **CLI quick-start:**
+
+    ```bash
+    shield config set-url http://localhost:8000/shield
+    shield login admin          # password: secret
+    shield status
+    shield disable GET:/payments --reason "hotfix"
+    shield enable  GET:/payments
+    shield log
+    ```
+
+    **Full source:**
+
+    ```python title="examples/fastapi/custom_backend/sqlite_backend.py"
+    --8<-- "examples/fastapi/custom_backend/sqlite_backend.py"
+    ```

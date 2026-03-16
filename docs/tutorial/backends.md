@@ -1,6 +1,6 @@
 # Backends
 
-A backend is where api-shield stores route state and the audit log. Swapping backends requires a one-line change — everything else (decorators, middleware, CLI, audit log) works unchanged.
+A backend is where api-shield stores route state and the audit log. Swapping backends requires a one-line change; everything else (decorators, middleware, CLI, audit log) works unchanged.
 
 ---
 
