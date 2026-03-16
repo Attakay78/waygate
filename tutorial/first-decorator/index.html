@@ -715,6 +715,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../admin-dashboard/" class="md-nav__link">
         
   
@@ -840,6 +868,34 @@
     
   
     Decorators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
   
 
     
@@ -1558,6 +1614,10 @@
 <tr>
 <td><code>@force_active</code></td>
 <td>Always 200, bypasses all checks</td>
+</tr>
+<tr>
+<td><code>@rate_limit("100/minute")</code></td>
+<td>429 when the limit is exceeded; requires <code>api-shield[rate-limit]</code></td>
 </tr>
 </tbody>
 </table>

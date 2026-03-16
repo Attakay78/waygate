@@ -586,6 +586,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../tutorial/rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../tutorial/admin-dashboard/" class="md-nav__link">
         
   
@@ -711,6 +739,34 @@
     
   
     Decorators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
   
 
     
@@ -1220,78 +1276,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Added">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#custom-responses" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom Responses
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#webhooks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Webhooks
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dependency-injection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Dependency Injection
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#webhook-deduplication" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Webhook Deduplication
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#distributed-global-maintenance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Distributed Global Maintenance
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#documentation-communication" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Documentation &amp; Communication
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -1521,78 +1505,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Added">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#custom-responses" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom Responses
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#webhooks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Webhooks
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dependency-injection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Dependency Injection
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#webhook-deduplication" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Webhook Deduplication
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#distributed-global-maintenance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Distributed Global Maintenance
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#documentation-communication" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Documentation &amp; Communication
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -1801,57 +1713,22 @@
 <hr />
 <h2 id="unreleased"><a href="https://github.com/Attakay78/api-shield/compare/v0.2.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
-<h4 id="custom-responses">Custom Responses<a class="headerlink" href="#custom-responses" title="Permanent link">&para;</a></h4>
 <ul>
-<li><code>response=</code> parameter on <code>@maintenance</code>, <code>@disabled</code>, and <code>@env_only</code> decorators: pass a sync or async factory <code>(request, exc) -&gt; Response</code> to replace the default JSON error body on a per-route basis</li>
-<li><code>responses=</code> dict parameter on <code>ShieldMiddleware</code>: set app-wide response defaults for <code>"maintenance"</code>, <code>"disabled"</code>, and <code>"env_gated"</code> states without repeating the factory on every route</li>
-<li>Resolution order: per-route <code>response=</code> → global <code>responses[...]</code> → built-in JSON</li>
-<li>Factories receive the live <code>Request</code> and the triggering <code>ShieldException</code>, giving access to <code>exc.reason</code>, <code>exc.retry_after</code>, <code>request.url.path</code>, and any other request context</li>
-<li>Any Starlette <code>Response</code> subclass is supported: <code>HTMLResponse</code>, <code>JSONResponse</code>, <code>RedirectResponse</code>, <code>PlainTextResponse</code>, or a raw <code>Response</code></li>
-<li><code>ResponseFactory</code> type alias exported from <code>shield.fastapi</code> for use in type annotations</li>
-<li><code>examples/fastapi/custom_responses.py</code>: runnable example demonstrating per-route and global response patterns</li>
-</ul>
-<h4 id="webhooks">Webhooks<a class="headerlink" href="#webhooks" title="Permanent link">&para;</a></h4>
-<ul>
-<li><code>examples/fastapi/webhooks.py</code>: fully self-contained runnable example demonstrating all three webhook formatters (<code>default_formatter</code>, <code>SlackWebhookFormatter</code>, and a custom formatter) with in-app receivers and a live <code>/webhook-log</code> HTML viewer that auto-refreshes every 5 seconds</li>
-</ul>
-<h4 id="dependency-injection">Dependency Injection<a class="headerlink" href="#dependency-injection" title="Permanent link">&para;</a></h4>
-<ul>
-<li><code>@deprecated</code> now works as a <code>Depends()</code> dependency, injecting <code>Deprecation</code>, <code>Sunset</code>, and <code>Link</code> response headers directly without requiring the middleware, using FastAPI's <code>Response</code> injection</li>
-<li><code>_REQUEST_RESPONSE_SIGNATURE</code> added internally so FastAPI correctly injects both <code>Request</code> and <code>Response</code> into the deprecated dep</li>
-<li><code>_ShieldCallable</code> extended with an optional <code>signature=</code> override and updated <code>__call__</code> to forward the <code>response</code> kwarg to <code>dep_raise</code> when present; fully backward compatible with all existing decorators</li>
-<li><code>examples/fastapi/dependency_injection.py</code> updated to include <code>@deprecated</code> as a <code>Depends()</code> example and a clear explanation of why <code>@force_active</code> cannot be used as a dependency</li>
-</ul>
-<h4 id="webhook-deduplication">Webhook Deduplication<a class="headerlink" href="#webhook-deduplication" title="Permanent link">&para;</a></h4>
-<ul>
-<li><code>ShieldBackend</code> ABC gains <code>try_claim_webhook_dispatch(dedup_key, ttl_seconds)</code>: returns <code>True</code> if this instance should fire webhooks, <code>False</code> if another instance already claimed the right for this event. Default implementation always returns <code>True</code> (single-instance backends never need dedup).</li>
-<li><code>RedisBackend</code> overrides <code>try_claim_webhook_dispatch()</code> using <code>SET NX EX</code>: the first instance to win the atomic write fires webhooks; all others skip. Fails open: a Redis error returns <code>True</code> so webhooks are over-delivered rather than silently dropped.</li>
-<li><code>ShieldEngine._fire_webhooks</code> refactored: now schedules a single <code>_dispatch_webhooks</code> task instead of one task per URL. The task computes a deterministic SHA-256 dedup key from <code>event + path + serialised RouteState</code>, claims dispatch rights via the backend, then fans out to individual webhook URLs only if the claim succeeds.</li>
-<li>Dedup key is deterministic across instances: because the scheduler produces an identical <code>RouteState</code> on all instances for the same window activation, the key is the same fleet-wide and only one instance wins.</li>
-<li>TTL on the dedup key defaults to 60 seconds; if the winning instance crashes mid-dispatch the key expires and re-delivery is possible on the next activation cycle.</li>
-</ul>
-<h4 id="distributed-global-maintenance">Distributed Global Maintenance<a class="headerlink" href="#distributed-global-maintenance" title="Permanent link">&para;</a></h4>
-<ul>
-<li><code>RedisBackend</code> now publishes a lightweight invalidation signal to <code>shield:global_invalidate</code> whenever <code>set_global_config()</code> is called, so any other instance subscribed to this channel immediately drops its in-process <code>GlobalMaintenanceConfig</code> cache</li>
-<li><code>ShieldBackend</code> ABC gains <code>subscribe_global_config()</code>: an async generator that yields <code>None</code> on each remote global config change; default implementation raises <code>NotImplementedError</code> (no-op for <code>MemoryBackend</code> and <code>FileBackend</code>)</li>
-<li><code>ShieldEngine.start()</code>: starts a background <code>asyncio.Task</code> that listens for global config invalidation signals and calls <code>_invalidate_global_config_cache()</code> on each one; idempotent, safe to call multiple times</li>
-<li><code>ShieldEngine.stop()</code>: cancels and awaits the listener task; called automatically by <code>__aexit__</code></li>
-<li><code>ShieldEngine.__aenter__</code> / <code>__aexit__</code> updated to call <code>start()</code> / <code>stop()</code> so CLI scripts using <code>async with ShieldEngine(...)</code> get distributed invalidation automatically</li>
-<li><code>ShieldRouter.register_shield_routes()</code> calls <code>engine.start()</code> at application startup so FastAPI apps also start the listener without requiring the context manager</li>
-<li>For <code>MemoryBackend</code> / <code>FileBackend</code> the new code path is a transparent no-op: <code>NotImplementedError</code> is caught, the task exits immediately, and single-instance cache behaviour is unchanged</li>
-</ul>
-<h4 id="documentation-communication">Documentation &amp; Communication<a class="headerlink" href="#documentation-communication" title="Permanent link">&para;</a></h4>
-<ul>
-<li>Early Access notice added to README and docs homepage, communicating that the library is fully functional and actively developed and inviting community feedback via GitHub Issues</li>
-<li>Webhooks and Custom Responses added to the Key Features table in the docs homepage</li>
-<li>Key Features section added to <code>README.md</code></li>
-<li>New guide: <strong>Distributed Deployments</strong> (<code>docs/guides/distributed.md</code>): covers backend capability matrix, the request lifecycle across instances, global maintenance cache invalidation architecture, scheduler behaviour and webhook deduplication in multi-instance setups, OpenAPI schema staleness, the fail-open guarantee, and a production checklist. Explains why <code>FileBackend</code> intentionally does not support cross-instance sync and when to use each backend.</li>
+<li><strong>Rate limiting</strong> (<code>@rate_limit</code>): per-IP, per-user, per-API-key, and global counters with fixed/sliding/moving window and token bucket algorithms. Supports burst allowance, tiered limits (<code>{"free": "10/min", "pro": "100/min"}</code>), exempt IPs/roles, and custom <code>on_missing_key</code> behaviour. Works as both a decorator and a <code>Depends()</code> dependency. Responses include <code>X-RateLimit-Limit/Remaining/Reset</code> and <code>Retry-After</code> headers. Requires <code>api-shield[rate-limit]</code>.</li>
+<li><strong>Rate limit custom responses</strong>: <code>response=</code> on <code>@rate_limit</code> and <code>responses["rate_limited"]</code> on <code>ShieldMiddleware</code> for replacing the default 429 JSON body with any Starlette <code>Response</code>.</li>
+<li><strong>Rate limit dashboard</strong>: <code>/shield/rate-limits</code> tab showing registered policies with reset/edit/delete actions; <code>/shield/blocked</code> page for the blocked requests log. Policies can also be managed via the <code>shield rl</code> CLI commands (<code>list</code>, <code>set</code>, <code>reset</code>, <code>delete</code>, <code>hits</code>).</li>
+<li><strong>Rate limit audit log</strong>: policy changes (<code>set</code>, <code>update</code>, <code>reset</code>, <code>delete</code>) are recorded in the audit log alongside route state changes, with coloured action badges in the dashboard.</li>
+<li><strong>Rate limit storage</strong>: <code>MemoryRateLimitStorage</code>, <code>FileRateLimitStorage</code> (in-memory counters with periodic disk snapshot), and <code>RedisRateLimitStorage</code> (atomic Redis counters, multi-worker safe). Storage is auto-selected based on the main backend.</li>
+<li><strong>Custom responses</strong> for lifecycle decorators: <code>response=</code> on <code>@maintenance</code>, <code>@disabled</code>, and <code>@env_only</code>; <code>responses=</code> dict on <code>ShieldMiddleware</code> for <code>"maintenance"</code>, <code>"disabled"</code>, and <code>"env_gated"</code> states.</li>
+<li><strong><code>@deprecated</code> as <code>Depends()</code></strong>: injects <code>Deprecation</code>, <code>Sunset</code>, and <code>Link</code> headers directly without requiring middleware.</li>
+<li><strong>Webhook deduplication</strong>: <code>RedisBackend</code> uses <code>SET NX EX</code> to ensure only one instance fires webhooks per event in multi-instance deployments. Fails open on Redis error.</li>
+<li><strong>Distributed global maintenance</strong>: <code>RedisBackend</code> publishes to <code>shield:global_invalidate</code> on every <code>set_global_config()</code> call so all instances drop their cached config immediately.</li>
+<li><strong>Distributed Deployments guide</strong> (<code>docs/guides/distributed.md</code>): backend capability matrix, global maintenance cache invalidation, scheduler behaviour, webhook dedup, and production checklist.</li>
 </ul>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>@deprecated</code> docstring updated: no longer described as decorator-only; documents the <code>Depends()</code> usage pattern</li>
-<li><code>@force_active</code> docstring updated: clearly explains why it cannot be a <code>Depends()</code> (middleware completes before dependencies are resolved)</li>
-<li><strong>Default <code>SHIELD_ENV</code> changed from <code>"production"</code> to <code>"dev"</code></strong>: <code>ShieldEngine</code>, <code>make_engine()</code>, and all examples now default to the <code>dev</code> environment. Set <code>SHIELD_ENV=production</code> (or pass <code>current_env=</code> explicitly) in production deployments. This makes the out-of-the-box experience work correctly for local development where <code>@env_only("dev")</code> routes should be accessible by default.</li>
+<li>Default <code>SHIELD_ENV</code> changed from <code>"production"</code> to <code>"dev"</code>. Set <code>SHIELD_ENV=production</code> explicitly in production deployments.</li>
+<li><code>@deprecated</code> and all blocking decorators now support <code>Depends()</code> in addition to the decorator form.</li>
 </ul>
 <hr />
 <h2 id="020-admin-redesign-docs"><a href="https://github.com/Attakay78/api-shield/compare/v0.1.0...v0.2.0">0.2.0</a> — Admin Redesign &amp; Docs<a class="headerlink" href="#020-admin-redesign-docs" title="Permanent link">&para;</a></h2>

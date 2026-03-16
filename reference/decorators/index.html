@@ -16,7 +16,7 @@
         <link rel="prev" href="../../tutorial/cli/">
       
       
-        <link rel="next" href="../engine/">
+        <link rel="next" href="../rate-limiting/">
       
       
         
@@ -588,6 +588,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../tutorial/rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../tutorial/admin-dashboard/" class="md-nav__link">
         
   
@@ -1013,6 +1041,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @rate_limit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="@rate_limit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tiered-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tiered limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#using-decorators-as-depends-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1038,6 +1116,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1751,6 +1857,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        @rate_limit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="@rate_limit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tiered-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tiered limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#using-decorators-as-depends-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1844,6 +2000,7 @@
 <p>Decorators are the primary way to declare the lifecycle state of a route. Each one stamps a <code>__shield_meta__</code> dictionary onto the endpoint function without modifying it. <code>ShieldRouter</code> reads this metadata at startup and registers the initial state with the engine.</p>
 <p>All decorators are importable from <code>shield.fastapi</code> or directly from <code>shield.fastapi.decorators</code>.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">maintenance</span><span class="p">,</span> <span class="n">disabled</span><span class="p">,</span> <span class="n">env_only</span><span class="p">,</span> <span class="n">force_active</span><span class="p">,</span> <span class="n">deprecated</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.fastapi.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">rate_limit</span>
 </span></code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Decorator order</p>
@@ -2204,6 +2361,11 @@
 <td><code>EnvGatedException</code></td>
 <td>Silent 404</td>
 </tr>
+<tr>
+<td><code>"rate_limited"</code></td>
+<td><code>RateLimitExceededException</code></td>
+<td>429 JSON</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -2239,18 +2401,108 @@
 <td><code>EnvGatedException</code></td>
 <td><code>exc.path</code>, <code>exc.current_env</code>, <code>exc.allowed_envs</code></td>
 </tr>
+<tr>
+<td>Rate limited</td>
+<td><code>RateLimitExceededException</code></td>
+<td><code>exc.limit</code>, <code>exc.retry_after_seconds</code>, <code>exc.reset_at</code>, <code>exc.remaining</code>, <code>exc.key</code></td>
+</tr>
 </tbody>
 </table>
 <p>Read more in <a href="../exceptions/">Exceptions</a>.</p>
 <hr />
+<h2 id="rate_limit"><code>@rate_limit</code><a class="headerlink" href="#rate_limit" title="Permanent link">&para;</a></h2>
+<p>Cap the number of requests a client can make in a given time window. Returns <strong>429</strong> with <code>Retry-After</code> and <code>X-RateLimit-*</code> headers when the limit is exceeded.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.fastapi.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">rate_limit</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/public/posts&quot;</span><span class="p">)</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="nd">@rate_limit</span><span class="p">(</span><span class="s2">&quot;10/minute&quot;</span><span class="p">)</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_posts</span><span class="p">():</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;posts&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">]}</span>
+</span></code></pre></div>
+<h3 id="basic-parameters">Basic parameters<a class="headerlink" href="#basic-parameters" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>limit</code></td>
+<td><code>str \| dict</code></td>
+<td>required</td>
+<td><code>"100/minute"</code> or a tier dict <code>{"free": "10/minute", "pro": "100/minute"}</code></td>
+</tr>
+<tr>
+<td><code>algorithm</code></td>
+<td><code>str</code></td>
+<td><code>"fixed_window"</code></td>
+<td><code>fixed_window</code>, <code>sliding_window</code>, <code>moving_window</code>, or <code>token_bucket</code></td>
+</tr>
+<tr>
+<td><code>key</code></td>
+<td><code>str \| callable</code></td>
+<td><code>"ip"</code></td>
+<td><code>"ip"</code>, <code>"user"</code>, <code>"api_key"</code>, <code>"global"</code>, or an async callable</td>
+</tr>
+<tr>
+<td><code>on_missing_key</code></td>
+<td><code>str \| None</code></td>
+<td>strategy default</td>
+<td><code>"exempt"</code>, <code>"fallback_ip"</code>, or <code>"block"</code></td>
+</tr>
+<tr>
+<td><code>burst</code></td>
+<td><code>int</code></td>
+<td><code>0</code></td>
+<td>Extra requests above the base limit</td>
+</tr>
+<tr>
+<td><code>exempt_ips</code></td>
+<td><code>list[str] \| None</code></td>
+<td><code>[]</code></td>
+<td>CIDR ranges that bypass the limit</td>
+</tr>
+<tr>
+<td><code>exempt_roles</code></td>
+<td><code>list[str] \| None</code></td>
+<td><code>[]</code></td>
+<td>Roles that bypass the limit</td>
+</tr>
+</tbody>
+</table>
+<h3 id="key-strategies">Key strategies<a class="headerlink" href="#key-strategies" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nd">@rate_limit</span><span class="p">(</span><span class="s2">&quot;100/minute&quot;</span><span class="p">)</span>                          <span class="c1"># per IP (default)</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="nd">@rate_limit</span><span class="p">(</span><span class="s2">&quot;100/minute&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">)</span>              <span class="c1"># per request.state.user_id</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="nd">@rate_limit</span><span class="p">(</span><span class="s2">&quot;50/minute&quot;</span><span class="p">,</span>  <span class="n">key</span><span class="o">=</span><span class="s2">&quot;api_key&quot;</span><span class="p">)</span>           <span class="c1"># per X-API-Key header</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="nd">@rate_limit</span><span class="p">(</span><span class="s2">&quot;5/minute&quot;</span><span class="p">,</span>   <span class="n">key</span><span class="o">=</span><span class="s2">&quot;global&quot;</span><span class="p">)</span>            <span class="c1"># shared counter for all callers</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="nd">@rate_limit</span><span class="p">(</span><span class="s2">&quot;100/minute&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">my_async_fn</span><span class="p">)</span>         <span class="c1"># custom extractor</span>
+</span></code></pre></div>
+<h3 id="tiered-limits">Tiered limits<a class="headerlink" href="#tiered-limits" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nd">@rate_limit</span><span class="p">(</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>    <span class="p">{</span><span class="s2">&quot;free&quot;</span><span class="p">:</span> <span class="s2">&quot;10/minute&quot;</span><span class="p">,</span> <span class="s2">&quot;pro&quot;</span><span class="p">:</span> <span class="s2">&quot;100/minute&quot;</span><span class="p">,</span> <span class="s2">&quot;enterprise&quot;</span><span class="p">:</span> <span class="s2">&quot;unlimited&quot;</span><span class="p">},</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>    <span class="n">key</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>The tier is read from <code>request.state.plan</code> by default. Override with <code>tier_resolver="your_attr"</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Requires installation</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;api-shield[rate-limit]&quot;</span>
+</span></code></pre></div>
+</div>
+<p>See <a href="../../tutorial/rate-limiting/"><strong>Tutorial: Rate Limiting</strong></a> and <a href="../rate-limiting/"><strong>Reference: Rate Limiting</strong></a> for the full API.</p>
+<hr />
 <h2 id="using-decorators-as-depends-dependencies">Using decorators as <code>Depends()</code> dependencies<a class="headerlink" href="#using-decorators-as-depends-dependencies" title="Permanent link">&para;</a></h2>
 <p>All decorators also work as FastAPI dependencies. This lets you enforce route state without middleware — useful in testing or when you need per-handler enforcement in a router that does not use <code>ShieldRouter</code>.</p>
-<div class="language-python highlight"><span class="filename">dependency injection usage</span><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
-</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">disabled</span>
-</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>
-</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/admin/report&quot;</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">Depends</span><span class="p">(</span><span class="n">disabled</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;Use /v2/report&quot;</span><span class="p">))])</span>
-</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">admin_report</span><span class="p">():</span>
-</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>    <span class="k">return</span> <span class="p">{}</span>
+<div class="language-python highlight"><span class="filename">dependency injection usage</span><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depends</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">disabled</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/admin/report&quot;</span><span class="p">,</span> <span class="n">dependencies</span><span class="o">=</span><span class="p">[</span><span class="n">Depends</span><span class="p">(</span><span class="n">disabled</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;Use /v2/report&quot;</span><span class="p">))])</span>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">admin_report</span><span class="p">():</span>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>    <span class="k">return</span> <span class="p">{}</span>
 </span></code></pre></div>
 <p>See <a href="../../adapters/fastapi/#dependency-injection">FastAPI adapter: Dependency injection</a> for full details.</p>
 <hr />
@@ -2314,13 +2566,13 @@
         
         
           
-          <a href="../engine/" class="md-footer__link md-footer__link--next" aria-label="Next: ShieldEngine">
+          <a href="../rate-limiting/" class="md-footer__link md-footer__link--next" aria-label="Next: Rate Limiting">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                ShieldEngine
+                Rate Limiting
               </div>
             </div>
             <div class="md-footer__button md-icon">

@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://attakay78.github.io/api-shield/reference/engine/">
       
       
-        <link rel="prev" href="../decorators/">
+        <link rel="prev" href="../rate-limiting/">
       
       
         <link rel="next" href="../backends/">
@@ -588,6 +588,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../tutorial/rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../tutorial/admin-dashboard/" class="md-nav__link">
         
   
@@ -716,6 +744,34 @@
     
   
     Decorators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
   
 
     
@@ -1080,6 +1136,89 @@
       
         <li class="md-nav__item">
   <a href="#webhooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhooks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rate-limiting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limiting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rate limiting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#set_rate_limit_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_rate_limit_policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete_rate_limit_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        delete_rate_limit_policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reset_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_rate_limit_hits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_rate_limit_hits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list_rate_limit_policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list_rate_limit_policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#webhooks_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Webhooks
@@ -1841,6 +1980,89 @@
     </span>
   </a>
   
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rate-limiting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limiting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rate limiting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#set_rate_limit_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_rate_limit_policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete_rate_limit_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        delete_rate_limit_policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reset_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_rate_limit_hits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_rate_limit_hits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list_rate_limit_policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list_rate_limit_policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#webhooks_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Webhooks
+      
+    </span>
+  </a>
+  
     <nav class="md-nav" aria-label="Webhooks">
       <ul class="md-nav__list">
         
@@ -2347,18 +2569,65 @@
 <p>Read more in <a href="../models/#auditentry">AuditEntry</a>.</p>
 <hr />
 <h2 id="webhooks">Webhooks<a class="headerlink" href="#webhooks" title="Permanent link">&para;</a></h2>
+<h2 id="rate-limiting">Rate limiting<a class="headerlink" href="#rate-limiting" title="Permanent link">&para;</a></h2>
+<h3 id="set_rate_limit_policy"><code>set_rate_limit_policy</code><a class="headerlink" href="#set_rate_limit_policy" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_rate_limit_policy</span><span class="p">(</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>    <span class="n">algorithm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;fixed_window&quot;</span><span class="p">,</span>
+</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>    <span class="n">key_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ip&quot;</span><span class="p">,</span>
+</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>    <span class="n">burst</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a>    <span class="n">actor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
+</span><span id="__span-31-9"><a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RateLimitPolicy</span>
+</span></code></pre></div>
+<p>Register or update a rate limit policy at runtime. Persists to the backend so restarts and other instances pick it up. Logged in the audit log as <code>rl_policy_set</code> (new) or <code>rl_policy_updated</code> (existing policy replaced).</p>
+<div class="language-python highlight"><span class="filename">example</span><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">set_rate_limit_policy</span><span class="p">(</span>
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>    <span class="s2">&quot;/public/posts&quot;</span><span class="p">,</span> <span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="s2">&quot;20/minute&quot;</span><span class="p">,</span> <span class="n">actor</span><span class="o">=</span><span class="s2">&quot;alice&quot;</span>
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="p">)</span>
+</span></code></pre></div>
+<hr />
+<h3 id="delete_rate_limit_policy"><code>delete_rate_limit_policy</code><a class="headerlink" href="#delete_rate_limit_policy" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">delete_rate_limit_policy</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">actor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;system&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+<p>Remove a persisted rate limit policy override. Logged as <code>rl_policy_deleted</code>.</p>
+<div class="language-python highlight"><span class="filename">example</span><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">delete_rate_limit_policy</span><span class="p">(</span><span class="s2">&quot;/public/posts&quot;</span><span class="p">,</span> <span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">actor</span><span class="o">=</span><span class="s2">&quot;alice&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<hr />
+<h3 id="reset_rate_limit"><code>reset_rate_limit</code><a class="headerlink" href="#reset_rate_limit" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reset_rate_limit</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">actor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;system&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+<p>Clear rate limit counters for a route immediately. When <code>method</code> is <code>None</code>, counters for all methods on the path are cleared. Logged as <code>rl_reset</code>.</p>
+<div class="language-python highlight"><span class="filename">example</span><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">reset_rate_limit</span><span class="p">(</span><span class="s2">&quot;/public/posts&quot;</span><span class="p">,</span> <span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">actor</span><span class="o">=</span><span class="s2">&quot;alice&quot;</span><span class="p">)</span>
+</span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">reset_rate_limit</span><span class="p">(</span><span class="s2">&quot;/public/posts&quot;</span><span class="p">)</span>   <span class="c1"># all methods</span>
+</span></code></pre></div>
+<hr />
+<h3 id="get_rate_limit_hits"><code>get_rate_limit_hits</code><a class="headerlink" href="#get_rate_limit_hits" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_rate_limit_hits</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">RateLimitHit</span><span class="p">]</span>
+</span></code></pre></div>
+<p>Return blocked request records, newest first.</p>
+<div class="language-python highlight"><span class="filename">example</span><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="n">hits</span> <span class="o">=</span> <span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">get_rate_limit_hits</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</span><span id="__span-38-2"><a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="n">hits</span> <span class="o">=</span> <span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">get_rate_limit_hits</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;/public/posts&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<hr />
+<h3 id="list_rate_limit_policies"><code>list_rate_limit_policies</code><a class="headerlink" href="#list_rate_limit_policies" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_rate_limit_policies</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">RateLimitPolicy</span><span class="p">]</span>
+</span></code></pre></div>
+<p>Return all registered rate limit policies.</p>
+<hr />
+<h2 id="webhooks_1">Webhooks<a class="headerlink" href="#webhooks_1" title="Permanent link">&para;</a></h2>
 <h3 id="add_webhook"><code>add_webhook</code><a class="headerlink" href="#add_webhook" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_webhook</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">formatter</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_webhook</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">formatter</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </span></code></pre></div>
 <p>Register a URL to receive HTTP POST notifications on every state change.</p>
-<div class="language-python highlight"><span class="filename">generic JSON webhook</span><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_webhook</span><span class="p">(</span><span class="s2">&quot;https://my-service.example.com/shield-events&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><span class="filename">generic JSON webhook</span><pre><span></span><code><span id="__span-41-1"><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_webhook</span><span class="p">(</span><span class="s2">&quot;https://my-service.example.com/shield-events&quot;</span><span class="p">)</span>
 </span></code></pre></div>
-<div class="language-python highlight"><span class="filename">Slack webhook</span><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.webhooks</span><span class="w"> </span><span class="kn">import</span> <span class="n">SlackWebhookFormatter</span>
-</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>
-</span><span id="__span-33-3"><a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_webhook</span><span class="p">(</span>
-</span><span id="__span-33-4"><a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>    <span class="s2">&quot;https://hooks.slack.com/services/...&quot;</span><span class="p">,</span>
-</span><span id="__span-33-5"><a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>    <span class="n">formatter</span><span class="o">=</span><span class="n">SlackWebhookFormatter</span><span class="p">(),</span>
-</span><span id="__span-33-6"><a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="p">)</span>
+<div class="language-python highlight"><span class="filename">Slack webhook</span><pre><span></span><code><span id="__span-42-1"><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.webhooks</span><span class="w"> </span><span class="kn">import</span> <span class="n">SlackWebhookFormatter</span>
+</span><span id="__span-42-2"><a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a>
+</span><span id="__span-42-3"><a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_webhook</span><span class="p">(</span>
+</span><span id="__span-42-4"><a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a>    <span class="s2">&quot;https://hooks.slack.com/services/...&quot;</span><span class="p">,</span>
+</span><span id="__span-42-5"><a id="__codelineno-42-5" name="__codelineno-42-5" href="#__codelineno-42-5"></a>    <span class="n">formatter</span><span class="o">=</span><span class="n">SlackWebhookFormatter</span><span class="p">(),</span>
+</span><span id="__span-42-6"><a id="__codelineno-42-6" name="__codelineno-42-6" href="#__codelineno-42-6"></a><span class="p">)</span>
 </span></code></pre></div>
 <table>
 <thead>
@@ -2386,13 +2655,13 @@
 </table>
 <details class="info">
 <summary>Default JSON payload</summary>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="p">{</span>
-</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">  </span><span class="nt">&quot;event&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;maintenance_on&quot;</span><span class="p">,</span>
-</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">  </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GET:/payments&quot;</span><span class="p">,</span>
-</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">  </span><span class="nt">&quot;reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DB migration&quot;</span><span class="p">,</span>
-</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-06-01T02:00:00Z&quot;</span><span class="p">,</span>
-</span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="w">  </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GET:/payments&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;maintenance&quot;</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-34-7"><a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-43-1"><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="p">{</span>
+</span><span id="__span-43-2"><a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="w">  </span><span class="nt">&quot;event&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;maintenance_on&quot;</span><span class="p">,</span>
+</span><span id="__span-43-3"><a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a><span class="w">  </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GET:/payments&quot;</span><span class="p">,</span>
+</span><span id="__span-43-4"><a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a><span class="w">  </span><span class="nt">&quot;reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;DB migration&quot;</span><span class="p">,</span>
+</span><span id="__span-43-5"><a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a><span class="w">  </span><span class="nt">&quot;timestamp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-06-01T02:00:00Z&quot;</span><span class="p">,</span>
+</span><span id="__span-43-6"><a id="__codelineno-43-6" name="__codelineno-43-6" href="#__codelineno-43-6"></a><span class="w">  </span><span class="nt">&quot;state&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GET:/payments&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;maintenance&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-43-7"><a id="__codelineno-43-7" name="__codelineno-43-7" href="#__codelineno-43-7"></a><span class="p">}</span>
 </span></code></pre></div>
 </details>
 <div class="admonition note">
@@ -2436,7 +2705,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../decorators/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Decorators">
+          <a href="../rate-limiting/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Rate Limiting">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2446,7 +2715,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Decorators
+                Rate Limiting
               </div>
             </div>
           </a>

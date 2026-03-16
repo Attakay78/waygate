@@ -591,6 +591,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../admin-dashboard/" class="md-nav__link">
         
   
@@ -751,6 +779,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rate-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#audit-log" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -901,6 +940,34 @@
     
   
     Decorators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
   
 
     
@@ -1449,6 +1516,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rate-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#audit-log" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1676,10 +1754,59 @@
 </span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>shield<span class="w"> </span>global<span class="w"> </span>disable<span class="w">   </span><span class="c1"># restore normal operation</span>
 </span></code></pre></div>
 <hr />
+<h2 id="rate-limits">Rate limits<a class="headerlink" href="#rate-limits" title="Permanent link">&para;</a></h2>
+<p>Manage rate limit policies and view blocked requests. Requires <code>api-shield[rate-limit]</code> on the server.</p>
+<p><code>shield rl</code> and <code>shield rate-limits</code> are aliases — use whichever you prefer.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>list<span class="w">                              </span><span class="c1"># show all registered policies</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/public/posts<span class="w"> </span><span class="m">20</span>/minute<span class="w">   </span><span class="c1"># set or update a policy</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/search<span class="w"> </span><span class="m">5</span>/minute<span class="w"> </span>--algorithm<span class="w"> </span>fixed_window<span class="w"> </span>--key<span class="w"> </span>global
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>shield<span class="w"> </span>rl<span class="w"> </span>reset<span class="w"> </span>GET:/public/posts<span class="w">           </span><span class="c1"># clear counters immediately</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>shield<span class="w"> </span>rl<span class="w"> </span>delete<span class="w"> </span>GET:/public/posts<span class="w">          </span><span class="c1"># remove persisted policy override</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w">                              </span><span class="c1"># blocked requests log (last 20)</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># identical — shield rate-limits is the full name</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>shield<span class="w"> </span>rate-limits<span class="w"> </span>list
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>shield<span class="w"> </span>rate-limits<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/public/posts<span class="w"> </span><span class="m">20</span>/minute
+</span></code></pre></div>
+<details class="example">
+<summary>Sample <code>shield rl list</code> output</summary>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Limit</th>
+<th>Algorithm</th>
+<th>Key Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET /public/posts</td>
+<td>10/minute</td>
+<td>fixed_window</td>
+<td>ip</td>
+</tr>
+<tr>
+<td>GET /search</td>
+<td>5/minute</td>
+<td>fixed_window</td>
+<td>global</td>
+</tr>
+<tr>
+<td>GET /users/me</td>
+<td>100/minute</td>
+<td>fixed_window</td>
+<td>user</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
 <h2 id="audit-log">Audit log<a class="headerlink" href="#audit-log" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>shield<span class="w"> </span>log<span class="w">                          </span><span class="c1"># last 20 entries</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>shield<span class="w"> </span>log<span class="w"> </span>--route<span class="w"> </span>GET:/payments<span class="w">    </span><span class="c1"># filter by route</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>shield<span class="w"> </span>log<span class="w"> </span>--limit<span class="w"> </span><span class="m">100</span><span class="w">              </span><span class="c1"># show more entries</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>shield<span class="w"> </span>log<span class="w">                          </span><span class="c1"># last 20 entries</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>shield<span class="w"> </span>log<span class="w"> </span>--route<span class="w"> </span>GET:/payments<span class="w">    </span><span class="c1"># filter by route</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>shield<span class="w"> </span>log<span class="w"> </span>--limit<span class="w"> </span><span class="m">100</span><span class="w">              </span><span class="c1"># show more entries</span>
 </span></code></pre></div>
 <details class="example">
 <summary>Sample <code>shield log</code> output</summary>
@@ -1716,16 +1843,16 @@
 </details>
 <hr />
 <h2 id="auth-commands">Auth commands<a class="headerlink" href="#auth-commands" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>shield<span class="w"> </span>login<span class="w"> </span>admin<span class="w">                          </span><span class="c1"># prompts for password interactively</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>shield<span class="w"> </span>login<span class="w"> </span>admin<span class="w"> </span>--password<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SHIELD_PASS</span><span class="s2">&quot;</span><span class="w">  </span><span class="c1"># inline, useful in CI</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>shield<span class="w"> </span>config<span class="w"> </span>show<span class="w">   </span><span class="c1"># check current session and resolved URL</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>shield<span class="w"> </span><span class="nb">logout</span><span class="w">        </span><span class="c1"># revokes server-side token and clears local credentials</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>shield<span class="w"> </span>login<span class="w"> </span>admin<span class="w">                          </span><span class="c1"># prompts for password interactively</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>shield<span class="w"> </span>login<span class="w"> </span>admin<span class="w"> </span>--password<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$SHIELD_PASS</span><span class="s2">&quot;</span><span class="w">  </span><span class="c1"># inline, useful in CI</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>shield<span class="w"> </span>config<span class="w"> </span>show<span class="w">   </span><span class="c1"># check current session and resolved URL</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>shield<span class="w"> </span><span class="nb">logout</span><span class="w">        </span><span class="c1"># revokes server-side token and clears local credentials</span>
 </span></code></pre></div>
 <hr />
 <h2 id="config-commands">Config commands<a class="headerlink" href="#config-commands" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>shield<span class="w"> </span>config<span class="w"> </span>set-url<span class="w"> </span>http://prod.example.com/shield<span class="w">   </span><span class="c1"># override server URL</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>shield<span class="w"> </span>config<span class="w"> </span>show<span class="w">                                      </span><span class="c1"># show URL, source, session</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>shield<span class="w"> </span>config<span class="w"> </span>set-url<span class="w"> </span>http://prod.example.com/shield<span class="w">   </span><span class="c1"># override server URL</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>shield<span class="w"> </span>config<span class="w"> </span>show<span class="w">                                      </span><span class="c1"># show URL, source, session</span>
 </span></code></pre></div>
 <hr />
 <h2 id="server-url-discovery">Server URL discovery<a class="headerlink" href="#server-url-discovery" title="Permanent link">&para;</a></h2>
@@ -1786,8 +1913,8 @@
 </tr>
 </tbody>
 </table>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>shield<span class="w"> </span>disable<span class="w"> </span><span class="s2">&quot;GET:/payments&quot;</span><span class="w">   </span><span class="c1"># method-specific</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>shield<span class="w"> </span><span class="nb">enable</span><span class="w"> </span><span class="s2">&quot;/payments&quot;</span><span class="w">        </span><span class="c1"># applies to all methods under /payments</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>shield<span class="w"> </span>disable<span class="w"> </span><span class="s2">&quot;GET:/payments&quot;</span><span class="w">   </span><span class="c1"># method-specific</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>shield<span class="w"> </span><span class="nb">enable</span><span class="w"> </span><span class="s2">&quot;/payments&quot;</span><span class="w">        </span><span class="c1"># applies to all methods under /payments</span>
 </span></code></pre></div>
 <hr />
 <h2 id="next-step">Next step<a class="headerlink" href="#next-step" title="Permanent link">&para;</a></h2>

@@ -726,6 +726,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../admin-dashboard/" class="md-nav__link">
         
   
@@ -851,6 +879,34 @@
     
   
     Decorators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
   
 
     
@@ -1519,9 +1575,14 @@
 </span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>        │       ├─ DISABLED     → 503
 </span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>        │       ├─ ENV_GATED    → 404 (silent)
 </span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>        │       ├─ DEPRECATED   → pass through + inject response headers
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>        │       └─ ACTIVE       → pass through ✓
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>        │
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>        └─ call_next(request)
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>        │       ├─ ACTIVE       → pass through ✓
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>        │       │
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>        │       └─ Rate limit check (if policy registered for route)
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>        │               ├─ Exempt IP or role? → pass through ✓
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>        │               ├─ Under limit?       → pass through + X-RateLimit-* headers ✓
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>        │               └─ Limit exceeded?    → 429 + Retry-After header
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>        │
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>        └─ call_next(request)
 </span></code></pre></div>
 <hr />
 <h2 id="route-registration">Route registration<a class="headerlink" href="#route-registration" title="Permanent link">&para;</a></h2>
@@ -1590,6 +1651,11 @@
 <td>Global maintenance</td>
 <td>503</td>
 <td><code>MAINTENANCE_MODE</code></td>
+</tr>
+<tr>
+<td>Rate limit exceeded</td>
+<td>429</td>
+<td><code>RATE_LIMIT_EXCEEDED</code></td>
 </tr>
 </tbody>
 </table>

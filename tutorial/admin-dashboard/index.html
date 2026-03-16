@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://attakay78.github.io/api-shield/tutorial/admin-dashboard/">
       
       
-        <link rel="prev" href="../backends/">
+        <link rel="prev" href="../rate-limiting/">
       
       
         <link rel="next" href="../cli/">
@@ -588,6 +588,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -700,6 +728,28 @@
     <span class="md-ellipsis">
       
         Live updates (SSE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rate-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#blocked-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blocked requests
       
     </span>
   </a>
@@ -868,6 +918,34 @@
     
   
     Decorators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
   
 
     
@@ -1400,6 +1478,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#rate-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rate limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#blocked-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blocked requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#audit-log" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1544,6 +1644,8 @@
 <ul>
 <li><strong>Dashboard UI</strong>: <code>http://localhost:8000/shield/</code></li>
 <li><strong>Audit log</strong>: <code>http://localhost:8000/shield/audit</code></li>
+<li><strong>Rate limits</strong>: <code>http://localhost:8000/shield/rate-limits</code></li>
+<li><strong>Blocked requests</strong>: <code>http://localhost:8000/shield/blocked</code></li>
 <li><strong>REST API</strong>: <code>http://localhost:8000/shield/api/</code></li>
 </ul>
 <hr />
@@ -1631,6 +1733,16 @@
 </ul>
 <h3 id="live-updates-sse">Live updates (SSE)<a class="headerlink" href="#live-updates-sse" title="Permanent link">&para;</a></h3>
 <p>The dashboard connects to the <code>/shield/events</code> SSE endpoint. When state changes (from another browser tab, CLI command, or API call), the affected row updates in real time without a page reload.</p>
+<h3 id="rate-limits">Rate limits<a class="headerlink" href="#rate-limits" title="Permanent link">&para;</a></h3>
+<p><code>http://localhost:8000/shield/rate-limits</code> shows all registered rate limit policies. Each row has three actions:</p>
+<ul>
+<li><strong>Reset</strong> — clear counters immediately so clients get their full quota back</li>
+<li><strong>Edit</strong> — update the limit, algorithm, or key strategy without redeploying</li>
+<li><strong>Delete</strong> — remove a persisted policy override</li>
+</ul>
+<p>Requires <code>api-shield[rate-limit]</code> installed on the server.</p>
+<h3 id="blocked-requests">Blocked requests<a class="headerlink" href="#blocked-requests" title="Permanent link">&para;</a></h3>
+<p><code>http://localhost:8000/shield/blocked</code> shows a paginated log of every request that was rejected with a 429. The log is capped at 10,000 entries (configurable via <code>max_rl_hit_entries</code> on the engine).</p>
 <h3 id="audit-log">Audit log<a class="headerlink" href="#audit-log" title="Permanent link">&para;</a></h3>
 <p><code>http://localhost:8000/shield/audit</code> shows a paginated table of all state changes:</p>
 <ul>
@@ -1639,7 +1751,7 @@
 <li>Action (enable / disable / maintenance / etc.)</li>
 <li>Actor (authenticated username or "anonymous")</li>
 <li>Platform (<code>cli</code> or <code>dashboard</code>)</li>
-<li>Old status → New status</li>
+<li>Status change — route status transitions shown as <code>old → new</code>; rate limit actions shown as coloured badges (<code>set</code>, <code>update</code>, <code>reset</code>, <code>delete</code>)</li>
 <li>Reason</li>
 </ul>
 <hr />
@@ -1723,6 +1835,21 @@
 <td><code>POST</code></td>
 <td><code>/api/global/disable</code></td>
 <td>Disable global maintenance</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/rate-limits</code></td>
+<td>List all rate limit policies</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/rate-limits/hits</code></td>
+<td>Blocked requests log</td>
+</tr>
+<tr>
+<td><code>DELETE</code></td>
+<td><code>/api/rate-limits/{key}/reset</code></td>
+<td>Clear counters for a route</td>
 </tr>
 </tbody>
 </table>
@@ -1812,7 +1939,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../backends/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Backends">
+          <a href="../rate-limiting/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Rate Limiting">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1822,7 +1949,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Backends
+                Rate Limiting
               </div>
             </div>
           </a>

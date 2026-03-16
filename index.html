@@ -677,6 +677,34 @@
   
   
     <li class="md-nav__item">
+      <a href="tutorial/rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="tutorial/admin-dashboard/" class="md-nav__link">
         
   
@@ -802,6 +830,34 @@
     
   
     Decorators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="reference/rate-limiting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rate Limiting
   
 
     
@@ -1361,8 +1417,8 @@
 <p class="admonition-title">Early Access: your feedback shapes the roadmap</p>
 <p><code>api-shield</code> is fully functional and ready to use. We are actively building on a solid foundation and would love to hear from you. If you have feedback, feature ideas, or suggestions, <strong><a href="https://github.com/Attakay78/api-shield/issues">open an issue on GitHub</a></strong>. Every voice helps make the library better for everyone.</p>
 </div>
-<p><strong>Route lifecycle management for Python web frameworks: maintenance mode, environment gating, deprecation, admin panels, and more. No restarts required.</strong></p>
-<p>Most "maintenance mode" tools are blunt instruments: shut everything down or nothing at all. <code>api-shield</code> treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through middleware, with no redeployment and no server restart.</p>
+<p><strong>Route(API) lifecycle management for Python web frameworks: maintenance mode, environment gating, deprecation, rate limiting, admin panels, and more. No restarts required.</strong></p>
+<p>Most "route lifecycle management" tools are blunt instruments: shut everything down or nothing at all. <code>api-shield</code> treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through middleware, with no redeployment and no server restart.</p>
 <hr />
 <h2 id="30-second-quickstart">30-second quickstart<a class="headerlink" href="#30-second-quickstart" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;api-shield[all]&quot;</span>
@@ -1471,6 +1527,10 @@
 <td>🎨 <strong>Custom responses</strong></td>
 <td>Return HTML, redirects, or any response shape for blocked routes, per-route or as an app-wide default</td>
 </tr>
+<tr>
+<td>🚦 <strong>Rate limiting</strong></td>
+<td>Per-IP, per-user, per-API-key, or global counters with tiered limits, burst allowance, and runtime policy mutation</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -1509,6 +1569,11 @@
 <td>Route bypasses all shield checks</td>
 <td>Always 200</td>
 </tr>
+<tr>
+<td><code>@rate_limit("100/minute")</code></td>
+<td>Cap requests per IP, user, API key, or globally</td>
+<td>429 when exceeded</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -1516,7 +1581,9 @@
 <ul>
 <li><a href="tutorial/installation/"><strong>Tutorial: Installation</strong></a>: get up and running in seconds</li>
 <li><a href="tutorial/first-decorator/"><strong>Tutorial: First Decorator</strong></a>: put your first route in maintenance mode</li>
+<li><a href="tutorial/rate-limiting/"><strong>Tutorial: Rate Limiting</strong></a>: per-IP, per-user, tiered limits, and more</li>
 <li><a href="reference/decorators/"><strong>Reference: Decorators</strong></a>: full decorator API</li>
+<li><a href="reference/rate-limiting/"><strong>Reference: Rate Limiting</strong></a>: <code>@rate_limit</code> parameters, models, and CLI commands</li>
 <li><a href="reference/engine/"><strong>Reference: ShieldEngine</strong></a>: programmatic control</li>
 <li><a href="reference/cli/"><strong>Reference: CLI</strong></a>: all CLI commands</li>
 </ul>
