@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+---
+
+## [0.4.0]
+
 ### Added
 
 - **Mobile & tablet responsive dashboard**: all four tables (Routes, Audit, Rate Limits, Blocked) transform into stacked cards on screens narrower than 640 px using a CSS-only card layout with `data-label` attributes. Action buttons collapse to icon-only on small screens.
@@ -111,7 +115,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `shield` CLI with direct backend access
 - `shield status`, `shield enable`, `shield disable`, `shield maintenance`, `shield schedule`, `shield log`
 
-[Unreleased]: https://github.com/Attakay78/api-shield/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Attakay78/api-shield/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Attakay78/api-shield/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Attakay78/api-shield/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Attakay78/api-shield/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Attakay78/api-shield/releases/tag/v0.1.0
