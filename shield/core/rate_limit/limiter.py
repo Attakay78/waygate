@@ -216,6 +216,10 @@ class ShieldRateLimiter:
         else:
             await self._storage.reset_all_for_path(path)
 
+    async def startup(self) -> None:
+        """Delegate startup to the storage layer."""
+        await self._storage.startup()
+
     async def shutdown(self) -> None:
         """Delegate shutdown to the storage layer."""
         await self._storage.shutdown()

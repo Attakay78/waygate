@@ -80,6 +80,9 @@ class ShieldEngine:
         # Background task that listens for cross-instance global config
         # invalidation signals (started by start(), cancelled by stop()).
         self._global_listener_task: asyncio.Task[None] | None = None
+        # Background task that syncs rate limit policy changes from other
+        # instances (RedisBackend only; no-op for Memory/File backends).
+        self._rl_policy_listener_task: asyncio.Task[None] | None = None
         # Monotonic counter bumped on every state change.  Used by the OpenAPI
         # filter to detect when the cached schema needs to be rebuilt.
         self._schema_version: int = 0
@@ -119,34 +122,47 @@ class ShieldEngine:
     async def start(self) -> None:
         """Start background tasks required for distributed operation.
 
-        Currently starts the global config cache-invalidation listener
-        when the backend supports ``subscribe_global_config()``
-        (i.e. ``RedisBackend``).  When using ``MemoryBackend`` or
-        ``FileBackend`` the method is a no-op — the backend raises
-        ``NotImplementedError`` on the first iteration and the task
-        completes immediately.
+        Starts two listeners when running with ``RedisBackend``:
 
-        Safe to call multiple times — a second call is a no-op if the
-        listener is already running.
+        * ``shield-global-config-listener`` — invalidates the in-process
+          global maintenance config cache when another instance writes a
+          new config.
+        * ``shield-rl-policy-listener`` — syncs rate limit policy changes
+          made on any instance into this instance's ``_rate_limit_policies``
+          dict so every worker always enforces the current policy.
+
+        Both listeners exit silently when the backend raises
+        ``NotImplementedError`` (``MemoryBackend``, ``FileBackend``).
+
+        Safe to call multiple times — already-running tasks are left alone.
         """
-        if self._global_listener_task is not None and not self._global_listener_task.done():
-            return
-        self._global_listener_task = asyncio.create_task(
-            self._run_global_config_listener(),
-            name="shield-global-config-listener",
-        )
+        if self._global_listener_task is None or self._global_listener_task.done():
+            self._global_listener_task = asyncio.create_task(
+                self._run_global_config_listener(),
+                name="shield-global-config-listener",
+            )
+        if self._rl_policy_listener_task is None or self._rl_policy_listener_task.done():
+            self._rl_policy_listener_task = asyncio.create_task(
+                self._run_rl_policy_listener(),
+                name="shield-rl-policy-listener",
+            )
 
     async def stop(self) -> None:
-        """Cancel the global config listener task and wait for it to finish.
+        """Cancel background listener tasks and wait for them to finish.
 
         Called automatically by ``__aexit__``.  Safe to call when no
-        task is running.
+        tasks are running.
         """
         if self._global_listener_task is not None:
             self._global_listener_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self._global_listener_task
             self._global_listener_task = None
+        if self._rl_policy_listener_task is not None:
+            self._rl_policy_listener_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._rl_policy_listener_task
+            self._rl_policy_listener_task = None
 
     async def _run_global_config_listener(self) -> None:
         """Background coroutine: invalidate the global config cache on remote changes.
@@ -174,6 +190,52 @@ class ShieldEngine:
                 "shield: global config listener crashed — invalidating cache as a precaution"
             )
             self._invalidate_global_config_cache()
+
+    async def _run_rl_policy_listener(self) -> None:
+        """Background coroutine: sync rate limit policy changes from other instances.
+
+        Iterates ``backend.subscribe_rate_limit_policy()``.  Each event
+        is either a ``"set"`` (apply the new policy to the local dict) or
+        a ``"delete"`` (remove the key from the local dict).
+
+        This keeps every worker's ``_rate_limit_policies`` in sync without
+        a Redis round-trip on every request.
+
+        If the backend raises ``NotImplementedError`` (MemoryBackend,
+        FileBackend) the generator exits immediately and the task ends
+        silently — single-instance deployments need no cross-process sync.
+        """
+        try:
+            async for event in self.backend.subscribe_rate_limit_policy():
+                action = event.get("action")
+                key = event.get("key")
+                if not key:
+                    continue
+                if action == "set":
+                    policy_data = event.get("policy")
+                    if policy_data:
+                        try:
+                            from shield.core.rate_limit.models import RateLimitPolicy
+
+                            policy = RateLimitPolicy.model_validate(policy_data)
+                            # register_rate_limit initialises the limiter if needed.
+                            await self.register_rate_limit(
+                                path=policy.path, method=policy.method, policy=policy
+                            )
+                            logger.debug("shield: rl policy synced from remote change: %s", key)
+                        except Exception:
+                            logger.exception(
+                                "shield: failed to apply remote rl policy change for %r", key
+                            )
+                elif action == "delete":
+                    self._rate_limit_policies.pop(key, None)
+                    logger.debug("shield: rl policy deleted by remote change: %s", key)
+        except NotImplementedError:
+            pass  # backend doesn't support pub/sub — per-process dict is the only store
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("shield: rl policy listener crashed")
 
     # ------------------------------------------------------------------
     # Hot-path: check
@@ -475,13 +537,16 @@ class ShieldEngine:
         except KeyError:
             pass
 
-        # Bare path not found — check for method-prefixed variants.
+        # Bare path not found — probe each HTTP method individually instead of
+        # fetching all routes.  This avoids loading the entire route table
+        # (SMEMBERS + MGET for Redis) just to find one or two method variants.
         if ":" not in path:
-            try:
-                all_states = await self.backend.list_states()
-                matches = [s for s in all_states if s.path.endswith(f":{path}")]
-            except Exception:
-                matches = []
+            matches: list[RouteState] = []
+            for _m in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"):
+                try:
+                    matches.append(await self.backend.get_state(f"{_m}:{path}"))
+                except (KeyError, Exception):
+                    pass
 
             if len(matches) == 1:
                 return matches[0]
@@ -568,12 +633,13 @@ class ShieldEngine:
         self._fire_webhooks("enable", actual_path, new_state)
         # Reset rate limit counters so clients are not penalised for retrying
         # during a maintenance window that has now ended.
+        # reset(method=None) calls reset_all_for_path() — one operation instead
+        # of seven sequential per-method calls.
         if self._rate_limiter is not None:
-            for _method in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"):
-                try:
-                    await self._rate_limiter.reset(path=actual_path, method=_method)
-                except Exception:
-                    pass  # fail-open — counter reset is best-effort
+            try:
+                await self._rate_limiter.reset(path=actual_path)
+            except Exception:
+                pass  # fail-open — counter reset is best-effort
         return new_state
 
     async def disable(
@@ -883,6 +949,10 @@ class ShieldEngine:
                     storage=storage,
                     default_algorithm=algo,
                 )
+                # Kick off storage background tasks (e.g. FileRateLimitStorage
+                # snapshot writer) now, in async context, so they are running
+                # before the first request rather than lazily per-increment.
+                await self._rate_limiter.startup()
             except ImportError:
                 raise ImportError(
                     "Rate limiting requires the 'limits' library. "

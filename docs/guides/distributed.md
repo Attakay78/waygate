@@ -20,9 +20,11 @@ The answer depends entirely on which backend you use.
 | Shared state across instances | No | Shared file only | Yes |
 | Per-route state sync (real-time) | In-process only | No | Yes — pub/sub |
 | Global maintenance sync (real-time) | In-process only | No | Yes — pub/sub |
+| Rate limit policy sync (real-time) | In-process only | No | Yes — pub/sub |
 | Dashboard SSE live updates | In-process only | No — polling fallback | Yes |
 | `subscribe()` pub/sub | `asyncio.Queue` | `NotImplementedError` | Redis pub/sub |
 | `subscribe_global_config()` | `NotImplementedError` | `NotImplementedError` | Redis pub/sub |
+| `subscribe_rate_limit_policy()` | `NotImplementedError` | `NotImplementedError` | Redis pub/sub |
 | Fail-open on backend error | Always | Always | Always |
 | Recommended for | Dev / tests | Single-instance prod | Multi-instance prod |
 
@@ -103,7 +105,10 @@ shield:state:{path}          STRING   JSON-serialised RouteState
 shield:route-index           SET      All registered route paths (safe SMEMBERS instead of KEYS scan)
 shield:audit                 LIST     Global audit log, newest-first (LPUSH + LTRIM 1000)
 shield:audit:path:{path}     LIST     Per-path audit log for O(limit) filtered queries
+shield:rlpolicy:{METHOD:path} STRING  JSON-serialised RateLimitPolicy
+shield:rl-policy-index       SET      All registered rate limit policy keys
 shield:global_invalidate     CHANNEL  Pub/sub — fires on every global maintenance config change
+shield:rl-policy-change      CHANNEL  Pub/sub — fires on every rate limit policy set or delete
 shield:changes               CHANNEL  Pub/sub — fires on every set_state call
 ```
 
@@ -155,6 +160,28 @@ For `MemoryBackend` and `FileBackend`, `subscribe_global_config()` raises `NotIm
 - `ShieldRouter.register_shield_routes()`: at FastAPI application startup
 
 You do not need to call `start()` manually unless you are using the engine outside of these two contexts.
+
+### Rate limit policies: distributed sync
+
+Rate limit policies (`@rate_limit` limits, algorithm, key strategy) are cached in each instance's `_rate_limit_policies` dict for fast O(1) lookup on every request. Without cross-instance sync, a policy update applied via the admin API or CLI would only take effect on the worker that handled that request — all other workers would continue enforcing the old limit.
+
+This is solved with the same invalidation pattern used for global maintenance:
+
+```
+Instance A                         Redis                    Instance B
+─────────                          ─────                    ─────────
+engine.set_rate_limit_policy(...)
+  │
+  ├── _rate_limit_policies[key] = new_policy   (local update)
+  ├── SET shield:rlpolicy:{key}  ──────────────────────────→ (persisted)
+  └── PUBLISH shield:rl-policy-change  ──────────────────→  _run_rl_policy_listener()
+        {"action": "set", "key": "GET:/api/orders",              │
+         "policy": {...}}                                   _rate_limit_policies[key] = new_policy
+```
+
+`ShieldEngine.start()` creates a `shield-rl-policy-listener` background task. Each message on `shield:rl-policy-change` carries the full policy payload (for `set`) or just the key (for `delete`), so the receiving instance applies the delta directly without an extra Redis round-trip.
+
+For `MemoryBackend` and `FileBackend`, `subscribe_rate_limit_policy()` raises `NotImplementedError`. The listener exits silently — single-instance deployments need no cross-process sync.
 
 ### The request lifecycle across instances
 

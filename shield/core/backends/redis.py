@@ -54,6 +54,7 @@ _CHANGES_CHANNEL = "shield:changes"
 # re-fetch from Redis on the next request.  The payload is always "1" —
 # only the arrival of the message matters, not its content.
 _GLOBAL_INVALIDATE_CHANNEL = "shield:global_invalidate"
+_RL_POLICY_CHANNEL = "shield:rl-policy-change"
 _MAX_AUDIT_ENTRIES = 1000
 
 
@@ -331,15 +332,18 @@ class RedisBackend(ShieldBackend):
     async def set_rate_limit_policy(
         self, path: str, method: str, policy_data: dict[str, Any]
     ) -> None:
-        """Persist *policy_data* for *path*/*method* in Redis."""
+        """Persist *policy_data* for *path*/*method* in Redis and broadcast to
+        all other instances via ``shield:rl-policy-change``."""
         key = f"{method.upper()}:{path}"
         redis_key = f"shield:rlpolicy:{key}"
         index_key = "shield:rl-policy-index"
+        event = json.dumps({"action": "set", "key": key, "policy": policy_data})
         try:
             async with self._client() as r:
                 pipe = r.pipeline()
                 pipe.set(redis_key, json.dumps(policy_data))
                 pipe.sadd(index_key, key)
+                pipe.publish(_RL_POLICY_CHANNEL, event)
                 await pipe.execute()
         except Exception as exc:
             logger.warning("shield: redis set_rate_limit_policy error: %s", exc)
@@ -367,15 +371,18 @@ class RedisBackend(ShieldBackend):
             return []
 
     async def delete_rate_limit_policy(self, path: str, method: str) -> None:
-        """Remove the persisted rate limit policy for *path*/*method* from Redis."""
+        """Remove the persisted rate limit policy for *path*/*method* from Redis
+        and broadcast the deletion to all other instances."""
         key = f"{method.upper()}:{path}"
         redis_key = f"shield:rlpolicy:{key}"
         index_key = "shield:rl-policy-index"
+        event = json.dumps({"action": "delete", "key": key})
         try:
             async with self._client() as r:
                 pipe = r.pipeline()
                 pipe.delete(redis_key)
                 pipe.srem(index_key, key)
+                pipe.publish(_RL_POLICY_CHANNEL, event)
                 await pipe.execute()
         except Exception as exc:
             logger.warning("shield: redis delete_rate_limit_policy error: %s", exc)
@@ -398,3 +405,26 @@ class RedisBackend(ShieldBackend):
                     if message["type"] != "message":
                         continue
                     yield None
+
+    async def subscribe_rate_limit_policy(self) -> AsyncIterator[dict[str, Any]]:
+        """Yield policy-change events whenever another instance sets or deletes
+        a rate limit policy.
+
+        Each yielded dict has one of two shapes::
+
+            {"action": "set",    "key": "GET:/api/orders", "policy": {...}}
+            {"action": "delete", "key": "GET:/api/orders"}
+
+        The generator runs indefinitely inside a cancellable ``asyncio.Task``
+        managed by ``ShieldEngine``.
+        """
+        async with self._client() as r:
+            async with r.pubsub() as pubsub:
+                await pubsub.subscribe(_RL_POLICY_CHANNEL)
+                async for message in pubsub.listen():
+                    if message["type"] != "message":
+                        continue
+                    try:
+                        yield json.loads(message["data"])
+                    except Exception as exc:
+                        logger.warning("shield: redis rl-policy-change parse error: %s", exc)

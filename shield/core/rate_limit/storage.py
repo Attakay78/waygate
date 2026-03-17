@@ -88,6 +88,13 @@ class RateLimitStorage(ABC):
     async def reset_all_for_path(self, path: str) -> None:
         """Clear all counters whose keys contain *path*."""
 
+    async def startup(self) -> None:
+        """Called once after the storage is created, in an async context.
+
+        Override to kick off background tasks (e.g. the periodic snapshot
+        writer in ``FileRateLimitStorage``).  Default is a no-op.
+        """
+
     async def shutdown(self) -> None:
         """Called on ASGI lifespan shutdown.  Default is a no-op."""
 
@@ -309,25 +316,35 @@ class RedisRateLimitStorage(RateLimitStorage):
         return max(0, int(stats.remaining))
 
     async def reset(self, key: str) -> None:
-        """Clear all Redis keys matching ``*{key}*`` using ``SCAN``."""
+        """Clear all Redis keys matching ``*{key}*`` using ``SCAN``.
+
+        The underlying ``limits`` Redis client is synchronous.  The blocking
+        SCAN + DELETE loop is offloaded to a thread via ``asyncio.to_thread``
+        so the event loop is not stalled during admin resets.
+        """
         import redis as redis_lib
 
-        # Use limits' underlying redis client if accessible, else create one.
+        # Use limits' underlying redis client if accessible.
         redis_client = getattr(self._redis_storage, "_storage", None) or getattr(
             self._redis_storage, "storage", None
         )
         if redis_client is None:
             logger.warning("shield: RedisRateLimitStorage.reset: cannot access redis client")
             return
-        try:
+
+        pattern = f"*{key}*"
+
+        def _do_reset() -> None:
             cursor = 0
-            pattern = f"*{key}*"
             while True:
-                cursor, keys = redis_client.scan(cursor, match=pattern, count=100)
-                if keys:
-                    redis_client.delete(*keys)
+                cursor, found_keys = redis_client.scan(cursor, match=pattern, count=100)
+                if found_keys:
+                    redis_client.delete(*found_keys)
                 if cursor == 0:
                     break
+
+        try:
+            await asyncio.to_thread(_do_reset)
         except redis_lib.RedisError as exc:
             logger.warning("shield: rate limit reset failed: %s", exc)
 
@@ -430,6 +447,16 @@ class FileRateLimitStorage(RateLimitStorage):
         if algorithm not in self._strategies:
             self._strategies[algorithm] = _get_strategy(algorithm, self._mem_storage)
         return self._strategies[algorithm]
+
+    async def startup(self) -> None:
+        """Start the background snapshot task.
+
+        Called once by ``ShieldEngine`` after the storage is wired up,
+        so the task is already running before the first request arrives.
+        ``increment()`` still calls ``_ensure_snapshot_task()`` as a
+        fallback for direct usage outside the engine.
+        """
+        self._ensure_snapshot_task()
 
     def _ensure_snapshot_task(self) -> None:
         """Start the background snapshot task if not already running."""
@@ -539,7 +566,11 @@ class FileRateLimitStorage(RateLimitStorage):
                 "limit": limit,
             }
 
-        self._ensure_snapshot_task()
+        # When used through ShieldEngine, startup() already started the task
+        # so this is only a fast None-check on the hot path.  When used
+        # directly (e.g. tests), this starts the task on first increment.
+        if self._snapshot_task is None:
+            self._ensure_snapshot_task()
         return _build_result(
             key=key,
             limit_str=limit,
