@@ -115,6 +115,7 @@ nav:
   - Adapters:
       - FastAPI: adapters/fastapi.md
       - Building Your Own: adapters/custom.md
+  - Contributing: contributing.md
   - Changelog: changelog.md
 
 extra:

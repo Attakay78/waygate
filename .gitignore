@@ -219,3 +219,9 @@ __marimo__/
 # Project specific ignores
 .shield
 CLAUDE.md
+
+# Node / Tailwind build tooling (dev only — not part of the Python package)
+node_modules/
+package-lock.json
+# NOTE: shield/dashboard/static/shield.min.css IS committed.
+# pip users have no npm, so the pre-built CSS must ship with the package.

@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **Mobile & tablet responsive dashboard**: all four tables (Routes, Audit, Rate Limits, Blocked) transform into stacked cards on screens narrower than 640 px using a CSS-only card layout with `data-label` attributes. Action buttons collapse to icon-only on small screens.
+- **Back-to-top button**: fixed button appears at the bottom-right after scrolling 200 px; hidden at the top.
+- **Success toast notifications**: 2.5 s toast appears after any mutating action (enable, disable, maintenance, schedule, rate limit edit/reset/delete).
+
+### Changed
+
+- **Tailwind CSS v3 → v4**: replaced `tailwind.config.js` with a CSS-first config in `input.css` (`@import "tailwindcss"`, `@source`, `@theme`). Dashboard CSS is pre-built and committed; no Node.js required at install time.
+- **No CDN dependency**: `shield.min.css` is now served as a local static file instead of the Tailwind CDN script, eliminating the production warning and removing the runtime network dependency.
+
 ---
 
 ## [0.3.0]

@@ -11,6 +11,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  css:
+    name: CSS build check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Tailwind
+        run: npm install
+
+      - name: Rebuild CSS
+        run: npm run build:css
+
+      - name: Verify CSS is up-to-date
+        run: |
+          if ! git diff --quiet shield/dashboard/static/shield.min.css; then
+            echo "::error::shield.min.css is out of date. Run 'npm run build:css' locally and commit the result."
+            git diff --stat shield/dashboard/static/shield.min.css
+            exit 1
+          fi
+
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest

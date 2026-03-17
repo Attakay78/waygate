@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* Tell v4 exactly where to scan for class names */
+@source "./shield/dashboard/templates/**/*.html";
+
+@theme {
+  /* Custom xs breakpoint (keeps default sm/md/lg/xl/2xl) */
+  --breakpoint-xs: 480px;
+
+  /* Brand colours */
+  --color-brand:       #4f46e5;
+  --color-brand-light: #eef2ff;
+  --color-brand-dark:  #3730a3;
+
+  /* Font families */
+  --font-sans: -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+}

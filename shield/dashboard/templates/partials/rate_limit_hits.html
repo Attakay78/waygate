@@ -3,13 +3,13 @@
     <td class="px-5 py-3 text-xs text-slate-500 font-mono whitespace-nowrap">
         {{ hit.timestamp.strftime('%H:%M:%S') if hit.timestamp else '—' }}
     </td>
-    <td class="px-4 py-3">
+    <td class="px-4 py-3" data-label="Route">
         <div class="flex items-center gap-2">
             <span class="px-1.5 py-0.5 text-[10px] font-mono font-semibold bg-slate-100 text-slate-600 rounded shrink-0">{{ hit.method }}</span>
             <code class="text-xs font-mono text-slate-800">{{ hit.path }}</code>
         </div>
     </td>
-    <td class="px-4 py-3 hidden lg:table-cell">
+    <td class="px-4 py-3 hidden lg:table-cell" data-label="Limit">
         <span class="text-xs text-red-600 font-mono">{{ hit.limit }}</span>
     </td>
 </tr>

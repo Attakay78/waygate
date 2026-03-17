@@ -61,7 +61,8 @@ from starlette.applications import Starlette
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, RedirectResponse, Response
-from starlette.routing import Route
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
 from shield.admin import api as _api
@@ -75,9 +76,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _TEMPLATES_DIR = Path(__file__).parent.parent / "dashboard" / "templates"
+_STATIC_DIR = Path(__file__).parent.parent / "dashboard" / "static"
 
 # Paths that are always accessible without a valid token.
 _PUBLIC_PATHS = {"/login", "/logout", "/api/auth/login"}
+_PUBLIC_PREFIXES = ("/static/",)
 
 
 class _AuthMiddleware(BaseHTTPMiddleware):
@@ -117,8 +120,12 @@ class _AuthMiddleware(BaseHTTPMiddleware):
             request.state.shield_platform = request.headers.get("X-Shield-Platform", "cli")
             return await call_next(request)
 
-        # Always let public paths through (login form, auth API endpoint).
-        if any(path == p or path.endswith(p) for p in _PUBLIC_PATHS):
+        # Always let public paths and static assets through.
+        # NOTE: path is the full URL path (includes the mount prefix), so we use
+        # endswith/in rather than exact equality for prefix-agnostic matching.
+        if any(path == p or path.endswith(p) for p in _PUBLIC_PATHS) or any(
+            pfx in path for pfx in _PUBLIC_PREFIXES
+        ):
             request.state.shield_actor = "anonymous"
             request.state.shield_platform = "anonymous"
             return await call_next(request)
@@ -264,6 +271,7 @@ def ShieldAdmin(
 
     starlette_app = Starlette(
         routes=[
+            Mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static"),
             # ── Auth (dashboard) ─────────────────────────────────────────
             Route("/login", _login_get, methods=["GET"]),
             Route("/login", _login_post, methods=["POST"]),

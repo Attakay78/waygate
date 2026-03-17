@@ -9,7 +9,7 @@
             <code class="text-sm font-mono text-slate-800">{{ p.path }}</code>
         </div>
     </td>
-    <td class="px-4 py-3.5">
+    <td class="px-4 py-3.5" data-label="Limit">
         <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-600/20">
             {{ p.limit }}
         </span>
@@ -17,13 +17,13 @@
         <span class="ml-1 text-[10px] text-slate-400">+{{ p.tiers | length }} tiers</span>
         {% endif %}
     </td>
-    <td class="px-4 py-3.5 hidden md:table-cell">
+    <td class="px-4 py-3.5 hidden md:table-cell" data-label="Algorithm">
         <span class="text-xs text-slate-500">{{ p.algorithm }}</span>
     </td>
-    <td class="px-4 py-3.5 hidden lg:table-cell">
+    <td class="px-4 py-3.5 hidden lg:table-cell" data-label="Key">
         <span class="text-xs text-slate-500">{{ p.key_strategy }}</span>
     </td>
-    <td class="px-4 py-3.5">
+    <td class="px-4 py-3.5" data-label="Actions">
         <div class="flex items-center justify-end gap-1">
             {# Reset counters #}
             <button hx-get="{{ prefix }}/modal/rl/reset/{{ path_key }}"

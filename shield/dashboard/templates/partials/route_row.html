@@ -4,7 +4,7 @@
     class="group hover:bg-slate-50/70 transition-colors">
 
     {# ── Path ──────────────────────────────────────────────────────── #}
-    <td class="px-5 py-3.5">
+    <td class="px-5 py-3.5 card-sticky sticky left-0 bg-white group-hover:bg-slate-50 transition-colors z-10">
         <div class="flex items-center gap-2 min-w-0">
             <code class="text-sm font-mono text-slate-800 truncate max-w-[18rem]">{{ state.path }}</code>
             {% if state.force_active %}
@@ -20,7 +20,7 @@
     </td>
 
     {# ── Status badge ──────────────────────────────────────────────── #}
-    <td class="px-4 py-3.5">
+    <td class="px-4 py-3.5" data-label="Status">
         {% if state.status == "active" %}
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Active
@@ -49,14 +49,14 @@
     </td>
 
     {# ── Reason ────────────────────────────────────────────────────── #}
-    <td class="px-4 py-3.5 hidden md:table-cell">
+    <td class="px-4 py-3.5 hidden md:table-cell" data-label="Reason">
         <span class="text-sm text-slate-500 max-w-[200px] block truncate" title="{{ state.reason }}">
             {{ state.reason or "—" }}
         </span>
     </td>
 
     {# ── Environments ──────────────────────────────────────────────── #}
-    <td class="px-4 py-3.5 hidden lg:table-cell">
+    <td class="px-4 py-3.5 hidden lg:table-cell" data-label="Envs">
         {% if state.allowed_envs %}
         <div class="flex flex-wrap gap-1">
             {% for env in state.allowed_envs %}
@@ -69,11 +69,11 @@
     </td>
 
     {# ── Actions ───────────────────────────────────────────────────── #}
-    <td class="px-4 py-3.5">
+    <td class="px-4 py-3.5" data-label="Actions">
         {% if state.force_active %}
         <span class="text-xs text-slate-400 italic">Protected</span>
         {% else %}
-        <div class="flex flex-col gap-2 items-end">
+        <div class="flex flex-col gap-2 items-end w-full">
             {# Action buttons — each opens the custom action modal #}
             <div class="flex flex-wrap justify-end gap-1.5">
                 {% if state.status != "active" %}
@@ -81,11 +81,12 @@
                     hx-get="{{ prefix }}/modal/enable/{{ state.path | encode_path }}"
                     hx-target="#shield-modal"
                     hx-swap="innerHTML"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100 hover:border-emerald-300 transition-all active:scale-95">
-                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    title="Enable route"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100 hover:border-emerald-300 transition-all active:scale-95">
+                    <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                     </svg>
-                    Enable
+                    <span class="hidden sm:inline">Enable</span>
                 </button>
                 {% endif %}
                 {% if state.status != "maintenance" %}
@@ -93,11 +94,12 @@
                     hx-get="{{ prefix }}/modal/maintenance/{{ state.path | encode_path }}"
                     hx-target="#shield-modal"
                     hx-swap="innerHTML"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 hover:border-amber-300 transition-all active:scale-95">
-                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    title="Set maintenance mode"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 hover:border-amber-300 transition-all active:scale-95">
+                    <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
                     </svg>
-                    Maintenance
+                    <span class="hidden sm:inline">Maintenance</span>
                 </button>
                 {% endif %}
                 {% if state.status != "disabled" %}
@@ -105,11 +107,12 @@
                     hx-get="{{ prefix }}/modal/disable/{{ state.path | encode_path }}"
                     hx-target="#shield-modal"
                     hx-swap="innerHTML"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 transition-all active:scale-95">
-                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    title="Disable route"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 hover:border-red-300 transition-all active:scale-95">
+                    <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                     </svg>
-                    Disable
+                    <span class="hidden sm:inline">Disable</span>
                 </button>
                 {% endif %}
             </div>
