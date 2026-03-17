@@ -4,22 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shield — Route Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['-apple-system','BlinkMacSystemFont','Inter','Segoe UI','Helvetica Neue','Arial','sans-serif'],
-                        mono: ['JetBrains Mono','Fira Code','ui-monospace','SFMono-Regular','Menlo','monospace'],
-                    },
-                    colors: {
-                        brand: { DEFAULT: '#4f46e5', light: '#eef2ff', dark: '#3730a3' }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="{{ prefix }}/static/shield.min.css">
     <script src="https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"></script>
     <script src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js"></script>
     <style>
@@ -42,6 +27,11 @@
 
         /* Native <dialog> modal styling */
         #shield-modal {
+            /* Tailwind v4 Preflight resets margin:0, which breaks the browser's
+               built-in dialog centering. Restore it explicitly. */
+            position: fixed;
+            inset: 0;
+            margin: auto;
             border: none;
             border-radius: 1rem;
             padding: 0;
@@ -61,18 +51,103 @@
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
         }
+
+        /* ── Mobile table → card layout (< 640 px) ──────────────────── */
+        @media (max-width: 639px) {
+            table.mobile-cards { display: block; min-width: 0 !important; }
+            table.mobile-cards thead  { display: none; }
+            table.mobile-cards tbody  { display: flex; flex-direction: column; gap: 0.625rem; }
+            table.mobile-cards tbody tr {
+                display: block;
+                border: 1px solid #e2e8f0;
+                border-radius: 0.75rem;
+                padding: 0.875rem 1rem;
+                background: #fff;
+                box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+                overflow: hidden;
+            }
+            /* All cells become flex rows */
+            table.mobile-cards tbody td {
+                display: flex !important;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.2rem 0;
+                border: none !important;
+                max-width: 100%;
+                overflow: hidden;
+            }
+            /* Label column from data-label */
+            table.mobile-cards tbody td[data-label]::before {
+                content: attr(data-label);
+                font-size: 0.6rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                color: #94a3b8;
+                min-width: 4.5rem;
+                flex-shrink: 0;
+            }
+            /* First cell = card title (no label, bolder, separator below) */
+            table.mobile-cards tbody td:first-child {
+                padding-bottom: 0.625rem;
+                margin-bottom: 0.25rem;
+                border-bottom: 1px solid #f1f5f9 !important;
+                font-weight: 500;
+                align-items: flex-start;
+            }
+            table.mobile-cards tbody td:first-child::before { display: none; }
+            /* Actions cell: separator above, right-aligned, no label */
+            table.mobile-cards tbody td[data-label="Actions"] {
+                padding-top: 0.625rem;
+                margin-top: 0.375rem;
+                border-top: 1px solid #f1f5f9 !important;
+                justify-content: flex-end;
+            }
+            table.mobile-cards tbody td[data-label="Actions"]::before { display: none; }
+            /* Disable sticky in card mode */
+            table.mobile-cards tbody td.card-sticky { position: static !important; background: inherit !important; }
+            /* Hover tint on tr */
+            table.mobile-cards tbody tr:hover { background: #f8fafc; }
+        }
+
+        /* ── Success toast ───────────────────────────────────────────── */
+        #shield-toast {
+            opacity: 0;
+            transform: translateY(0.5rem);
+            transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+        #shield-toast.toast-show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* ── Back-to-top button ──────────────────────────────────────── */
+        #back-to-top {
+            opacity: 0;
+            transform: translateY(0.5rem);
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #back-to-top.btt-show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body class="h-full bg-slate-50 text-slate-900 antialiased font-sans">
 
     <!-- ── Header ─────────────────────────────────────────────────── -->
     <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-slate-200 shadow-[0_1px_3px_0_rgb(0,0,0,0.04)]">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-14">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-2 sm:pb-3">
+
+            <!-- ── Top bar: brand left, nav+auth right ─────────────── -->
+            <div class="flex items-center justify-between h-12 sm:h-14">
 
                 <!-- Brand mark -->
-                <a href="{{ prefix }}/" class="flex items-center gap-2.5 group">
-                    <!-- api-shield logo -->
+                <a href="{{ prefix }}/" class="flex items-center gap-2.5 group shrink-0">
                     <svg class="shrink-0 w-7 h-9" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
                         <path d="M80 15 L140 50 L140 105 C140 155 110 185 80 200 C50 185 20 155 20 105 L20 50 Z" fill="#F59E0B"/>
                         <g stroke="white" stroke-width="14" stroke-linecap="round">
@@ -91,60 +166,102 @@
                     <span class="hidden sm:inline text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">v{{ version }}</span>
                 </a>
 
-                <!-- User / logout (shown only when auth is active) -->
-                {% if shield_actor and shield_actor != 'anonymous' %}
-                <div class="flex items-center gap-2">
-                    <span class="hidden sm:inline text-xs text-slate-500 font-mono">{{ shield_actor }}</span>
-                    <a href="{{ prefix }}/logout"
-                       class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium
-                              text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25
-                                     2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
-                        </svg>
-                        <span>Sign out</span>
-                    </a>
-                </div>
-                {% endif %}
+                <!-- Desktop nav + auth -->
+                <div class="flex items-center gap-3 sm:gap-5">
+                    <!-- Navigation tabs (desktop only — mobile tabs in second row below) -->
+                    <nav class="hidden sm:flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg">
+                        <a href="{{ prefix }}/"
+                           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150
+                                  {% if active_tab == 'routes' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/>
+                            </svg>
+                            <span>Routes</span>
+                        </a>
+                        <a href="{{ prefix }}/audit"
+                           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150
+                                  {% if active_tab == 'audit' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>Audit</span>
+                        </a>
+                        <a href="{{ prefix }}/rate-limits"
+                           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150
+                                  {% if active_tab == 'rate_limits' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+                            </svg>
+                            <span>Rate Limits</span>
+                        </a>
+                        <a href="{{ prefix }}/blocked"
+                           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150
+                                  {% if active_tab == 'rl_hits' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                            </svg>
+                            <span>Blocked</span>
+                        </a>
+                    </nav>
 
-                <!-- Navigation tabs -->
-                <nav class="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg">
-                    <a href="{{ prefix }}/"
-                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150
-                              {% if active_tab == 'routes' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
-                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/>
-                        </svg>
-                        <span>Routes</span>
-                    </a>
-                    <a href="{{ prefix }}/audit"
-                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150
-                              {% if active_tab == 'audit' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
-                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span>Audit</span>
-                    </a>
-                    <a href="{{ prefix }}/rate-limits"
-                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150
-                              {% if active_tab == 'rate_limits' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
-                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
-                        </svg>
-                        <span>Rate Limits</span>
-                    </a>
-                    <a href="{{ prefix }}/blocked"
-                       class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150
-                              {% if active_tab == 'rl_hits' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500 hover:text-slate-700{% endif %}">
-                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
-                        </svg>
-                        <span>Blocked</span>
-                    </a>
-                </nav>
+                    <!-- User / logout (shown only when auth is active) -->
+                    {% if shield_actor and shield_actor != 'anonymous' %}
+                    <div class="flex items-center gap-2">
+                        <span class="hidden sm:inline text-xs text-slate-500 font-mono">{{ shield_actor }}</span>
+                        <a href="{{ prefix }}/logout"
+                           class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium
+                                  text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                      d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25
+                                         2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
+                            </svg>
+                            <span class="hidden sm:inline">Sign out</span>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
 
             </div>
+
+            <!-- ── Mobile nav row (hidden sm+) ─────────────────────── -->
+            <nav class="flex sm:hidden gap-0.5 bg-slate-100 p-0.5 rounded-lg mt-2 mb-1">
+                <a href="{{ prefix }}/"
+                   class="flex flex-1 items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-xs font-medium transition-all duration-150
+                          {% if active_tab == 'routes' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500{% endif %}">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/>
+                    </svg>
+                    <span>Routes</span>
+                </a>
+                <a href="{{ prefix }}/audit"
+                   class="flex flex-1 items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-xs font-medium transition-all duration-150
+                          {% if active_tab == 'audit' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500{% endif %}">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Audit</span>
+                </a>
+                <a href="{{ prefix }}/rate-limits"
+                   class="flex flex-1 items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-xs font-medium transition-all duration-150
+                          {% if active_tab == 'rate_limits' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500{% endif %}">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+                    </svg>
+                    <!-- "Limits" on very small screens, "Rate Limits" on xs+ -->
+                    <span class="xs:hidden">Limits</span>
+                    <span class="hidden xs:inline">Rate Limits</span>
+                </a>
+                <a href="{{ prefix }}/blocked"
+                   class="flex flex-1 items-center justify-center gap-1 px-1.5 py-1.5 rounded-md text-xs font-medium transition-all duration-150
+                          {% if active_tab == 'rl_hits' %}bg-white text-slate-900 shadow-sm{% else %}text-slate-500{% endif %}">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                    </svg>
+                    <span>Blocked</span>
+                </a>
+            </nav>
+
         </div>
     </header>
 
@@ -156,12 +273,101 @@
     <!-- ── Action modal ───────────────────────────────────────────── -->
     <dialog id="shield-modal"></dialog>
 
+    <!-- ── Back to top ────────────────────────────────────────────── -->
+    <button id="back-to-top"
+            aria-label="Back to top"
+            onclick="window.scrollTo({top:0,behavior:'smooth'})"
+            class="fixed bottom-20 right-5 z-40 w-9 h-9 flex items-center justify-center
+                   bg-white border border-slate-200 rounded-full shadow-md
+                   text-slate-500 hover:text-indigo-600 hover:border-indigo-300
+                   hover:shadow-lg transition-all active:scale-95">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/>
+        </svg>
+    </button>
+
+    <!-- ── Success toast ──────────────────────────────────────────── -->
+    <div id="shield-toast"
+         role="status"
+         aria-live="polite"
+         class="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3
+                bg-slate-900 text-white text-xs font-medium rounded-xl shadow-2xl">
+        <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span id="shield-toast-msg"></span>
+    </div>
+
     <script>
         const _modal = document.getElementById('shield-modal');
         // Auto-open whenever HTMX swaps new content into the dialog.
         document.body.addEventListener('htmx:afterSwap', e => { if (e.detail.target === _modal) _modal.showModal(); });
         // Close when user clicks the backdrop (outside the dialog box).
         _modal.addEventListener('click', e => { if (e.target === _modal) _modal.close(); });
+
+        // ── Back to top ─────────────────────────────────────────────
+        (function () {
+            const _btt = document.getElementById('back-to-top');
+            window.addEventListener('scroll', function () {
+                _btt.classList.toggle('btt-show', window.scrollY > 200);
+            }, { passive: true });
+        })();
+
+        // ── Success toast ───────────────────────────────────────────
+        (function () {
+            const _toast    = document.getElementById('shield-toast');
+            const _toastMsg = document.getElementById('shield-toast-msg');
+            let   _toastTimer = null;
+
+            // Map URL path fragments → human-readable message.
+            const MESSAGES = [
+                ['/enable/',                    'Route enabled'],
+                ['/disable/',                   'Route disabled'],
+                ['/global-maintenance/enable',  'Global maintenance enabled'],
+                ['/global-maintenance/disable', 'Service restored'],
+                ['/rl/reset/',                  'Counters reset'],
+                ['/rl/edit/',                   'Rate limit updated'],
+                ['/rl/delete/',                 'Rate limit removed'],
+                ['/toggle/',                    'Route updated'],
+            ];
+
+            function getMessage(path, verb) {
+                if (verb === 'delete' && path.includes('/schedule/')) return 'Schedule cancelled';
+                if (verb === 'post'   && /\/schedule$/.test(path))    return 'Maintenance scheduled';
+                for (const [pat, msg] of MESSAGES) {
+                    if (path.includes(pat)) return msg;
+                }
+                return null;
+            }
+
+            function showToast(msg) {
+                _toastMsg.textContent = msg;
+                _toast.classList.add('toast-show');
+                clearTimeout(_toastTimer);
+                _toastTimer = setTimeout(() => _toast.classList.remove('toast-show'), 2500);
+            }
+
+            document.body.addEventListener('htmx:afterRequest', function (e) {
+                if (!e.detail.successful) return;
+                const cfg  = e.detail.requestConfig || {};
+                let verb = (cfg.verb || '').toLowerCase();
+                // HTMX 2.x may not populate verb — fall back to element attributes.
+                if (!verb) {
+                    const elt = cfg.elt || e.detail.elt;
+                    if (elt) {
+                        verb = elt.hasAttribute('hx-post')   ? 'post'
+                             : elt.hasAttribute('hx-delete') ? 'delete'
+                             : elt.hasAttribute('hx-put')    ? 'put' : '';
+                    }
+                }
+                if (!verb || verb === 'get') return;
+                // Use responseURL as the most reliable path source.
+                const url = (e.detail.xhr && e.detail.xhr.responseURL) || cfg.path || '';
+                if (!url) return;
+                const msg = getMessage(url, verb);
+                if (msg) showToast(msg);
+            });
+        })();
     </script>
 
 </body>

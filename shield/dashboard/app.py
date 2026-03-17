@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from starlette.applications import Starlette
-from starlette.routing import Route
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
 from shield.core.engine import ShieldEngine
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
     from starlette.types import ASGIApp
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
+_STATIC_DIR = Path(__file__).parent / "static"
 
 
 def ShieldDashboard(
@@ -73,6 +75,7 @@ def ShieldDashboard(
 
     starlette_app = Starlette(
         routes=[
+            Mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static"),
             Route("/", r.index),
             Route("/routes", r.routes_partial),
             Route("/modal/global/enable", r.modal_global_enable),
