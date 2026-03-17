@@ -1796,8 +1796,8 @@
 </tbody>
 </table>
 <div class="admonition note">
-<p class="admonition-title">ShieldMiddleware returns 404, not 403</p>
-<p>When <code>ShieldMiddleware</code> catches an <code>EnvGatedException</code>, it returns a 404 with <strong>no response body</strong>. This is intentional — a 403 would reveal that the route exists but is forbidden, leaking internal information.</p>
+<p class="admonition-title">ShieldMiddleware returns 403 with JSON</p>
+<p>When <code>ShieldMiddleware</code> catches an <code>EnvGatedException</code>, it returns a 403 with a structured JSON body containing <code>code: "ENV_GATED"</code>, <code>current_env</code>, <code>allowed_envs</code>, and <code>path</code>.</p>
 </div>
 <hr />
 <h2 id="using-exceptions-in-custom-adapters">Using exceptions in custom adapters<a class="headerlink" href="#using-exceptions-in-custom-adapters" title="Permanent link">&para;</a></h2>
@@ -1824,9 +1824,17 @@
 </span><span id="__span-7-18"><a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    <span class="c1"># 503, no Retry-After</span>
 </span><span id="__span-7-19"><a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="mi">503</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="n">exc</span><span class="o">.</span><span class="n">reason</span><span class="p">})</span>
 </span><span id="__span-7-20"><a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>
-</span><span id="__span-7-21"><a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="k">except</span> <span class="n">EnvGatedException</span><span class="p">:</span>
-</span><span id="__span-7-22"><a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>    <span class="c1"># 404 with no body — intentionally silent</span>
-</span><span id="__span-7-23"><a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+</span><span id="__span-7-21"><a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="k">except</span> <span class="n">EnvGatedException</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="__span-7-22"><a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>    <span class="c1"># 403 with JSON body</span>
+</span><span id="__span-7-23"><a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="mi">403</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-7-24"><a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>        <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-7-25"><a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>            <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;ENV_GATED&quot;</span><span class="p">,</span>
+</span><span id="__span-7-26"><a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;This endpoint is not available in the current environment&quot;</span><span class="p">,</span>
+</span><span id="__span-7-27"><a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>            <span class="s2">&quot;current_env&quot;</span><span class="p">:</span> <span class="n">exc</span><span class="o">.</span><span class="n">current_env</span><span class="p">,</span>
+</span><span id="__span-7-28"><a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>            <span class="s2">&quot;allowed_envs&quot;</span><span class="p">:</span> <span class="n">exc</span><span class="o">.</span><span class="n">allowed_envs</span><span class="p">,</span>
+</span><span id="__span-7-29"><a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>            <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">exc</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+</span><span id="__span-7-30"><a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>        <span class="p">}</span>
+</span><span id="__span-7-31"><a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>    <span class="p">})</span>
 </span></code></pre></div>
 </details>
 <p>See <a href="../../adapters/custom/">Building your own adapter</a> for a complete working example.</p>

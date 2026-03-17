@@ -1619,7 +1619,7 @@
 </span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        │       ├─ Global maintenance ON? → 503
 </span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        │       ├─ MAINTENANCE  → 503 + Retry-After header
 </span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>        │       ├─ DISABLED     → 503
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>        │       ├─ ENV_GATED    → 404 (silent)
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>        │       ├─ ENV_GATED    → 403 JSON
 </span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>        │       ├─ DEPRECATED   → pass through + inject response headers
 </span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>        │       ├─ ACTIVE       → pass through ✓
 </span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>        │       │
@@ -1690,8 +1690,8 @@
 </tr>
 <tr>
 <td>Env-gated (wrong env)</td>
-<td>404</td>
-<td><em>(no body)</em></td>
+<td>403</td>
+<td><code>ENV_GATED</code></td>
 </tr>
 <tr>
 <td>Global maintenance</td>

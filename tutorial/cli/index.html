@@ -1808,12 +1808,13 @@
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/search<span class="w"> </span><span class="m">5</span>/minute<span class="w"> </span>--algorithm<span class="w"> </span>fixed_window<span class="w"> </span>--key<span class="w"> </span>global
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>shield<span class="w"> </span>rl<span class="w"> </span>reset<span class="w"> </span>GET:/public/posts<span class="w">           </span><span class="c1"># clear counters immediately</span>
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>shield<span class="w"> </span>rl<span class="w"> </span>delete<span class="w"> </span>GET:/public/posts<span class="w">          </span><span class="c1"># remove persisted policy override</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w">                              </span><span class="c1"># blocked requests log (last 20)</span>
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span>
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
-</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># identical — shield rate-limits is the full name</span>
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>shield<span class="w"> </span>rate-limits<span class="w"> </span>list
-</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>shield<span class="w"> </span>rate-limits<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/public/posts<span class="w"> </span><span class="m">20</span>/minute
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w">                              </span><span class="c1"># blocked requests log, page 1</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w"> </span>--page<span class="w"> </span><span class="m">2</span><span class="w">                     </span><span class="c1"># next page</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w"> </span>--per-page<span class="w"> </span><span class="m">50</span><span class="w">               </span><span class="c1"># 50 rows per page</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="c1"># identical — shield rate-limits is the full name</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>shield<span class="w"> </span>rate-limits<span class="w"> </span>list
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>shield<span class="w"> </span>rate-limits<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/public/posts<span class="w"> </span><span class="m">20</span>/minute
 </span></code></pre></div>
 <details class="example">
 <summary>Sample <code>shield rl list</code> output</summary>
@@ -1850,9 +1851,10 @@
 </details>
 <hr />
 <h2 id="audit-log">Audit log<a class="headerlink" href="#audit-log" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>shield<span class="w"> </span>log<span class="w">                          </span><span class="c1"># last 20 entries</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>shield<span class="w"> </span>log<span class="w">                          </span><span class="c1"># page 1, 20 entries per page</span>
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>shield<span class="w"> </span>log<span class="w"> </span>--route<span class="w"> </span>GET:/payments<span class="w">    </span><span class="c1"># filter by route</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>shield<span class="w"> </span>log<span class="w"> </span>--limit<span class="w"> </span><span class="m">100</span><span class="w">              </span><span class="c1"># show more entries</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>shield<span class="w"> </span>log<span class="w"> </span>--page<span class="w"> </span><span class="m">2</span><span class="w">                 </span><span class="c1"># next page</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>shield<span class="w"> </span>log<span class="w"> </span>--per-page<span class="w"> </span><span class="m">50</span><span class="w">           </span><span class="c1"># 50 rows per page</span>
 </span></code></pre></div>
 <details class="example">
 <summary>Sample <code>shield log</code> output</summary>
@@ -1864,6 +1866,7 @@
 <th>Action</th>
 <th>Actor</th>
 <th>Platform</th>
+<th>Status</th>
 <th>Reason</th>
 </tr>
 </thead>
@@ -1874,6 +1877,7 @@
 <td>maintenance</td>
 <td>alice</td>
 <td>cli</td>
+<td>active &gt; maintenance</td>
 <td>DB migration</td>
 </tr>
 <tr>
@@ -1882,6 +1886,16 @@
 <td>disable</td>
 <td>system</td>
 <td>system</td>
+<td>active &gt; disabled</td>
+<td></td>
+</tr>
+<tr>
+<td>2025-06-01 01:58:00</td>
+<td>GET:/payments</td>
+<td>rl_policy_set</td>
+<td>alice</td>
+<td>cli</td>
+<td>set</td>
 <td></td>
 </tr>
 </tbody>

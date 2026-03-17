@@ -1310,7 +1310,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Unreleased">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#040" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1578,7 +1589,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Unreleased">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#040" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.4.0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.4.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1835,7 +1857,9 @@
 <p>All notable changes to this project will be documented here.</p>
 <p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>, and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <hr />
-<h2 id="unreleased"><a href="https://github.com/Attakay78/api-shield/compare/v0.3.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="unreleased"><a href="https://github.com/Attakay78/api-shield/compare/v0.4.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<hr />
+<h2 id="040"><a href="https://github.com/Attakay78/api-shield/compare/v0.3.0...v0.4.0">0.4.0</a><a class="headerlink" href="#040" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Mobile &amp; tablet responsive dashboard</strong>: all four tables (Routes, Audit, Rate Limits, Blocked) transform into stacked cards on screens narrower than 640 px using a CSS-only card layout with <code>data-label</code> attributes. Action buttons collapse to icon-only on small screens.</li>
@@ -1844,6 +1868,8 @@
 </ul>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>CLI table pagination</strong>: <code>shield status</code>, <code>shield log</code>, <code>shield rl list</code>, and <code>shield rl hits</code> now support <code>--page</code> and <code>--per-page</code> (default 20) instead of a flat <code>--limit</code>; a footer shows the current slice and the next/prev page flag to run. The <code>shield log</code> status column now combines old and new state into a single <code>old &gt; new</code> cell and shows a coloured label for rate limit audit actions. The <code>shield rl hits</code> table drops the <code>Key</code> and <code>Method</code> columns in favour of a single <code>Path</code> column showing <code>METHOD /route</code>.</li>
+<li><strong><code>@env_only</code> now returns 403 with JSON</strong>: env-gated routes blocked by the wrong environment return <code>403 ENV_GATED</code> with <code>current_env</code>, <code>allowed_envs</code>, and <code>path</code> instead of a silent empty 404.</li>
 <li><strong>Tailwind CSS v3 → v4</strong>: replaced <code>tailwind.config.js</code> with a CSS-first config in <code>input.css</code> (<code>@import "tailwindcss"</code>, <code>@source</code>, <code>@theme</code>). Dashboard CSS is pre-built and committed; no Node.js required at install time.</li>
 <li><strong>No CDN dependency</strong>: <code>shield.min.css</code> is now served as a local static file instead of the Tailwind CDN script, eliminating the production warning and removing the runtime network dependency.</li>
 </ul>

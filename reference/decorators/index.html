@@ -2181,7 +2181,7 @@
 </div>
 <hr />
 <h2 id="env_only"><code>@env_only</code><a class="headerlink" href="#env_only" title="Permanent link">&para;</a></h2>
-<p>Restrict a route to specific environment names. In any other environment the route returns a <strong>silent 404</strong> — no response body, no indication that the path exists.</p>
+<p>Restrict a route to specific environment names. In any other environment the route returns a <strong>403 Forbidden</strong> with a JSON body containing the current environment and the list of allowed environments.</p>
 <p>Use this for internal tools, debug endpoints, admin utilities, or staging-only features that should never be accessible in production.</p>
 <div class="language-python highlight"><span class="filename">basic usage</span><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">env_only</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
@@ -2207,8 +2207,8 @@
 <div class="language-ini highlight"><span class="filename">.shield file</span><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="na">SHIELD_ENV</span><span class="o">=</span><span class="s">staging</span>
 </span></code></pre></div>
 <div class="admonition note">
-<p class="admonition-title">404, not 403</p>
-<p>Env-gated routes return 404 with <strong>no body</strong> to avoid leaking that the path exists in other environments. A 403 would reveal the route is present but forbidden.</p>
+<p class="admonition-title">403 with JSON body</p>
+<p>Env-gated routes return 403 with a structured JSON error so callers can distinguish an environment restriction from a genuine missing route. The body includes <code>code</code>, <code>current_env</code>, <code>allowed_envs</code>, and <code>path</code>.</p>
 </div>
 <hr />
 <h2 id="force_active"><code>@force_active</code><a class="headerlink" href="#force_active" title="Permanent link">&para;</a></h2>
@@ -2379,7 +2379,7 @@
 </span><span id="__span-19-14"><a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a>    <span class="n">responses</span><span class="o">=</span><span class="p">{</span>
 </span><span id="__span-19-15"><a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a>        <span class="s2">&quot;maintenance&quot;</span><span class="p">:</span> <span class="n">maintenance_page</span><span class="p">,</span>
 </span><span id="__span-19-16"><a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a>        <span class="s2">&quot;disabled&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">req</span><span class="p">,</span> <span class="n">exc</span><span class="p">:</span> <span class="n">HTMLResponse</span><span class="p">(</span><span class="s2">&quot;&lt;h1&gt;Gone&lt;/h1&gt;&quot;</span><span class="p">,</span> <span class="n">status_code</span><span class="o">=</span><span class="mi">503</span><span class="p">),</span>
-</span><span id="__span-19-17"><a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a>        <span class="c1"># omit &quot;env_gated&quot; to keep the default silent 404</span>
+</span><span id="__span-19-17"><a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a>        <span class="c1"># omit &quot;env_gated&quot; to keep the default 403 JSON</span>
 </span><span id="__span-19-18"><a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a>    <span class="p">},</span>
 </span><span id="__span-19-19"><a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a><span class="p">)</span>
 </span></code></pre></div>
@@ -2405,7 +2405,7 @@
 <tr>
 <td><code>"env_gated"</code></td>
 <td><code>EnvGatedException</code></td>
-<td>Silent 404</td>
+<td>403 JSON</td>
 </tr>
 <tr>
 <td><code>"rate_limited"</code></td>

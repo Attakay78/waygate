@@ -2163,9 +2163,29 @@
 <h2 id="route-commands">Route commands<a class="headerlink" href="#route-commands" title="Permanent link">&para;</a></h2>
 <h3 id="shield-status"><code>shield status</code><a class="headerlink" href="#shield-status" title="Permanent link">&para;</a></h3>
 <p>Show all registered routes and their current state, or inspect a single route in detail.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>shield<span class="w"> </span>status<span class="w">                  </span><span class="c1"># all routes</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>shield<span class="w"> </span>status<span class="w"> </span>GET:/payments<span class="w">    </span><span class="c1"># one route</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>shield<span class="w"> </span>status<span class="w">                          </span><span class="c1"># all routes, page 1</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>shield<span class="w"> </span>status<span class="w"> </span>GET:/payments<span class="w">            </span><span class="c1"># one route</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>shield<span class="w"> </span>status<span class="w"> </span>--page<span class="w"> </span><span class="m">2</span><span class="w">                 </span><span class="c1"># next page</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>shield<span class="w"> </span>status<span class="w"> </span>--per-page<span class="w"> </span><span class="m">50</span><span class="w">           </span><span class="c1"># 50 rows per page</span>
 </span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--page INT</code></td>
+<td>Page number to display when listing all routes (default: 1)</td>
+</tr>
+<tr>
+<td><code>--per-page INT</code></td>
+<td>Rows per page (default: 20)</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Example output:</strong></p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>┌─────────────────────┬─────────────┬──────────────────────┬──────────────┐
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>│ Route               │ Status      │ Reason               │ Since        │
@@ -2174,6 +2194,7 @@
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>│ GET /debug          │ ENV_GATED   │ dev, staging only    │ startup      │
 </span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>│ GET /health         │ ACTIVE      │                      │              │
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>└─────────────────────┴─────────────┴──────────────────────┴──────────────┘
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  Showing 1-3  (last page)
 </span></code></pre></div>
 <hr />
 <h3 id="shield-enable"><code>shield enable</code><a class="headerlink" href="#shield-enable" title="Permanent link">&para;</a></h3>
@@ -2334,7 +2355,27 @@
 <h3 id="shield-rl-list"><code>shield rl list</code><a class="headerlink" href="#shield-rl-list" title="Permanent link">&para;</a></h3>
 <p>Show all registered rate limit policies.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>list
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>shield<span class="w"> </span>rl<span class="w"> </span>list<span class="w"> </span>--page<span class="w"> </span><span class="m">2</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>shield<span class="w"> </span>rl<span class="w"> </span>list<span class="w"> </span>--per-page<span class="w"> </span><span class="m">50</span>
 </span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--page INT</code></td>
+<td>Page number to display (default: 1)</td>
+</tr>
+<tr>
+<td><code>--per-page INT</code></td>
+<td>Rows per page (default: 20)</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h3 id="shield-rl-set"><code>shield rl set</code><a class="headerlink" href="#shield-rl-set" title="Permanent link">&para;</a></h3>
 <p>Register or update a rate limit policy at runtime. Changes take effect on the next request.</p>
@@ -2374,9 +2415,11 @@
 </span></code></pre></div>
 <hr />
 <h3 id="shield-rl-hits"><code>shield rl hits</code><a class="headerlink" href="#shield-rl-hits" title="Permanent link">&para;</a></h3>
-<p>Show the blocked requests log, newest first.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w">                    </span><span class="c1"># last 20 entries</span>
-</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span>
+<p>Show the blocked requests log, newest first. The <code>Path</code> column combines the HTTP method and route path.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w">                    </span><span class="c1"># page 1, 20 rows</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w"> </span>--page<span class="w"> </span><span class="m">2</span><span class="w">           </span><span class="c1"># next page</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w"> </span>--per-page<span class="w"> </span><span class="m">50</span><span class="w">     </span><span class="c1"># 50 rows per page</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w"> </span>--route<span class="w"> </span>/api/pay<span class="w">   </span><span class="c1"># filter to one route</span>
 </span></code></pre></div>
 <table>
 <thead>
@@ -2387,18 +2430,27 @@
 </thead>
 <tbody>
 <tr>
-<td><code>--limit INT</code></td>
-<td>Maximum entries to display (default: 20)</td>
+<td><code>--route TEXT</code></td>
+<td>Filter entries to a single route path</td>
+</tr>
+<tr>
+<td><code>--page INT</code></td>
+<td>Page number to display (default: 1)</td>
+</tr>
+<tr>
+<td><code>--per-page INT</code></td>
+<td>Rows per page (default: 20)</td>
 </tr>
 </tbody>
 </table>
 <hr />
 <h2 id="audit-log">Audit log<a class="headerlink" href="#audit-log" title="Permanent link">&para;</a></h2>
 <h3 id="shield-log"><code>shield log</code><a class="headerlink" href="#shield-log" title="Permanent link">&para;</a></h3>
-<p>Display the audit log, newest entries first.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>shield<span class="w"> </span>log<span class="w">                          </span><span class="c1"># last 20 entries</span>
+<p>Display the audit log, newest entries first. The <code>Status</code> column shows <code>old &gt; new</code> for route state changes and a coloured action label (<code>set</code>, <code>update</code>, <code>reset</code>, <code>delete</code>) for rate limit policy changes.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>shield<span class="w"> </span>log<span class="w">                          </span><span class="c1"># page 1, 20 rows</span>
 </span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>shield<span class="w"> </span>log<span class="w"> </span>--route<span class="w"> </span>GET:/payments<span class="w">    </span><span class="c1"># filter by route</span>
-</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>shield<span class="w"> </span>log<span class="w"> </span>--limit<span class="w"> </span><span class="m">100</span><span class="w">              </span><span class="c1"># show more entries</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>shield<span class="w"> </span>log<span class="w"> </span>--page<span class="w"> </span><span class="m">2</span><span class="w">                 </span><span class="c1"># next page</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>shield<span class="w"> </span>log<span class="w"> </span>--per-page<span class="w"> </span><span class="m">50</span><span class="w">           </span><span class="c1"># 50 rows per page</span>
 </span></code></pre></div>
 <table>
 <thead>
@@ -2413,8 +2465,12 @@
 <td>Filter entries to a single route key</td>
 </tr>
 <tr>
-<td><code>--limit INT</code></td>
-<td>Maximum number of entries to display (default: 20)</td>
+<td><code>--page INT</code></td>
+<td>Page number to display (default: 1)</td>
+</tr>
+<tr>
+<td><code>--per-page INT</code></td>
+<td>Rows per page (default: 20)</td>
 </tr>
 </tbody>
 </table>
