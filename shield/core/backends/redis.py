@@ -28,8 +28,10 @@ Performance notes
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import weakref
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 
@@ -85,12 +87,52 @@ class RedisBackend(ShieldBackend):
         url: str = "redis://localhost:6379/0",
         max_rl_hit_entries: int = 10_000,
     ) -> None:
-        self._pool = ConnectionPool.from_url(url, decode_responses=True)
+        self._url = url
         self._max_rl_hit_entries = max_rl_hit_entries
+        # One ConnectionPool per event loop, keyed by id(loop).
+        # Values are (weakref.ref(loop), pool) — a weak reference so the loop
+        # can be GC'd naturally when replaced, and the pool alongside it.
+        self._pools: dict[int, tuple[weakref.ref[asyncio.AbstractEventLoop], ConnectionPool]] = {}
+
+    def _get_pool(self) -> ConnectionPool:
+        """Return a ConnectionPool bound to the current running event loop.
+
+        A new pool is created whenever the running loop differs from the one
+        the existing pool was created under — this handles gunicorn worker
+        recycles and uvicorn ``--reload`` restarts where the event loop is
+        replaced mid-process without a fresh interpreter.
+
+        Dead-loop pruning runs only when a new pool must be created (the rare
+        event of a loop replacement), keeping the hot path to a single dict
+        lookup.
+        """
+        loop = asyncio.get_running_loop()
+        loop_id = id(loop)
+        cached = self._pools.get(loop_id)
+        if cached is not None:
+            loop_ref, pool = cached
+            if loop_ref() is loop:
+                # Same loop still running — reuse the pool.
+                return pool
+            # Either the weak ref is dead (loop was GC'd and id reused) or
+            # the id belongs to a different live loop. Either way, discard.
+            del self._pools[loop_id]
+
+        # Creating a new pool: prune any entries whose loop has been GC'd.
+        # This is O(n) over a tiny dict (at most a handful of entries across
+        # the lifetime of a process) and only runs on the rare loop-replacement
+        # event, never on the hot request path.
+        dead = [lid for lid, (ref, _) in self._pools.items() if ref() is None]
+        for lid in dead:
+            del self._pools[lid]
+
+        pool = ConnectionPool.from_url(self._url, decode_responses=True)
+        self._pools[loop_id] = (weakref.ref(loop), pool)
+        return pool
 
     def _client(self) -> aioredis.Redis:
-        """Return a Redis client using the shared connection pool."""
-        return aioredis.Redis(connection_pool=self._pool)
+        """Return a Redis client bound to the current event loop's pool."""
+        return aioredis.Redis(connection_pool=self._get_pool())
 
     # ------------------------------------------------------------------
     # ShieldBackend interface

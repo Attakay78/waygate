@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- **`RedisBackend` crashes with "attached to a different loop" / "Event loop is closed" after worker restart**: `ConnectionPool` was created once at `__init__` time and shared for the process lifetime; after a gunicorn worker recycle or `uvicorn --reload`, all Redis calls failed because the pool's internal futures were bound to the replaced event loop. Fixed by replacing the single shared pool with a per-event-loop pool dict (`dict[id(loop), (weakref.ref(loop), pool)]`): pools are now created lazily on first use within each event loop and dead entries are pruned automatically when the loop is GC'd.
+
 ---
 
 ## [0.5.0]
