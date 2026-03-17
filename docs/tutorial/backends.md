@@ -94,6 +94,13 @@ Redis key schema:
 
 Best for: multi-instance / load-balanced production deployments.
 
+!!! warning "Deploy Redis in the same region as your app"
+    Every request runs at least one Redis read (`engine.check()`) and, when rate limiting
+    is active, an additional Redis write. If your Redis instance is in a different region
+    from your web service, each of those operations crosses a long-haul network link and
+    adds latency to every request. Always provision Redis in the same region as the
+    service that uses it.
+
 ---
 
 ## Using `make_engine` (recommended)
@@ -145,6 +152,14 @@ class MyBackend(ShieldBackend):
 ```
 
 See [**Adapters: Building your own backend →**](../adapters/custom.md) for a full SQLite example.
+
+!!! warning "Storage latency affects every request"
+    api-shield calls your backend on every incoming request. If your storage layer is
+    remote (PostgreSQL, SQLite over NFS, a hosted database), the round-trip time to that
+    storage is added to every request that passes through the middleware. Keep your
+    storage instance in the same data centre or region as your application. The same
+    applies to rate limit storage — a slow counter increment slows down every request
+    that has a rate limit applied.
 
 ---
 
