@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+- **`@env_only` now returns 403 with JSON**: env-gated routes blocked by the wrong environment return `403 ENV_GATED` with `current_env`, `allowed_envs`, and `path` instead of a silent empty 404.
 - **Tailwind CSS v3 → v4**: replaced `tailwind.config.js` with a CSS-first config in `input.css` (`@import "tailwindcss"`, `@source`, `@theme`). Dashboard CSS is pre-built and committed; no Node.js required at install time.
 - **No CDN dependency**: `shield.min.css` is now served as a local static file instead of the Tailwind CDN script, eliminating the production warning and removing the runtime network dependency.
 

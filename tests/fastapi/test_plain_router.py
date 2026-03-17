@@ -80,7 +80,7 @@ async def test_plain_router_disabled_returns_503():
 # ---------------------------------------------------------------------------
 
 
-async def test_plain_router_env_gated_returns_404_in_production():
+async def test_plain_router_env_gated_returns_403_in_production():
     app, _ = _make_app(env="production")
     router = APIRouter()
 
@@ -94,7 +94,8 @@ async def test_plain_router_env_gated_returns_404_in_production():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/debug")
 
-    assert resp.status_code == 404
+    assert resp.status_code == 403
+    assert resp.json()["error"]["code"] == "ENV_GATED"
 
 
 async def test_plain_router_env_gated_passes_in_allowed_env():

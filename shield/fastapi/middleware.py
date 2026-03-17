@@ -302,8 +302,7 @@ class ShieldMiddleware(BaseHTTPMiddleware):
             factory = response_factory or self._default_responses.get("env_gated")
             if factory:
                 return await self._call_response_factory(factory, request, exc)
-            # Silent 404 — do not reveal that the route exists.
-            return Response(status_code=404)
+            return self._env_gated_response(path, exc)
         except RateLimitExceededException as exc:
             factory = rl_response_factory or self._default_responses.get("rate_limited")
             if factory:
@@ -449,6 +448,21 @@ class ShieldMiddleware(BaseHTTPMiddleware):
                     "code": "ROUTE_DISABLED",
                     "message": "This endpoint has been disabled",
                     "reason": exc.reason,
+                    "path": path,
+                }
+            },
+        )
+
+    @staticmethod
+    def _env_gated_response(path: str, exc: EnvGatedException) -> JSONResponse:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "error": {
+                    "code": "ENV_GATED",
+                    "message": "This endpoint is not available in the current environment",
+                    "current_env": exc.current_env,
+                    "allowed_envs": exc.allowed_envs,
                     "path": path,
                 }
             },

@@ -2,7 +2,7 @@
 
 Verifies end-to-end behaviour:
   GET /payments  → 503 with reason
-  GET /debug     → 404 (production env)
+  GET /debug     → 403 (production env)
   GET /old-endpoint → 503
   GET /health    → 200 always
   /docs does not show /debug or /old-endpoint
@@ -73,12 +73,13 @@ async def test_payments_returns_503(acceptance_app):
     assert body["error"]["reason"] == "DB migration"
 
 
-async def test_debug_returns_404_in_production(acceptance_app):
+async def test_debug_returns_403_in_production(acceptance_app):
     app, _ = acceptance_app
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/debug")
-    assert resp.status_code == 404
-    assert resp.content == b""  # silent
+    assert resp.status_code == 403
+    body = resp.json()
+    assert body["error"]["code"] == "ENV_GATED"
 
 
 async def test_old_endpoint_returns_503(acceptance_app):

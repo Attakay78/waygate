@@ -41,7 +41,7 @@ ShieldMiddleware.dispatch()
         │       ├─ Global maintenance ON? → 503
         │       ├─ MAINTENANCE  → 503 + Retry-After header
         │       ├─ DISABLED     → 503
-        │       ├─ ENV_GATED    → 404 (silent)
+        │       ├─ ENV_GATED    → 403 JSON
         │       ├─ DEPRECATED   → pass through + inject response headers
         │       ├─ ACTIVE       → pass through ✓
         │       │
@@ -114,7 +114,7 @@ All error responses from the middleware use a consistent JSON structure:
 |---|---|---|
 | Maintenance mode | 503 | `MAINTENANCE_MODE` |
 | Route disabled | 503 | `ROUTE_DISABLED` |
-| Env-gated (wrong env) | 404 | *(no body)* |
+| Env-gated (wrong env) | 403 | `ENV_GATED` |
 | Global maintenance | 503 | `MAINTENANCE_MODE` |
 | Rate limit exceeded | 429 | `RATE_LIMIT_EXCEEDED` |
 
