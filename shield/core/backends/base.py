@@ -223,3 +223,20 @@ class ShieldBackend(ABC):
         No-op if no policy is stored for that pair.
         Default implementation is a no-op.
         """
+
+    async def subscribe_rate_limit_policy(self) -> AsyncIterator[dict[str, Any]]:
+        """Stream rate limit policy changes as they occur.
+
+        Each yielded dict has the shape::
+
+            {"action": "set",    "key": "GET:/api/orders", "policy": {...}}
+            {"action": "delete", "key": "GET:/api/orders"}
+
+        Backends that support pub/sub (e.g. ``RedisBackend``) override this.
+        Others raise ``NotImplementedError`` — ``ShieldEngine.start()`` treats
+        that as "single-instance mode" and skips the listener task.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} does not support rate limit policy pub/sub."
+        )
+        yield  # make this a valid async generator

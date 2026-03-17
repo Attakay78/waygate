@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.5.0]
+
+### Fixed
+
+- **Rate limit policies not synced across workers** (`RedisBackend`): updating a policy via the admin API or CLI only updated the in-process dict of the worker that handled the request. Other workers continued enforcing the old (decorator-declared) limit until restart. Fixed by adding a `shield:rl-policy-change` Redis pub/sub channel, every `set` and `delete` now broadcasts the change to all instances, which apply it to their local `_rate_limit_policies` dict immediately via a new background listener task (`shield-rl-policy-listener`), mirroring the existing `shield:global_invalidate` pattern.
+- **Rate limit policies reverted to decorator defaults on restart** (`ShieldRouter`): `register_shield_routes()` called `restore_rate_limit_policies()` (via `register_batch`) before re-registering decorator-declared policies, so persisted admin/CLI updates were immediately overwritten on every app startup. Fixed by registering decorator policies first and running `restore_rate_limit_policies()` last, consistent with the order already used by `scan_routes()`.
+- **`RedisRateLimitStorage.reset()` blocked the event loop**: the underlying `limits` library exposes a synchronous Redis client; calling `.scan()` and `.delete()` directly inside `async def reset()` stalled the event loop during every admin reset and route `enable()` call. Fixed by offloading the SCAN + DELETE loop to `asyncio.to_thread()`.
+- **`enable()` reset rate limit counters with seven sequential calls**: a `for _method in (…)` loop called `_rate_limiter.reset()` once per HTTP method. Replaced with a single `reset_all_for_path()` call (`method=None`), which is the existing one-shot API on `ShieldRateLimiter`.
+
+---
+
 ## [0.4.0]
 
 ### Added
@@ -115,7 +126,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `shield` CLI with direct backend access
 - `shield status`, `shield enable`, `shield disable`, `shield maintenance`, `shield schedule`, `shield log`
 
-[Unreleased]: https://github.com/Attakay78/api-shield/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Attakay78/api-shield/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Attakay78/api-shield/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Attakay78/api-shield/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Attakay78/api-shield/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Attakay78/api-shield/compare/v0.1.0...v0.2.0

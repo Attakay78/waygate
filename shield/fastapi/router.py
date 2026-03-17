@@ -228,10 +228,13 @@ class ShieldRouter(APIRouter):
         for distributed operation (e.g. the global config cache-invalidation
         listener when using ``RedisBackend``).
         """
-        await self._shield_engine.register_batch(list(self._shield_routes))
-        # Register rate limit policies after route state registration.
+        # Register rate limit policies from decorators BEFORE register_batch.
+        # register_batch calls restore_rate_limit_policies() at the end, so
+        # persisted (admin/CLI-updated) values correctly override decorator
+        # defaults — same order as scan_routes().
         for path, method, meta in self._shield_rl_routes:
             await _register_rate_limit_from_meta(path, method, meta, self._shield_engine)
+        await self._shield_engine.register_batch(list(self._shield_routes))
         await self._shield_engine.start()
 
     # ------------------------------------------------------------------
