@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+---
+
+## [0.3.0]
+
 ### Added
 
 - **Rate limiting** (`@rate_limit`): per-IP, per-user, per-API-key, and global counters with fixed/sliding/moving window and token bucket algorithms. Supports burst allowance, tiered limits (`{"free": "10/min", "pro": "100/min"}`), exempt IPs/roles, and custom `on_missing_key` behaviour. Works as both a decorator and a `Depends()` dependency. Responses include `X-RateLimit-Limit/Remaining/Reset` and `Retry-After` headers. Requires `api-shield[rate-limit]`.
@@ -94,6 +98,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `shield` CLI with direct backend access
 - `shield status`, `shield enable`, `shield disable`, `shield maintenance`, `shield schedule`, `shield log`
 
-[Unreleased]: https://github.com/Attakay78/api-shield/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Attakay78/api-shield/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Attakay78/api-shield/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Attakay78/api-shield/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Attakay78/api-shield/releases/tag/v0.1.0
