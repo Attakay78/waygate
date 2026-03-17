@@ -10,11 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://attakay78.github.io/api-shield/changelog/">
+        <link rel="canonical" href="https://attakay78.github.io/api-shield/contributing/">
       
       
-        <link rel="prev" href="../contributing/">
+        <link rel="prev" href="../adapters/custom/">
       
+      
+        <link rel="next" href="../changelog/">
       
       
         
@@ -25,7 +27,7 @@
     
     
       
-        <title>Changelog - api-shield</title>
+        <title>Contributing - api-shield</title>
       
     
     
@@ -80,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#changelog" class="md-skip">
+        <a href="#contributing" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Changelog
+              Contributing
             
           </span>
         </div>
@@ -319,9 +321,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../contributing/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -338,11 +342,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
         
   
   
@@ -1212,33 +1214,6 @@
       
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../contributing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Contributing
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
     
   
   
@@ -1258,7 +1233,7 @@
   <span class="md-ellipsis">
     
   
-    Changelog
+    Contributing
   
 
     
@@ -1276,7 +1251,7 @@
   <span class="md-ellipsis">
     
   
-    Changelog
+    Contributing
   
 
     
@@ -1302,22 +1277,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#unreleased" class="md-nav__link">
+  <a href="#before-you-start" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Unreleased
+        Before you start
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Unreleased">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-up-your-development-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setting up your development environment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Setting up your development environment">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#1-python-environment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Added
+        1. Python environment
       
     </span>
   </a>
@@ -1325,10 +1311,77 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#2-dashboard-css-tailwind" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Changed
+        2. Dashboard CSS (Tailwind)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Dashboard CSS (Tailwind)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#when-you-must-rebuild" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When you must rebuild
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#branching-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branching strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commit-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commit messages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#testing-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing conventions
       
     </span>
   </a>
@@ -1341,197 +1394,46 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#030" class="md-nav__link">
+  <a href="#linting-formatting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.3.0
+        Linting &amp; formatting
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="0.3.0">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#added_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Added
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Changed
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#020-admin-redesign-docs" class="md-nav__link">
+  <a href="#architecture-rules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.2.0 — Admin Redesign &amp; Docs
+        Architecture rules
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="0.2.0 — Admin Redesign &amp; Docs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#added_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Added
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Added">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#admin-dashboard" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Admin &amp; Dashboard
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cli" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CLI
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Documentation
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changed_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Changed
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#010-initial-release" class="md-nav__link">
+  <a href="#ci-jobs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.1.0 — Initial Release
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.1.0 — Initial Release">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#added_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Added
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Added">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#core" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Core
+        CI jobs
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#fastapi-adapter" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#project-structure-quick-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        FastAPI adapter
+        Project structure (quick reference)
       
     </span>
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dashboard-original" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Dashboard (original)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cli-original" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CLI (original)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1539,6 +1441,33 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1570,22 +1499,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#unreleased" class="md-nav__link">
+  <a href="#before-you-start" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Unreleased
+        Before you start
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Unreleased">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-up-your-development-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setting up your development environment
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Setting up your development environment">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#1-python-environment" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Added
+        1. Python environment
       
     </span>
   </a>
@@ -1593,10 +1533,77 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#2-dashboard-css-tailwind" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Changed
+        2. Dashboard CSS (Tailwind)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Dashboard CSS (Tailwind)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#when-you-must-rebuild" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When you must rebuild
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#branching-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branching strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commit-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commit messages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#testing-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing conventions
       
     </span>
   </a>
@@ -1609,197 +1616,46 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#030" class="md-nav__link">
+  <a href="#linting-formatting" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.3.0
+        Linting &amp; formatting
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="0.3.0">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#added_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Added
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Changed
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#020-admin-redesign-docs" class="md-nav__link">
+  <a href="#architecture-rules" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.2.0 — Admin Redesign &amp; Docs
+        Architecture rules
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="0.2.0 — Admin Redesign &amp; Docs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#added_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Added
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Added">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#admin-dashboard" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Admin &amp; Dashboard
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cli" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CLI
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#documentation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Documentation
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#changed_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Changed
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#010-initial-release" class="md-nav__link">
+  <a href="#ci-jobs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        0.1.0 — Initial Release
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="0.1.0 — Initial Release">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#added_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Added
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Added">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#core" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Core
+        CI jobs
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#fastapi-adapter" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#project-structure-quick-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        FastAPI adapter
+        Project structure (quick reference)
       
     </span>
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#dashboard-original" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Dashboard (original)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cli-original" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CLI (original)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1831,112 +1687,213 @@
   
 
 
-<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
-<p>All notable changes to this project will be documented here.</p>
-<p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>, and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<h1 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h1>
+<p>Contributions are welcome with bug fixes, new features, documentation improvements, and adapter implementations all help make api-shield better. This page walks you through everything you need to get started.</p>
 <hr />
-<h2 id="unreleased"><a href="https://github.com/Attakay78/api-shield/compare/v0.3.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
-<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<h2 id="before-you-start">Before you start<a class="headerlink" href="#before-you-start" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Mobile &amp; tablet responsive dashboard</strong>: all four tables (Routes, Audit, Rate Limits, Blocked) transform into stacked cards on screens narrower than 640 px using a CSS-only card layout with <code>data-label</code> attributes. Action buttons collapse to icon-only on small screens.</li>
-<li><strong>Back-to-top button</strong>: fixed button appears at the bottom-right after scrolling 200 px; hidden at the top.</li>
-<li><strong>Success toast notifications</strong>: 2.5 s toast appears after any mutating action (enable, disable, maintenance, schedule, rate limit edit/reset/delete).</li>
-</ul>
-<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Tailwind CSS v3 → v4</strong>: replaced <code>tailwind.config.js</code> with a CSS-first config in <code>input.css</code> (<code>@import "tailwindcss"</code>, <code>@source</code>, <code>@theme</code>). Dashboard CSS is pre-built and committed; no Node.js required at install time.</li>
-<li><strong>No CDN dependency</strong>: <code>shield.min.css</code> is now served as a local static file instead of the Tailwind CDN script, eliminating the production warning and removing the runtime network dependency.</li>
+<li>Check the <a href="https://github.com/Attakay78/api-shield/issues">issue tracker</a> to see if someone is already working on the same thing.</li>
+<li>For significant changes, open an issue first so we can align on the approach before you invest time writing code.</li>
+<li>All PRs target the <code>develop</code> branch, not <code>main</code>.</li>
 </ul>
 <hr />
-<h2 id="030"><a href="https://github.com/Attakay78/api-shield/compare/v0.2.0...v0.3.0">0.3.0</a><a class="headerlink" href="#030" title="Permanent link">&para;</a></h2>
-<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
+<h2 id="setting-up-your-development-environment">Setting up your development environment<a class="headerlink" href="#setting-up-your-development-environment" title="Permanent link">&para;</a></h2>
+<h3 id="1-python-environment">1. Python environment<a class="headerlink" href="#1-python-environment" title="Permanent link">&para;</a></h3>
+<p><strong>Requirements:</strong> Python 3.11+, <a href="https://docs.astral.sh/uv/">uv</a></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Attakay78/api-shield
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>api-shield
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Create a virtual environment and install all extras + dev tools</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>uv<span class="w"> </span>venv
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">        </span><span class="c1"># Windows: .venv\Scripts\activate</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[all,dev]&quot;</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Wire up the pre-commit hooks (runs ruff automatically on every commit)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>pre-commit<span class="w"> </span>install
+</span></code></pre></div>
+<h3 id="2-dashboard-css-tailwind">2. Dashboard CSS (Tailwind)<a class="headerlink" href="#2-dashboard-css-tailwind" title="Permanent link">&para;</a></h3>
+<p>The admin dashboard is styled with <a href="https://tailwindcss.com/">Tailwind CSS v4</a>. The compiled stylesheet (<code>shield/dashboard/static/shield.min.css</code>) is <strong>committed to the repository</strong> so that <code>pip install api-shield</code> works without requiring Node.js on the user's machine.</p>
+<p>Configuration lives entirely in <code>input.css</code> via <code>@theme</code> and <code>@source</code> directives — there is no <code>tailwind.config.js</code> in v4.</p>
+<p><strong>Requirements:</strong> Node.js 18+</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Install Tailwind (one-time setup after cloning)</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>npm<span class="w"> </span>install
+</span></code></pre></div>
+<p>Two npm scripts are available:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run build:css</code></td>
+<td>One-shot rebuild — run before committing template changes</td>
+</tr>
+<tr>
+<td><code>npm run watch:css</code></td>
+<td>Continuous rebuild — run while actively editing templates</td>
+</tr>
+</tbody>
+</table>
+<h4 id="when-you-must-rebuild">When you must rebuild<a class="headerlink" href="#when-you-must-rebuild" title="Permanent link">&para;</a></h4>
+<p>You need to rebuild and commit <code>shield.min.css</code> whenever you:</p>
 <ul>
-<li><strong>Rate limiting</strong> (<code>@rate_limit</code>): per-IP, per-user, per-API-key, and global counters with fixed/sliding/moving window and token bucket algorithms. Supports burst allowance, tiered limits (<code>{"free": "10/min", "pro": "100/min"}</code>), exempt IPs/roles, and custom <code>on_missing_key</code> behaviour. Works as both a decorator and a <code>Depends()</code> dependency. Responses include <code>X-RateLimit-Limit/Remaining/Reset</code> and <code>Retry-After</code> headers. Requires <code>api-shield[rate-limit]</code>.</li>
-<li><strong>Rate limit custom responses</strong>: <code>response=</code> on <code>@rate_limit</code> and <code>responses["rate_limited"]</code> on <code>ShieldMiddleware</code> for replacing the default 429 JSON body with any Starlette <code>Response</code>.</li>
-<li><strong>Rate limit dashboard</strong>: <code>/shield/rate-limits</code> tab showing registered policies with reset/edit/delete actions; <code>/shield/blocked</code> page for the blocked requests log. Policies can also be managed via the <code>shield rl</code> CLI commands (<code>list</code>, <code>set</code>, <code>reset</code>, <code>delete</code>, <code>hits</code>).</li>
-<li><strong>Rate limit audit log</strong>: policy changes (<code>set</code>, <code>update</code>, <code>reset</code>, <code>delete</code>) are recorded in the audit log alongside route state changes, with coloured action badges in the dashboard.</li>
-<li><strong>Rate limit storage</strong>: <code>MemoryRateLimitStorage</code>, <code>FileRateLimitStorage</code> (in-memory counters with periodic disk snapshot), and <code>RedisRateLimitStorage</code> (atomic Redis counters, multi-worker safe). Storage is auto-selected based on the main backend.</li>
-<li><strong>Custom responses</strong> for lifecycle decorators: <code>response=</code> on <code>@maintenance</code>, <code>@disabled</code>, and <code>@env_only</code>; <code>responses=</code> dict on <code>ShieldMiddleware</code> for <code>"maintenance"</code>, <code>"disabled"</code>, and <code>"env_gated"</code> states.</li>
-<li><strong><code>@deprecated</code> as <code>Depends()</code></strong>: injects <code>Deprecation</code>, <code>Sunset</code>, and <code>Link</code> headers directly without requiring middleware.</li>
-<li><strong>Webhook deduplication</strong>: <code>RedisBackend</code> uses <code>SET NX EX</code> to ensure only one instance fires webhooks per event in multi-instance deployments. Fails open on Redis error.</li>
-<li><strong>Distributed global maintenance</strong>: <code>RedisBackend</code> publishes to <code>shield:global_invalidate</code> on every <code>set_global_config()</code> call so all instances drop their cached config immediately.</li>
-<li><strong>Distributed Deployments guide</strong> (<code>docs/guides/distributed.md</code>): backend capability matrix, global maintenance cache invalidation, scheduler behaviour, webhook dedup, and production checklist.</li>
+<li>Add or change Tailwind utility classes in any file under <code>shield/dashboard/templates/</code></li>
+<li>Create a new template file</li>
+<li>Modify <code>input.css</code> (custom breakpoints, colours, or font config)</li>
 </ul>
-<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Edit templates, then:</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>npm<span class="w"> </span>run<span class="w"> </span>build:css
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>git<span class="w"> </span>add<span class="w"> </span>shield/dashboard/static/shield.min.css
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;rebuild: update shield.min.css&quot;</span>
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">CI enforces this</p>
+<p>The <code>css</code> CI job rebuilds the stylesheet from scratch and fails the PR if
+<code>shield.min.css</code> does not match the current templates. A forgotten rebuild will
+block the merge.</p>
+</div>
+<hr />
+<h2 id="branching-strategy">Branching strategy<a class="headerlink" href="#branching-strategy" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Branch</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main</code></td>
+<td>Stable releases only, never commit directly</td>
+</tr>
+<tr>
+<td><code>develop</code></td>
+<td>Integration branch, all PRs target here</td>
+</tr>
+</tbody>
+</table>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>feat/my-feature  →  develop  →  (release PR)  →  main  →  vX.Y.Z tag
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>checkout<span class="w"> </span>develop
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>git<span class="w"> </span>pull
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feat/my-feature
+</span></code></pre></div>
+<hr />
+<h2 id="commit-messages">Commit messages<a class="headerlink" href="#commit-messages" title="Permanent link">&para;</a></h2>
+<p>We follow <a href="https://www.conventionalcommits.org/">Conventional Commits</a>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>feat(core): add rollout percentage to ShieldEngine
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>fix(middleware): handle missing path in check()
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>docs: add Redis backend guide
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>chore(ci): pin ruff to v0.9
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>rebuild: update shield.min.css
+</span></code></pre></div>
+<hr />
+<h2 id="running-tests">Running tests<a class="headerlink" href="#running-tests" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># All tests — Redis tests auto-skip when Redis is unavailable</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>pytest
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Narrow to a module</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>pytest<span class="w"> </span>tests/core/
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>pytest<span class="w"> </span>tests/fastapi/
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>pytest<span class="w"> </span>tests/dashboard/
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="c1"># Run with a real Redis instance</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="nv">SHIELD_REDIS_URL</span><span class="o">=</span>redis://localhost:6379<span class="w"> </span>pytest
+</span></code></pre></div>
+<p>Tests use <code>pytest-asyncio</code> with <code>asyncio_mode = "auto"</code>, all async test functions work without decorators.</p>
+<h3 id="testing-conventions">Testing conventions<a class="headerlink" href="#testing-conventions" title="Permanent link">&para;</a></h3>
 <ul>
-<li>Default <code>SHIELD_ENV</code> changed from <code>"production"</code> to <code>"dev"</code>. Set <code>SHIELD_ENV=production</code> explicitly in production deployments.</li>
-<li><code>@deprecated</code> and all blocking decorators now support <code>Depends()</code> in addition to the decorator form.</li>
+<li>Core tests (<code>tests/core/</code>) must never import <code>fastapi</code> or <code>starlette</code>.</li>
+<li>FastAPI tests use <code>httpx.AsyncClient</code> with <code>ASGITransport</code>, no live server.</li>
+<li>CLI tests use <code>typer.testing.CliRunner</code> and must be <strong>sync <code>def</code></strong>, not <code>async def</code>, because the CLI calls <code>anyio.run()</code> internally.</li>
+<li>Backend tests are parametrized over all three backends (<code>memory</code>, <code>file</code>, <code>redis</code>).</li>
 </ul>
 <hr />
-<h2 id="020-admin-redesign-docs"><a href="https://github.com/Attakay78/api-shield/compare/v0.1.0...v0.2.0">0.2.0</a> — Admin Redesign &amp; Docs<a class="headerlink" href="#020-admin-redesign-docs" title="Permanent link">&para;</a></h2>
-<h3 id="added_2">Added<a class="headerlink" href="#added_2" title="Permanent link">&para;</a></h3>
-<h4 id="admin-dashboard">Admin &amp; Dashboard<a class="headerlink" href="#admin-dashboard" title="Permanent link">&para;</a></h4>
-<ul>
-<li><code>ShieldAdmin</code>: unified admin interface combining the HTMX dashboard UI and the REST API under a single mount point</li>
-<li>REST API under <code>/api/</code> for programmatic route management (enable, disable, maintenance, schedule, audit, global maintenance)</li>
-<li>Token-based authentication with HMAC-SHA256 signing</li>
-<li>Support for single user, multiple users, and custom <code>ShieldAuthBackend</code> auth backends</li>
-<li>Automatic token invalidation when credentials change (auth fingerprint mixed into signing key)</li>
-<li><code>HttpOnly</code> session cookies for dashboard browser sessions</li>
-<li>HTMX dashboard with SSE live updates, audit log table, and login page</li>
-<li>Platform field in audit log entries (<code>"cli"</code> / <code>"dashboard"</code>)</li>
-</ul>
-<h4 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h4>
-<ul>
-<li><code>shield</code> CLI redesigned as a thin HTTP client over the <code>ShieldAdmin</code> REST API</li>
-<li><code>shield login</code> / <code>shield logout</code>, <code>shield status</code>, <code>shield enable</code>, <code>shield disable</code>, <code>shield maintenance</code>, <code>shield schedule</code>, <code>shield log</code></li>
-<li><code>shield global</code> subcommands: enable, disable, status, exempt-add, exempt-remove</li>
-<li><code>shield config set-url</code> and <code>shield config show</code></li>
-<li>Cross-platform config file at <code>~/.shield/config.json</code></li>
-<li>Server URL auto-discovery via <code>SHIELD_SERVER_URL</code> env var, <code>.shield</code> file, or config file</li>
-</ul>
-<h4 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h4>
-<ul>
-<li>MkDocs Material documentation site with full tutorial, reference, guides, and adapter sections</li>
-</ul>
-<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
-<ul>
-<li>CLI no longer accesses the backend directly; all operations go through the REST API</li>
-<li>Custom auth header changed from <code>Authorization: Bearer</code> to <code>X-Shield-Token</code></li>
-<li><code>ShieldDashboard</code> retained for backward compatibility; <code>ShieldAdmin</code> is now the recommended entry point</li>
-</ul>
+<h2 id="linting-formatting">Linting &amp; formatting<a class="headerlink" href="#linting-formatting" title="Permanent link">&para;</a></h2>
+<p>We use <a href="https://docs.astral.sh/ruff/">ruff</a> for both linting and formatting:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ruff<span class="w"> </span>check<span class="w"> </span>.<span class="w">          </span><span class="c1"># lint</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w"> </span>.<span class="w">    </span><span class="c1"># lint + auto-fix</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>ruff<span class="w"> </span>format<span class="w"> </span>.<span class="w">         </span><span class="c1"># format</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>ruff<span class="w"> </span>format<span class="w"> </span>--check<span class="w"> </span>.<span class="w"> </span><span class="c1"># check formatting without modifying files</span>
+</span></code></pre></div>
+<p>Pre-commit runs ruff automatically on staged files before each commit. CI will fail on any ruff errors or formatting drift.</p>
 <hr />
-<h2 id="010-initial-release"><a href="https://github.com/Attakay78/api-shield/releases/tag/v0.1.0">0.1.0</a> — Initial Release<a class="headerlink" href="#010-initial-release" title="Permanent link">&para;</a></h2>
-<h3 id="added_3">Added<a class="headerlink" href="#added_3" title="Permanent link">&para;</a></h3>
-<h4 id="core">Core<a class="headerlink" href="#core" title="Permanent link">&para;</a></h4>
-<ul>
-<li><code>RouteStatus</code>, <code>MaintenanceWindow</code>, <code>RouteState</code>, <code>AuditEntry</code> Pydantic v2 models</li>
-<li><code>ShieldException</code>, <code>MaintenanceException</code>, <code>EnvGatedException</code>, <code>RouteDisabledException</code></li>
-<li><code>ShieldBackend</code> ABC with full contract</li>
-<li><code>MemoryBackend</code>: in-process dict with <code>asyncio.Queue</code> subscribe</li>
-<li><code>FileBackend</code>: JSON file via <code>aiofiles</code> with <code>asyncio.Lock</code></li>
-<li><code>RedisBackend</code>: <code>redis-py</code> async with pub/sub for live dashboard updates in multi-instance deployments</li>
-<li><code>ShieldEngine</code>: <code>check</code>, <code>register</code>, <code>enable</code>, <code>disable</code>, <code>set_maintenance</code>, <code>set_env_only</code>, <code>get_state</code>, <code>list_states</code>, <code>get_audit_log</code></li>
-<li>Fail-open guarantee: backend errors are logged; requests pass through</li>
-<li><code>MaintenanceScheduler</code>: <code>asyncio.Task</code>-based scheduler that auto-activates and auto-deactivates maintenance windows</li>
-<li>Webhook support: <code>add_webhook()</code> and <code>SlackWebhookFormatter</code></li>
-</ul>
-<h4 id="fastapi-adapter">FastAPI adapter<a class="headerlink" href="#fastapi-adapter" title="Permanent link">&para;</a></h4>
-<ul>
-<li><code>@maintenance</code>, <code>@disabled</code>, <code>@env_only</code>, <code>@force_active</code>, <code>@deprecated</code> decorators</li>
-<li><code>ShieldRouter</code>: drop-in <code>APIRouter</code> replacement with startup registration hook</li>
-<li><code>ShieldMiddleware</code>: ASGI middleware with structured JSON error responses and <code>Retry-After</code> header</li>
-<li><code>@deprecated</code>: injects <code>Deprecation</code>, <code>Sunset</code>, and <code>Link</code> response headers</li>
-<li><code>apply_shield_to_openapi</code>: runtime OpenAPI schema filtering</li>
-<li><code>setup_shield_docs</code>: enhanced <code>/docs</code> and <code>/redoc</code> with maintenance banners</li>
-<li>Global maintenance mode: <code>enable_global_maintenance</code>, <code>disable_global_maintenance</code>, <code>get_global_maintenance</code></li>
-</ul>
-<h4 id="dashboard-original">Dashboard (original)<a class="headerlink" href="#dashboard-original" title="Permanent link">&para;</a></h4>
-<ul>
-<li>HTMX dashboard with SSE live updates and HTTP basic auth via <code>ShieldDashboard</code></li>
-<li>Route list with status badges, enable/maintenance/disable actions per route</li>
-<li>Audit log table</li>
-</ul>
-<h4 id="cli-original">CLI (original)<a class="headerlink" href="#cli-original" title="Permanent link">&para;</a></h4>
-<ul>
-<li><code>shield</code> CLI with direct backend access</li>
-<li><code>shield status</code>, <code>shield enable</code>, <code>shield disable</code>, <code>shield maintenance</code>, <code>shield schedule</code>, <code>shield log</code></li>
-</ul>
+<h2 id="architecture-rules">Architecture rules<a class="headerlink" href="#architecture-rules" title="Permanent link">&para;</a></h2>
+<p>These constraints are enforced at review time. PRs that violate them will be asked to refactor before merging:</p>
+<ol>
+<li>
+<p><strong><code>shield.core</code> has zero framework imports.</strong>
+   It must never import from <code>shield.fastapi</code>, <code>shield.dashboard</code>, or <code>shield.cli</code>. Core is the dependency and everything else depends on it.</p>
+</li>
+<li>
+<p><strong>All business logic lives in <code>ShieldEngine</code>.</strong>
+   Middleware and decorators are transport layers. They call engine methods; they never make state decisions themselves.</p>
+</li>
+<li>
+<p><strong>Decorators only stamp metadata.</strong>
+   <code>@maintenance(...)</code> attaches <code>__shield_meta__</code> to the function and does nothing else. <code>ShieldRouter</code> reads this at startup. The decorator wrapper never executes logic at request time.</p>
+</li>
+<li>
+<p><strong><code>engine.check()</code> is the single chokepoint.</strong>
+   Every request path must flow through <code>engine.check()</code>. Never duplicate the check logic in middleware, a dependency, or a decorator.</p>
+</li>
+<li>
+<p><strong>Backends implement the full <code>ShieldBackend</code> ABC.</strong>
+   No partial implementations. If a method is not supported (e.g. <code>subscribe()</code> on <code>FileBackend</code>), it raises <code>NotImplementedError</code> and callers handle the fallback.</p>
+</li>
+<li>
+<p><strong>Fail-open on backend errors.</strong>
+   If <code>backend.get_state()</code> raises, <code>engine.check()</code> logs the error and lets the request through. Shield must never take down an API because its own storage is temporarily unavailable.</p>
+</li>
+</ol>
+<hr />
+<h2 id="ci-jobs">CI jobs<a class="headerlink" href="#ci-jobs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>What it checks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>css</code></td>
+<td>Rebuilds <code>shield.min.css</code> and asserts it matches the committed file</td>
+</tr>
+<tr>
+<td><code>lint</code></td>
+<td><code>ruff check</code> + <code>ruff format --check</code> + <code>mypy --strict</code></td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td>Full pytest suite on Python 3.11 / 3.12 / 3.13 × Linux / macOS / Windows</td>
+</tr>
+<tr>
+<td><code>test-redis</code></td>
+<td>Pytest suite against a live Redis 7 instance</td>
+</tr>
+</tbody>
+</table>
+<p>All four jobs must pass before a PR can be merged to <code>develop</code>.</p>
+<hr />
+<h2 id="project-structure-quick-reference">Project structure (quick reference)<a class="headerlink" href="#project-structure-quick-reference" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>shield/
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>├── core/               # Zero framework dependencies — engine, models, backends
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>│   ├── engine.py       # ShieldEngine — all business logic lives here
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>│   ├── models.py       # RouteState, AuditEntry, RateLimitPolicy, …
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>│   ├── backends/       # MemoryBackend, FileBackend, RedisBackend
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>│   ├── rate_limit/     # Rate limiting subsystem
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>│   └── scheduler.py    # asyncio-based maintenance window scheduler
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>├── fastapi/            # FastAPI adapter — middleware, decorators, router, OpenAPI
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>├── admin/              # Unified admin ASGI app (dashboard UI + REST API + auth)
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>├── dashboard/          # HTMX/Jinja2 templates and static assets
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>│   ├── templates/      # Edit these, then run `npm run build:css`
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>│   └── static/         # shield.min.css lives here — commit after rebuilding
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>└── cli/                # Typer CLI — thin HTTP client that talks to ShieldAdmin
+</span></code></pre></div>
 
 
 
@@ -1974,7 +1931,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../contributing/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Contributing">
+          <a href="../adapters/custom/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Building Your Own">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1984,11 +1941,27 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Contributing
+                Building Your Own
               </div>
             </div>
           </a>
         
+        
+          
+          <a href="../changelog/" class="md-footer__link md-footer__link--next" aria-label="Next: Changelog">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Changelog
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     
