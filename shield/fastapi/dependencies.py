@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 
 from shield.core.engine import ShieldEngine
 from shield.core.exceptions import (
@@ -35,6 +35,7 @@ from shield.core.exceptions import (
 )
 from shield.fastapi.decorators import (
     _build_disabled_exception,
+    _build_env_gated_exception,
     _build_maintenance_exception,
     _format_retry_after,
 )
@@ -118,6 +119,5 @@ class ShieldGuard:
             raise _build_maintenance_exception(path, exc.reason, retry_after)
         except RouteDisabledException as exc:
             raise _build_disabled_exception(path, exc.reason)
-        except EnvGatedException:
-            # Silent 404 — do not reveal that the route exists.
-            raise HTTPException(status_code=404)
+        except EnvGatedException as exc:
+            raise _build_env_gated_exception(request.url.path, exc.current_env, exc.allowed_envs)

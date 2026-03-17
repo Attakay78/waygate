@@ -106,8 +106,8 @@ from shield.core.exceptions import EnvGatedException
 | `current_env` | `str` | The active environment name (the value `ShieldEngine` was constructed with) |
 | `allowed_envs` | `list[str]` | The environments where the route is accessible |
 
-!!! note "ShieldMiddleware returns 404, not 403"
-    When `ShieldMiddleware` catches an `EnvGatedException`, it returns a 404 with **no response body**. This is intentional — a 403 would reveal that the route exists but is forbidden, leaking internal information.
+!!! note "ShieldMiddleware returns 403 with JSON"
+    When `ShieldMiddleware` catches an `EnvGatedException`, it returns a 403 with a structured JSON body containing `code: "ENV_GATED"`, `current_env`, `allowed_envs`, and `path`.
 
 ---
 
@@ -138,9 +138,17 @@ If you are building an adapter for a framework other than FastAPI, catch these e
         # 503, no Retry-After
         return Response(503, body={"error": exc.reason})
 
-    except EnvGatedException:
-        # 404 with no body — intentionally silent
-        return Response(404)
+    except EnvGatedException as exc:
+        # 403 with JSON body
+        return Response(403, body={
+            "error": {
+                "code": "ENV_GATED",
+                "message": "This endpoint is not available in the current environment",
+                "current_env": exc.current_env,
+                "allowed_envs": exc.allowed_envs,
+                "path": exc.path,
+            }
+        })
     ```
 
 See [Building your own adapter](../adapters/custom.md) for a complete working example.

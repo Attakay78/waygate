@@ -118,7 +118,7 @@ async def legacy_report():
 
 ## `@env_only`
 
-Restrict a route to specific environment names. In any other environment the route returns a **silent 404** — no response body, no indication that the path exists.
+Restrict a route to specific environment names. In any other environment the route returns a **403 Forbidden** with a JSON body containing the current environment and the list of allowed environments.
 
 Use this for internal tools, debug endpoints, admin utilities, or staging-only features that should never be accessible in production.
 
@@ -157,8 +157,8 @@ engine = make_engine()
 SHIELD_ENV=staging
 ```
 
-!!! note "404, not 403"
-    Env-gated routes return 404 with **no body** to avoid leaking that the path exists in other environments. A 403 would reveal the route is present but forbidden.
+!!! note "403 with JSON body"
+    Env-gated routes return 403 with a structured JSON error so callers can distinguish an environment restriction from a genuine missing route. The body includes `code`, `current_env`, `allowed_envs`, and `path`.
 
 ---
 
@@ -338,7 +338,7 @@ app.add_middleware(
     responses={
         "maintenance": maintenance_page,
         "disabled": lambda req, exc: HTMLResponse("<h1>Gone</h1>", status_code=503),
-        # omit "env_gated" to keep the default silent 404
+        # omit "env_gated" to keep the default 403 JSON
     },
 )
 ```
@@ -347,7 +347,7 @@ app.add_middleware(
 |---|---|---|
 | `"maintenance"` | `MaintenanceException` (per-route or global) | 503 JSON |
 | `"disabled"` | `RouteDisabledException` | 503 JSON |
-| `"env_gated"` | `EnvGatedException` | Silent 404 |
+| `"env_gated"` | `EnvGatedException` | 403 JSON |
 | `"rate_limited"` | `RateLimitExceededException` | 429 JSON |
 
 ---

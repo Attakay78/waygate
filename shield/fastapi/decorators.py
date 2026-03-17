@@ -151,6 +151,22 @@ def _build_disabled_exception(path: str, reason: str) -> HTTPException:
     )
 
 
+def _build_env_gated_exception(
+    path: str, current_env: str, allowed_envs: list[str]
+) -> HTTPException:
+    """Build an HTTPException for a route accessed from a disallowed environment."""
+    return HTTPException(
+        status_code=403,
+        detail={
+            "code": "ENV_GATED",
+            "message": "This endpoint is not available in the current environment",
+            "current_env": current_env,
+            "allowed_envs": allowed_envs,
+            "path": path,
+        },
+    )
+
+
 def _resolve_engine(explicit: Any, request: Request) -> Any:
     """Return the effective engine for a dep call.
 
@@ -183,8 +199,8 @@ def _engine_dep_raise(engine: Any, request: Request) -> None:
         raise _build_maintenance_exception(path, exc.reason, retry_after)
     except RouteDisabledException as exc:
         raise _build_disabled_exception(path, exc.reason)
-    except EnvGatedException:
-        raise HTTPException(status_code=404)
+    except EnvGatedException as exc:
+        raise _build_env_gated_exception(path, exc.current_env, exc.allowed_envs)
 
 
 def _stamp(func: F, meta: dict[str, Any]) -> F:
@@ -363,7 +379,7 @@ def env_only(
 ) -> _ShieldCallable:
     """Restrict a route to the given environment names.
 
-    In any other environment returns a silent 404 by default.
+    In any other environment returns a 403 with a JSON error body by default.
 
     Parameters
     ----------
@@ -408,7 +424,7 @@ def env_only(
         if eff_engine is None:
             return  # no engine — fail-open; rely on middleware
         if eff_engine.current_env not in envs:
-            raise HTTPException(status_code=404)
+            raise _build_env_gated_exception(_request.url.path, eff_engine.current_env, list(envs))
 
     return _ShieldCallable(meta=meta, dep_raise=dep_raise)
 

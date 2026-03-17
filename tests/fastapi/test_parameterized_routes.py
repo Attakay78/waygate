@@ -81,7 +81,7 @@ async def test_parameterised_route_disabled_returns_503():
     assert resp.json()["error"]["code"] == "ROUTE_DISABLED"
 
 
-async def test_parameterised_route_env_gated_returns_404():
+async def test_parameterised_route_env_gated_returns_403():
     app, _ = _make_app(env="production")
     router = APIRouter()
 
@@ -95,7 +95,8 @@ async def test_parameterised_route_env_gated_returns_404():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/internal/secrets")
 
-    assert resp.status_code == 404
+    assert resp.status_code == 403
+    assert resp.json()["error"]["code"] == "ENV_GATED"
 
 
 async def test_parameterised_route_force_active_always_passes():

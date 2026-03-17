@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+---
+
+## [0.4.0]
+
 ### Added
 
 - **Mobile & tablet responsive dashboard**: all four tables (Routes, Audit, Rate Limits, Blocked) transform into stacked cards on screens narrower than 640 px using a CSS-only card layout with `data-label` attributes. Action buttons collapse to icon-only on small screens.
@@ -16,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+- **CLI table pagination**: `shield status`, `shield log`, `shield rl list`, and `shield rl hits` now support `--page` and `--per-page` (default 20) instead of a flat `--limit`; a footer shows the current slice and the next/prev page flag to run. The `shield log` status column now combines old and new state into a single `old > new` cell and shows a coloured label for rate limit audit actions. The `shield rl hits` table drops the `Key` and `Method` columns in favour of a single `Path` column showing `METHOD /route`.
+- **`@env_only` now returns 403 with JSON**: env-gated routes blocked by the wrong environment return `403 ENV_GATED` with `current_env`, `allowed_envs`, and `path` instead of a silent empty 404.
 - **Tailwind CSS v3 → v4**: replaced `tailwind.config.js` with a CSS-first config in `input.css` (`@import "tailwindcss"`, `@source`, `@theme`). Dashboard CSS is pre-built and committed; no Node.js required at install time.
 - **No CDN dependency**: `shield.min.css` is now served as a local static file instead of the Tailwind CDN script, eliminating the production warning and removing the runtime network dependency.
 
@@ -109,7 +115,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `shield` CLI with direct backend access
 - `shield status`, `shield enable`, `shield disable`, `shield maintenance`, `shield schedule`, `shield log`
 
-[Unreleased]: https://github.com/Attakay78/api-shield/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Attakay78/api-shield/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Attakay78/api-shield/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Attakay78/api-shield/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Attakay78/api-shield/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Attakay78/api-shield/releases/tag/v0.1.0

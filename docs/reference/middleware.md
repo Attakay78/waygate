@@ -55,7 +55,7 @@ engine.check(path, method)
         ├─ Global maintenance ON + path not exempt    → 503 JSON
         ├─ MAINTENANCE                                → 503 JSON + Retry-After
         ├─ DISABLED                                   → 503 JSON
-        ├─ ENV_GATED (wrong environment)              → 404, no body
+        ├─ ENV_GATED (wrong environment)              → 403 JSON
         ├─ DEPRECATED                                 → call_next + inject headers
         └─ ACTIVE                                     → call_next ✓
 ```
@@ -81,7 +81,7 @@ All error responses use a consistent JSON structure:
 | Route in maintenance | 503 | `MAINTENANCE_MODE` |
 | Route disabled | 503 | `ROUTE_DISABLED` |
 | Global maintenance active | 503 | `MAINTENANCE_MODE` |
-| Env-gated (wrong environment) | 404 | *(no body)* |
+| Env-gated (wrong environment) | 403 | `ENV_GATED` |
 
 ### Deprecation headers
 

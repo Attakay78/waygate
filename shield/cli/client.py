@@ -189,7 +189,7 @@ class ShieldClient:
 
     # ── Audit ────────────────────────────────────────────────────────────
 
-    async def audit_log(self, route: str | None = None, limit: int = 20) -> list[dict[str, Any]]:
+    async def audit_log(self, route: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
         """GET /api/audit — return audit log entries."""
         params: dict[str, Any] = {"limit": limit}
         if route:

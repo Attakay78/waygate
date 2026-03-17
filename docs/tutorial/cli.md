@@ -108,8 +108,9 @@ shield rl set GET:/public/posts 20/minute   # set or update a policy
 shield rl set GET:/search 5/minute --algorithm fixed_window --key global
 shield rl reset GET:/public/posts           # clear counters immediately
 shield rl delete GET:/public/posts          # remove persisted policy override
-shield rl hits                              # blocked requests log (last 20)
-shield rl hits --limit 50
+shield rl hits                              # blocked requests log, page 1
+shield rl hits --page 2                     # next page
+shield rl hits --per-page 50               # 50 rows per page
 
 # identical — shield rate-limits is the full name
 shield rate-limits list
@@ -129,17 +130,19 @@ shield rate-limits set GET:/public/posts 20/minute
 ## Audit log
 
 ```bash
-shield log                          # last 20 entries
+shield log                          # page 1, 20 entries per page
 shield log --route GET:/payments    # filter by route
-shield log --limit 100              # show more entries
+shield log --page 2                 # next page
+shield log --per-page 50           # 50 rows per page
 ```
 
 ??? example "Sample `shield log` output"
 
-    | Timestamp | Route | Action | Actor | Platform | Reason |
-    |---|---|---|---|---|---|
-    | 2025-06-01 02:00:01 | GET:/payments | maintenance | alice | cli | DB migration |
-    | 2025-06-01 01:59:00 | GET:/debug | disable | system | system | |
+    | Timestamp | Route | Action | Actor | Platform | Status | Reason |
+    |---|---|---|---|---|---|---|
+    | 2025-06-01 02:00:01 | GET:/payments | maintenance | alice | cli | active > maintenance | DB migration |
+    | 2025-06-01 01:59:00 | GET:/debug | disable | system | system | active > disabled | |
+    | 2025-06-01 01:58:00 | GET:/payments | rl_policy_set | alice | cli | set | |
 
 ---
 

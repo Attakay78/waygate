@@ -58,9 +58,16 @@ shield logout
 Show all registered routes and their current state, or inspect a single route in detail.
 
 ```bash
-shield status                  # all routes
-shield status GET:/payments    # one route
+shield status                          # all routes, page 1
+shield status GET:/payments            # one route
+shield status --page 2                 # next page
+shield status --per-page 50           # 50 rows per page
 ```
+
+| Option | Description |
+|---|---|
+| `--page INT` | Page number to display when listing all routes (default: 1) |
+| `--per-page INT` | Rows per page (default: 20) |
 
 **Example output:**
 
@@ -72,6 +79,7 @@ shield status GET:/payments    # one route
 │ GET /debug          │ ENV_GATED   │ dev, staging only    │ startup      │
 │ GET /health         │ ACTIVE      │                      │              │
 └─────────────────────┴─────────────┴──────────────────────┴──────────────┘
+  Showing 1-3  (last page)
 ```
 
 ---
@@ -230,7 +238,14 @@ Show all registered rate limit policies.
 
 ```bash
 shield rl list
+shield rl list --page 2
+shield rl list --per-page 50
 ```
+
+| Option | Description |
+|---|---|
+| `--page INT` | Page number to display (default: 1) |
+| `--per-page INT` | Rows per page (default: 20) |
 
 ---
 
@@ -277,16 +292,20 @@ shield rl delete GET:/public/posts
 
 ### `shield rl hits`
 
-Show the blocked requests log, newest first.
+Show the blocked requests log, newest first. The `Path` column combines the HTTP method and route path.
 
 ```bash
-shield rl hits                    # last 20 entries
-shield rl hits --limit 50
+shield rl hits                    # page 1, 20 rows
+shield rl hits --page 2           # next page
+shield rl hits --per-page 50     # 50 rows per page
+shield rl hits --route /api/pay   # filter to one route
 ```
 
 | Option | Description |
 |---|---|
-| `--limit INT` | Maximum entries to display (default: 20) |
+| `--route TEXT` | Filter entries to a single route path |
+| `--page INT` | Page number to display (default: 1) |
+| `--per-page INT` | Rows per page (default: 20) |
 
 ---
 
@@ -294,18 +313,20 @@ shield rl hits --limit 50
 
 ### `shield log`
 
-Display the audit log, newest entries first.
+Display the audit log, newest entries first. The `Status` column shows `old > new` for route state changes and a coloured action label (`set`, `update`, `reset`, `delete`) for rate limit policy changes.
 
 ```bash
-shield log                          # last 20 entries
+shield log                          # page 1, 20 rows
 shield log --route GET:/payments    # filter by route
-shield log --limit 100              # show more entries
+shield log --page 2                 # next page
+shield log --per-page 50           # 50 rows per page
 ```
 
 | Option | Description |
 |---|---|
 | `--route ROUTE` | Filter entries to a single route key |
-| `--limit INT` | Maximum number of entries to display (default: 20) |
+| `--page INT` | Page number to display (default: 1) |
+| `--per-page INT` | Rows per page (default: 20) |
 
 ---
 

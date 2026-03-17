@@ -112,7 +112,7 @@ async def test_disabled_returns_503():
 # ---------------------------------------------------------------------------
 
 
-async def test_env_gated_wrong_env_returns_404():
+async def test_env_gated_wrong_env_returns_403():
     app, engine = _build_app(env="production")
     router = ShieldRouter(engine=engine)
 
@@ -127,8 +127,11 @@ async def test_env_gated_wrong_env_returns_404():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/debug")
 
-    assert resp.status_code == 404
-    assert resp.content == b""  # silent — no body
+    assert resp.status_code == 403
+    body = resp.json()
+    assert body["error"]["code"] == "ENV_GATED"
+    assert body["error"]["current_env"] == "production"
+    assert body["error"]["allowed_envs"] == ["dev"]
 
 
 async def test_env_gated_correct_env_passes():

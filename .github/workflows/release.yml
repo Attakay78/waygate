@@ -1,0 +1,186 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  # ── 1. Check whether this push actually bumped the version ──────────────────
+  check-version:
+    name: Check version bump
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      tag: ${{ steps.get-version.outputs.tag }}
+      should-release: ${{ steps.compare.outputs.should-release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # need full history to list tags
+
+      - name: Extract version from pyproject.toml
+        id: get-version
+        run: |
+          VERSION=$(python - <<'EOF'
+          import tomllib
+          with open("pyproject.toml", "rb") as f:
+              print(tomllib.load(f)["project"]["version"])
+          EOF
+          )
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION"    >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: compare
+        run: |
+          TAG="v${{ steps.get-version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists — skipping release."
+            echo "should-release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New version $TAG detected — will release."
+            echo "should-release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── 2. Full CI gate (reuse existing checks) ────────────────────────────────
+  ci-gate:
+    name: CI gate
+    needs: check-version
+    if: needs.check-version.outputs.should-release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Rebuild CSS & verify
+        run: |
+          npm install
+          npm run build:css
+          if ! git diff --quiet shield/dashboard/static/shield.min.css; then
+            echo "::error::shield.min.css is out of date."
+            exit 1
+          fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Lint
+        run: |
+          uv pip install --system ruff
+          ruff check .
+          ruff format --check .
+
+      - name: Tests
+        run: |
+          uv pip install --system -e ".[all,dev]"
+          pytest --tb=short -q
+
+  # ── 3. Build distribution ──────────────────────────────────────────────────
+  build:
+    name: Build distribution
+    needs: [check-version, ci-gate]
+    if: needs.check-version.outputs.should-release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Build wheel & sdist
+        run: |
+          uv pip install --system build
+          python -m build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  # ── 4. Publish to PyPI (OIDC trusted publishing) ──────────────────────────
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [check-version, build]
+    if: needs.check-version.outputs.should-release == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi                   # protects the OIDC token — require approval if desired
+    permissions:
+      id-token: write                   # required for OIDC trusted publishing
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  # ── 5. Create GitHub tag & release ────────────────────────────────────────
+  github-release:
+    name: Create GitHub Release
+    needs: [check-version, publish-pypi]
+    if: needs.check-version.outputs.should-release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write                   # required to create tags and releases
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          # Extract the section for this version from CHANGELOG.md (if it exists)
+          if [ -f CHANGELOG.md ]; then
+            NOTES=$(python - <<EOF
+          import re, sys
+          text = open("CHANGELOG.md").read()
+          # Match ## [x.y.z] or ## x.y.z heading up to the next ## heading
+          pattern = rf"(?:^|\n)## \[?{re.escape("$VERSION")}\]?[^\n]*\n(.*?)(?=\n## |\Z)"
+          m = re.search(pattern, text, re.DOTALL)
+          print(m.group(1).strip() if m else "")
+          EOF
+            )
+          else
+            NOTES=""
+          fi
+          # Fallback to a plain message when changelog is absent/empty
+          if [ -z "$NOTES" ]; then
+            NOTES="Release $VERSION — see commit history for details."
+          fi
+          # Write to a file to avoid quoting issues
+          echo "$NOTES" > release_notes.txt
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ needs.check-version.outputs.tag }}"
+          VERSION="${{ needs.check-version.outputs.version }}"
+          gh release create "$TAG" dist/* \
+            --title "api-shield $VERSION" \
+            --notes-file release_notes.txt

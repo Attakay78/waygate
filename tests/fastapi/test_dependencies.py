@@ -101,7 +101,7 @@ class TestShieldGuard:
         assert resp.status_code == 503
         assert resp.json()["detail"]["code"] == "ROUTE_DISABLED"
 
-    async def test_env_gated_wrong_env_returns_404(self):
+    async def test_env_gated_wrong_env_returns_403(self):
         engine = _engine(env="production")
         await engine.register("/debug", {"status": "active"})
         await engine.set_env_only("/debug", envs=["dev", "staging"])
@@ -114,7 +114,8 @@ class TestShieldGuard:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
             resp = await c.get("/debug")
 
-        assert resp.status_code == 404
+        assert resp.status_code == 403
+        assert resp.json()["detail"]["code"] == "ENV_GATED"
 
     async def test_env_gated_correct_env_passes_through(self):
         engine = _engine(env="dev")
@@ -266,7 +267,7 @@ class TestMaintenanceAsDep:
 
 
 class TestEnvOnlyAsDep:
-    async def test_wrong_env_returns_404(self):
+    async def test_wrong_env_returns_403(self):
         engine = _engine(env="production")
         app = FastAPI()
 
@@ -277,7 +278,8 @@ class TestEnvOnlyAsDep:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
             resp = await c.get("/debug")
 
-        assert resp.status_code == 404
+        assert resp.status_code == 403
+        assert resp.json()["detail"]["code"] == "ENV_GATED"
 
     async def test_correct_env_passes_through(self):
         engine = _engine(env="staging")
@@ -409,7 +411,8 @@ class TestEngineBackedDeps:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
             resp = await c.get("/debug")
 
-        assert resp.status_code == 404
+        assert resp.status_code == 403
+        assert resp.json()["detail"]["code"] == "ENV_GATED"
 
     async def test_engine_backed_reflects_state_change_immediately(self):
         engine = _engine()
@@ -503,7 +506,8 @@ class TestConfigureShield:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
             prod = await c.get("/debug")
 
-        assert prod.status_code == 404
+        assert prod.status_code == 403
+        assert prod.json()["detail"]["code"] == "ENV_GATED"
 
     async def test_env_only_passes_in_allowed_env(self):
         engine = _engine(env="dev")

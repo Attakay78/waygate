@@ -38,7 +38,7 @@ from __future__ import annotations
 
 import getpass
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import anyio
 import typer
@@ -161,6 +161,48 @@ def _run(coro_fn: object) -> None:
     except Exception as exc:
         err_console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=1)
+
+
+_DEFAULT_PER_PAGE = 20
+
+
+def _paginate(
+    items: list[Any],
+    page: int,
+    per_page: int,
+) -> tuple[list[Any], bool, bool, int, int]:
+    """Slice *items* for *page*.
+
+    *items* must have been fetched with ``limit = page * per_page + 1`` so
+    that we can detect whether a next page exists without knowing the total.
+
+    Returns ``(page_items, has_prev, has_next, first_num, last_num)`` where
+    the nums are 1-based display indices.
+    """
+    start = (page - 1) * per_page
+    end = page * per_page
+    has_next = len(items) > end
+    page_items = items[start : min(end, len(items))]
+    return page_items, page > 1, has_next, start + 1, start + len(page_items)
+
+
+def _print_page_footer(
+    page: int,
+    per_page: int,
+    first_num: int,
+    last_num: int,
+    has_prev: bool,
+    has_next: bool,
+) -> None:
+    """Print a compact pagination footer beneath a table."""
+    parts: list[str] = [f"[dim]Showing {first_num}–{last_num}[/dim]"]
+    if has_prev:
+        parts.append(f"[dim]← --page {page - 1}[/dim]")
+    if has_next:
+        parts.append(f"[dim]--page {page + 1} →[/dim]")
+    else:
+        parts.append("[dim](last page)[/dim]")
+    console.print("  " + "  [dim]•[/dim]  ".join(parts))
 
 
 def _confirm_ambiguous(matches: list[str], action: str) -> list[str]:
@@ -301,6 +343,8 @@ def status(
         None,
         help="Route: /path or METHOD:/path. Omit for all routes.",
     ),
+    page: int = typer.Option(1, "--page", "-p", help="Page number (when listing all routes)."),
+    per_page: int = typer.Option(_DEFAULT_PER_PAGE, "--per-page", help="Rows per page."),
 ) -> None:
     """Show current shield status for all routes (or one route)."""
 
@@ -309,10 +353,14 @@ def status(
         if route:
             key = _parse_route(route)
             states = [await client.get_route(key)]
+            paginated, has_prev, has_next, first_num, last_num = states, False, False, 1, 1
         else:
-            states = await client.list_routes()
+            all_states = sorted(await client.list_routes(), key=lambda x: x["path"])
+            paginated, has_prev, has_next, first_num, last_num = _paginate(
+                all_states, page, per_page
+            )
 
-        if not states:
+        if not paginated:
             console.print("[dim]No routes registered.[/dim]")
             return
 
@@ -323,7 +371,7 @@ def status(
         table.add_column("Envs")
         table.add_column("Window end")
 
-        for s in sorted(states, key=lambda x: x["path"]):
+        for s in paginated:
             colour = _status_colour(s["status"])
             window = s.get("window") or {}
             window_end = ""
@@ -343,6 +391,8 @@ def status(
             )
 
         console.print(table)
+        if not route and (has_prev or has_next):
+            _print_page_footer(page, per_page, first_num, last_num, has_prev, has_next)
 
     _run(_run_status)
 
@@ -496,16 +546,36 @@ def schedule_cmd(
 @cli.command("log")
 def log_cmd(
     route: str | None = typer.Option(None, "--route", help="Filter by route path."),
-    limit: int = typer.Option(20, "--limit", "-n", help="Number of entries to show."),
+    page: int = typer.Option(1, "--page", "-p", help="Page number."),
+    per_page: int = typer.Option(_DEFAULT_PER_PAGE, "--per-page", help="Rows per page."),
 ) -> None:
     """Show the audit log (most recent first)."""
 
     async def _run_log() -> None:
-        entries = await make_client().audit_log(route=route, limit=limit)
+        fetch_limit = page * per_page + 1
+        entries = await make_client().audit_log(route=route, limit=fetch_limit)
 
         if not entries:
             console.print("[dim]No audit entries found.[/dim]")
             return
+
+        entries, has_prev, has_next, first_num, last_num = _paginate(entries, page, per_page)
+        if not entries:
+            console.print(f"[dim]No entries on page {page}.[/dim]")
+            return
+
+        _rl_action_labels = {
+            "rl_policy_set": "set",
+            "rl_policy_updated": "update",
+            "rl_reset": "reset",
+            "rl_policy_deleted": "delete",
+        }
+        _rl_action_colours = {
+            "rl_policy_set": "green",
+            "rl_policy_updated": "yellow",
+            "rl_reset": "cyan",
+            "rl_policy_deleted": "red",
+        }
 
         table = Table(box=box.ROUNDED, show_header=True, header_style="bold")
         table.add_column("Timestamp", style="dim")
@@ -513,30 +583,42 @@ def log_cmd(
         table.add_column("Action")
         table.add_column("Actor")
         table.add_column("Platform")
-        table.add_column("Old Status")
-        table.add_column("New Status")
+        table.add_column("Status")
         table.add_column("Reason")
 
         for e in entries:
-            old_colour = _status_colour(e["previous_status"])
-            new_colour = _status_colour(e["new_status"])
             ts = e.get("timestamp", "")
             try:
                 ts = datetime.fromisoformat(ts).strftime("%Y-%m-%d %H:%M:%S")
             except Exception:
                 pass
+            action = e["action"]
+            if action in _rl_action_labels:
+                label = _rl_action_labels[action]
+                colour = _rl_action_colours[action]
+                status_cell = f"[{colour}]{label}[/{colour}]"
+            elif e.get("previous_status") and e.get("new_status"):
+                old_c = _status_colour(e["previous_status"])
+                new_c = _status_colour(e["new_status"])
+                status_cell = (
+                    f"[{old_c}]{e['previous_status']}[/{old_c}]"
+                    f" → "
+                    f"[{new_c}]{e['new_status']}[/{new_c}]"
+                )
+            else:
+                status_cell = "—"
             table.add_row(
                 ts,
                 e["path"],
-                e["action"],
+                action,
                 e.get("actor", "—"),
                 e.get("platform", "—"),
-                f"[{old_colour}]{e['previous_status']}[/{old_colour}]",
-                f"[{new_colour}]{e['new_status']}[/{new_colour}]",
+                status_cell,
                 e.get("reason") or "—",
             )
 
         console.print(table)
+        _print_page_footer(page, per_page, first_num, last_num, has_prev, has_next)
 
     _run(_run_log)
 
@@ -692,13 +774,21 @@ cli.add_typer(rl_app, name="rl")
 
 
 @rl_app.command("list")
-def rl_list() -> None:
+def rl_list(
+    page: int = typer.Option(1, "--page", "-p", help="Page number."),
+    per_page: int = typer.Option(_DEFAULT_PER_PAGE, "--per-page", help="Rows per page."),
+) -> None:
     """List all registered rate limit policies."""
 
     async def _run_rl_list() -> None:
-        policies = await make_client().list_rate_limits()
-        if not policies:
+        all_policies = sorted(await make_client().list_rate_limits(), key=lambda x: x["path"])
+        if not all_policies:
             console.print("[dim]No rate limit policies registered.[/dim]")
+            return
+
+        policies, has_prev, has_next, first_num, last_num = _paginate(all_policies, page, per_page)
+        if not policies:
+            console.print(f"[dim]No entries on page {page}.[/dim]")
             return
 
         table = Table(box=box.ROUNDED, show_header=True, header_style="bold")
@@ -709,7 +799,7 @@ def rl_list() -> None:
         table.add_column("Key Strategy", style="dim")
         table.add_column("Tiers", justify="right")
 
-        for p in sorted(policies, key=lambda x: x["path"]):
+        for p in policies:
             tiers = len(p.get("tiers") or [])
             table.add_row(
                 p["path"],
@@ -721,6 +811,8 @@ def rl_list() -> None:
             )
 
         console.print(table)
+        if has_prev or has_next:
+            _print_page_footer(page, per_page, first_num, last_num, has_prev, has_next)
 
     _run(_run_rl_list)
 
@@ -728,21 +820,26 @@ def rl_list() -> None:
 @rl_app.command("hits")
 def rl_hits(
     route: str | None = typer.Option(None, "--route", "-r", help="Filter by route path."),
-    limit: int = typer.Option(20, "--limit", "-n", help="Number of entries to show."),
+    page: int = typer.Option(1, "--page", "-p", help="Page number."),
+    per_page: int = typer.Option(_DEFAULT_PER_PAGE, "--per-page", help="Rows per page."),
 ) -> None:
     """Show recent rate-limited (blocked) requests."""
 
     async def _run_rl_hits() -> None:
-        hits = await make_client().rate_limit_hits(route=route, limit=limit)
-        if not hits:
+        fetch_limit = page * per_page + 1
+        all_hits = await make_client().rate_limit_hits(route=route, limit=fetch_limit)
+        if not all_hits:
             console.print("[dim]No rate limit hits found.[/dim]")
+            return
+
+        hits, has_prev, has_next, first_num, last_num = _paginate(all_hits, page, per_page)
+        if not hits:
+            console.print(f"[dim]No entries on page {page}.[/dim]")
             return
 
         table = Table(box=box.ROUNDED, show_header=True, header_style="bold")
         table.add_column("Time", style="dim")
-        table.add_column("Route", style="cyan")
-        table.add_column("Method", style="dim")
-        table.add_column("Key", style="dim")
+        table.add_column("Path", style="cyan")
         table.add_column("Limit", style="red")
 
         for h in hits:
@@ -751,15 +848,17 @@ def rl_hits(
                 ts = datetime.fromisoformat(ts).strftime("%H:%M:%S")
             except Exception:
                 pass
+            method = h.get("method", "")
+            path = h.get("path", "—")
+            path_cell = f"{method} {path}" if method else path
             table.add_row(
                 ts,
-                h.get("path", "—"),
-                h.get("method", "—"),
-                h.get("key", "—"),
-                h.get("limit", "—"),
+                path_cell,
+                str(h.get("limit", "—")),
             )
 
         console.print(table)
+        _print_page_footer(page, per_page, first_num, last_num, has_prev, has_next)
 
     _run(_run_rl_hits)
 

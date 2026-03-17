@@ -305,7 +305,7 @@ def test_log_limit() -> None:
         _do_async(lambda: e.disable("/api/pay", reason="x"))
         _do_async(lambda: e.enable("/api/pay"))
     client = _open_client(e)
-    result = invoke_with_client(client, "log", "--limit", "3")
+    result = invoke_with_client(client, "log", "--per-page", "3")
     assert result.exit_code == 0
     assert result.output.count("/api/pay") <= 3
 
