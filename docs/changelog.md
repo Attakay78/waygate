@@ -8,8 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+---
+
+## [0.6.0]
+
 ### Fixed
 
+- **OpenAPI schema stale across Gunicorn workers** (`RedisBackend`): route filtering in `/docs`/`/redoc` was inconsistent and the global maintenance banner never appeared after changes made by another worker. The `_run_global_config_listener` task was invalidating the in-process config cache but not bumping `_schema_version`, so the OpenAPI schema cache on receiving workers never expired. A new `shield-route-state-listener` background task now bumps `_schema_version` on every remote route state change too, ensuring all workers rebuild their schema on the next `/openapi.json` request.
 - **`RedisBackend` crashes with "attached to a different loop" / "Event loop is closed" after worker restart**: `ConnectionPool` was created once at `__init__` time and shared for the process lifetime; after a gunicorn worker recycle or `uvicorn --reload`, all Redis calls failed because the pool's internal futures were bound to the replaced event loop. Fixed by replacing the single shared pool with a per-event-loop pool dict (`dict[id(loop), (weakref.ref(loop), pool)]`): pools are now created lazily on first use within each event loop and dead entries are pruned automatically when the loop is GC'd.
 
 ---

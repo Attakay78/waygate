@@ -80,6 +80,10 @@ class ShieldEngine:
         # Background task that listens for cross-instance global config
         # invalidation signals (started by start(), cancelled by stop()).
         self._global_listener_task: asyncio.Task[None] | None = None
+        # Background task that listens for route state changes from other
+        # instances and bumps _schema_version so the OpenAPI schema cache is
+        # invalidated on this worker (RedisBackend only).
+        self._route_state_listener_task: asyncio.Task[None] | None = None
         # Background task that syncs rate limit policy changes from other
         # instances (RedisBackend only; no-op for Memory/File backends).
         self._rl_policy_listener_task: asyncio.Task[None] | None = None
@@ -122,16 +126,21 @@ class ShieldEngine:
     async def start(self) -> None:
         """Start background tasks required for distributed operation.
 
-        Starts two listeners when running with ``RedisBackend``:
+        Starts three listeners when running with ``RedisBackend``:
 
         * ``shield-global-config-listener`` — invalidates the in-process
           global maintenance config cache when another instance writes a
-          new config.
+          new config, and bumps ``_schema_version`` so the OpenAPI schema
+          cache is rebuilt on the next request.
+        * ``shield-route-state-listener`` — bumps ``_schema_version``
+          whenever another instance changes any route state (enable,
+          disable, maintenance, etc.) so this worker's OpenAPI schema
+          cache is invalidated and rebuilt with the current state.
         * ``shield-rl-policy-listener`` — syncs rate limit policy changes
           made on any instance into this instance's ``_rate_limit_policies``
           dict so every worker always enforces the current policy.
 
-        Both listeners exit silently when the backend raises
+        All listeners exit silently when the backend raises
         ``NotImplementedError`` (``MemoryBackend``, ``FileBackend``).
 
         Safe to call multiple times — already-running tasks are left alone.
@@ -140,6 +149,11 @@ class ShieldEngine:
             self._global_listener_task = asyncio.create_task(
                 self._run_global_config_listener(),
                 name="shield-global-config-listener",
+            )
+        if self._route_state_listener_task is None or self._route_state_listener_task.done():
+            self._route_state_listener_task = asyncio.create_task(
+                self._run_route_state_listener(),
+                name="shield-route-state-listener",
             )
         if self._rl_policy_listener_task is None or self._rl_policy_listener_task.done():
             self._rl_policy_listener_task = asyncio.create_task(
@@ -158,6 +172,11 @@ class ShieldEngine:
             with contextlib.suppress(asyncio.CancelledError):
                 await self._global_listener_task
             self._global_listener_task = None
+        if self._route_state_listener_task is not None:
+            self._route_state_listener_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._route_state_listener_task
+            self._route_state_listener_task = None
         if self._rl_policy_listener_task is not None:
             self._rl_policy_listener_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -170,8 +189,8 @@ class ShieldEngine:
         Iterates ``backend.subscribe_global_config()``.  Each ``None``
         yielded by the backend means another instance has written a new
         ``GlobalMaintenanceConfig`` to the shared store, so we drop the
-        in-process cache.  The next ``check()`` call will re-fetch the
-        authoritative value from the backend.
+        in-process cache and bump ``_schema_version`` so the OpenAPI schema
+        cache is also rebuilt on the next ``/openapi.json`` request.
 
         If the backend raises ``NotImplementedError`` (MemoryBackend,
         FileBackend) the generator exits immediately and the task ends
@@ -180,6 +199,7 @@ class ShieldEngine:
         try:
             async for _ in self.backend.subscribe_global_config():
                 self._invalidate_global_config_cache()
+                self._bump_schema_version()
                 logger.debug("shield: global config cache invalidated by remote change")
         except NotImplementedError:
             pass  # backend doesn't support pub/sub — single-instance cache is fine
@@ -190,6 +210,36 @@ class ShieldEngine:
                 "shield: global config listener crashed — invalidating cache as a precaution"
             )
             self._invalidate_global_config_cache()
+            self._bump_schema_version()
+
+    async def _run_route_state_listener(self) -> None:
+        """Background coroutine: bump schema version on remote route state changes.
+
+        Iterates ``backend.subscribe()``.  Each ``RouteState`` yielded
+        means another worker has changed a route's lifecycle state
+        (enable, disable, maintenance, etc.).  Bumping ``_schema_version``
+        here ensures this worker's OpenAPI schema cache is invalidated so
+        the next ``/openapi.json`` request reflects the current state read
+        fresh from the backend — even if the change was made by a
+        different Gunicorn worker.
+
+        If the backend raises ``NotImplementedError`` (MemoryBackend,
+        FileBackend) the generator exits immediately and the task ends
+        silently.
+        """
+        try:
+            async for _ in self.backend.subscribe():
+                self._bump_schema_version()
+                logger.debug("shield: schema version bumped by remote route state change")
+        except NotImplementedError:
+            pass  # backend doesn't support pub/sub — single-instance, no sync needed
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception(
+                "shield: route state listener crashed — bumping schema version as a precaution"
+            )
+            self._bump_schema_version()
 
     async def _run_rl_policy_listener(self) -> None:
         """Background coroutine: sync rate limit policy changes from other instances.
