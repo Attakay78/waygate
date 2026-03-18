@@ -21,6 +21,7 @@
 |---|---|
 | 🎨 **Decorator-first DX** | Route state lives next to the route definition, not in a separate config file |
 | ⚡ **Zero-restart control** | State changes take effect immediately — no redeployment or server restart needed |
+| 🔄 **Sync & async** | Full support for both `async def` and plain `def` route handlers — use `await engine.*` or `engine.sync.*` |
 | 🛡️ **Fail-open by default** | If the backend is unreachable, requests pass through. Shield never takes down your API |
 | 🔌 **Pluggable backends** | In-memory (default), file-based JSON, or Redis for multi-instance deployments |
 | 🖥️ **Admin dashboard** | HTMX-powered UI with live SSE updates — no JS framework required |

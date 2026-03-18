@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **`engine.sync` — synchronous proxy for sync route handlers and background threads**: every async engine method (`enable`, `disable`, `set_maintenance`, `schedule_maintenance`, `set_env_only`, `enable_global_maintenance`, `disable_global_maintenance`, `set_rate_limit_policy`, `delete_rate_limit_policy`, `reset_rate_limit`, `get_state`, `list_states`, `get_audit_log`) is now mirrored on `engine.sync` using `anyio.from_thread.run()`, the same mechanism the shield decorators use internally. Use `engine.sync.*` from plain `def` FastAPI handlers (which FastAPI runs in a worker thread automatically) and background threads — no event-loop wiring required.
+
 ---
 
 ## [0.6.0]

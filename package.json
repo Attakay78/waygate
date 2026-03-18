@@ -4,6 +4,6 @@
     "watch:css": "tailwindcss -i input.css -o shield/dashboard/static/shield.min.css --watch"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.0.0"
+    "@tailwindcss/cli": "4.2.1"
   }
 }

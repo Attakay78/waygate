@@ -11,9 +11,9 @@ import contextlib
 import hashlib
 import logging
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, TypeVar
 
 from shield.core.backends.base import ShieldBackend
 from shield.core.backends.memory import MemoryBackend
@@ -37,8 +37,206 @@ from shield.core.webhooks import default_formatter
 
 logger = logging.getLogger(__name__)
 
+_T = TypeVar("_T")
+
 # Type alias for a webhook formatter callable.
 WebhookFormatter = Callable[[str, str, RouteState], dict[str, Any]]
+
+
+class _SyncProxy:
+    """Synchronous façade over :class:`ShieldEngine`.
+
+    Access via ``engine.sync`` from any sync context that runs inside an
+    anyio worker thread — which is exactly what FastAPI does for every
+    ``def`` (non-async) route handler and dependency.
+
+    Uses ``anyio.from_thread.run()`` internally, the same mechanism the
+    shield decorators use, so no event-loop wiring is needed.
+
+    Do **not** call from inside an ``async def`` — use ``await engine.*``
+    directly there.
+
+    Examples
+    --------
+    Sync route handler::
+
+        @router.post("/admin/deploy")
+        @force_active
+        def deploy():  # FastAPI runs sync handlers in a worker thread
+            engine.sync.disable("GET:/payments", reason="deploy in progress")
+            run_migration()
+            engine.sync.enable("GET:/payments")
+            return {"deployed": True}
+
+    Background thread::
+
+        def nightly_job():
+            engine.sync.set_maintenance("GET:/reports", reason="nightly rebuild")
+            rebuild_reports()
+            engine.sync.enable("GET:/reports")
+    """
+
+    __slots__ = ("_engine",)
+
+    def __init__(self, engine: ShieldEngine) -> None:
+        self._engine = engine
+
+    def _run(self, coro: Coroutine[Any, Any, _T]) -> _T:
+        import anyio.from_thread
+
+        return anyio.from_thread.run(coro)  # type: ignore[arg-type]
+
+    # ------------------------------------------------------------------
+    # Route lifecycle
+    # ------------------------------------------------------------------
+
+    def enable(
+        self, path: str, actor: str = "system", reason: str = "", platform: str = "system"
+    ) -> RouteState:
+        """Sync version of :meth:`ShieldEngine.enable`."""
+        return self._run(self._engine.enable(path, actor=actor, reason=reason, platform=platform))
+
+    def disable(
+        self, path: str, reason: str = "", actor: str = "system", platform: str = "system"
+    ) -> RouteState:
+        """Sync version of :meth:`ShieldEngine.disable`."""
+        return self._run(self._engine.disable(path, reason=reason, actor=actor, platform=platform))
+
+    def set_maintenance(
+        self,
+        path: str,
+        reason: str = "",
+        window: MaintenanceWindow | None = None,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> RouteState:
+        """Sync version of :meth:`ShieldEngine.set_maintenance`."""
+        return self._run(
+            self._engine.set_maintenance(
+                path, reason=reason, window=window, actor=actor, platform=platform
+            )
+        )
+
+    def schedule_maintenance(
+        self,
+        path: str,
+        window: MaintenanceWindow,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> None:
+        """Sync version of :meth:`ShieldEngine.schedule_maintenance`."""
+        self._run(
+            self._engine.schedule_maintenance(path, window=window, actor=actor, platform=platform)
+        )
+
+    def set_env_only(
+        self, path: str, envs: list[str], actor: str = "system", platform: str = "system"
+    ) -> RouteState:
+        """Sync version of :meth:`ShieldEngine.set_env_only`."""
+        return self._run(self._engine.set_env_only(path, envs=envs, actor=actor, platform=platform))
+
+    # ------------------------------------------------------------------
+    # Global maintenance
+    # ------------------------------------------------------------------
+
+    def get_global_maintenance(self) -> GlobalMaintenanceConfig:
+        """Sync version of :meth:`ShieldEngine.get_global_maintenance`."""
+        return self._run(self._engine.get_global_maintenance())
+
+    def enable_global_maintenance(
+        self,
+        reason: str = "",
+        exempt_paths: list[str] | None = None,
+        include_force_active: bool = False,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> GlobalMaintenanceConfig:
+        """Sync version of :meth:`ShieldEngine.enable_global_maintenance`."""
+        return self._run(
+            self._engine.enable_global_maintenance(
+                reason=reason,
+                exempt_paths=exempt_paths,
+                include_force_active=include_force_active,
+                actor=actor,
+                platform=platform,
+            )
+        )
+
+    def disable_global_maintenance(
+        self, actor: str = "system", platform: str = "system"
+    ) -> GlobalMaintenanceConfig:
+        """Sync version of :meth:`ShieldEngine.disable_global_maintenance`."""
+        return self._run(self._engine.disable_global_maintenance(actor=actor, platform=platform))
+
+    def set_global_exempt_paths(self, paths: list[str]) -> GlobalMaintenanceConfig:
+        """Sync version of :meth:`ShieldEngine.set_global_exempt_paths`."""
+        return self._run(self._engine.set_global_exempt_paths(paths))
+
+    # ------------------------------------------------------------------
+    # Rate limiting
+    # ------------------------------------------------------------------
+
+    def set_rate_limit_policy(
+        self,
+        path: str,
+        method: str,
+        limit: str,
+        *,
+        algorithm: str | None = None,
+        key_strategy: str | None = None,
+        burst: int = 0,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> Any:
+        """Sync version of :meth:`ShieldEngine.set_rate_limit_policy`."""
+        return self._run(
+            self._engine.set_rate_limit_policy(
+                path,
+                method,
+                limit,
+                algorithm=algorithm,
+                key_strategy=key_strategy,
+                burst=burst,
+                actor=actor,
+                platform=platform,
+            )
+        )
+
+    def delete_rate_limit_policy(
+        self, path: str, method: str, *, actor: str = "system", platform: str = "system"
+    ) -> None:
+        """Sync version of :meth:`ShieldEngine.delete_rate_limit_policy`."""
+        self._run(
+            self._engine.delete_rate_limit_policy(path, method, actor=actor, platform=platform)
+        )
+
+    def get_rate_limit_hits(self, path: str | None = None, limit: int = 100) -> list[Any]:
+        """Sync version of :meth:`ShieldEngine.get_rate_limit_hits`."""
+        return self._run(self._engine.get_rate_limit_hits(path=path, limit=limit))
+
+    def reset_rate_limit(
+        self, path: str, method: str | None = None, actor: str = "system", platform: str = "system"
+    ) -> None:
+        """Sync version of :meth:`ShieldEngine.reset_rate_limit`."""
+        self._run(
+            self._engine.reset_rate_limit(path, method=method, actor=actor, platform=platform)
+        )
+
+    # ------------------------------------------------------------------
+    # Read-only queries
+    # ------------------------------------------------------------------
+
+    def get_state(self, path: str) -> RouteState:
+        """Sync version of :meth:`ShieldEngine.get_state`."""
+        return self._run(self._engine.get_state(path))
+
+    def list_states(self) -> list[RouteState]:
+        """Sync version of :meth:`ShieldEngine.list_states`."""
+        return self._run(self._engine.list_states())
+
+    def get_audit_log(self, path: str | None = None, limit: int = 100) -> list[AuditEntry]:
+        """Sync version of :meth:`ShieldEngine.get_audit_log`."""
+        return self._run(self._engine.get_audit_log(path=path, limit=limit))
 
 
 class ShieldEngine:
@@ -97,6 +295,8 @@ class ShieldEngine:
         self._default_rate_limit_algorithm: Any = default_rate_limit_algorithm
         self._rate_limiter: Any = None  # ShieldRateLimiter | None
         self._rate_limit_policies: dict[str, Any] = {}  # "METHOD:/path" → RateLimitPolicy
+        # Sync proxy — created once, reused on every engine.sync access.
+        self.sync: _SyncProxy = _SyncProxy(self)
 
     # ------------------------------------------------------------------
     # Async context manager — calls backend lifecycle hooks

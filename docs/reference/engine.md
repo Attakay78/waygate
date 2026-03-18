@@ -260,6 +260,77 @@ for s in states:
 
 ---
 
+## Sync API — `engine.sync`
+
+Every async engine method has a synchronous mirror available via `engine.sync`. This is useful for **sync FastAPI route handlers** (plain `def`, not `async def`) and background threads, where you cannot use `await`.
+
+FastAPI automatically runs sync handlers in a worker thread, which is exactly the context `engine.sync` requires. No additional setup is needed — just use `engine.sync.*` instead of `await engine.*`.
+
+!!! warning "Do not call from inside `async def`"
+    `engine.sync.*` uses `anyio.from_thread.run()` internally. Calling it from inside an async function (on the event loop thread) will deadlock. Use `await engine.*` there instead.
+
+=== "Async handler (normal)"
+
+    ```python
+    @router.post("/admin/deploy")
+    @force_active
+    async def deploy():
+        await engine.disable("GET:/payments", reason="deploy in progress")
+        await run_migration()
+        await engine.enable("GET:/payments")
+        return {"deployed": True}
+    ```
+
+=== "Sync handler (engine.sync)"
+
+    ```python
+    @router.post("/admin/deploy")
+    @force_active
+    def deploy():  # FastAPI runs this in a worker thread automatically
+        engine.sync.disable("GET:/payments", reason="deploy in progress")
+        run_migration()
+        engine.sync.enable("GET:/payments")
+        return {"deployed": True}
+    ```
+
+=== "Background thread"
+
+    ```python
+    import threading
+
+    def nightly_job():
+        engine.sync.set_maintenance("GET:/reports", reason="nightly rebuild")
+        rebuild_reports()
+        engine.sync.enable("GET:/reports")
+
+    threading.Thread(target=nightly_job, daemon=True).start()
+    ```
+
+### Available methods
+
+`engine.sync` exposes the same public API as the async engine:
+
+| `engine.sync.*` | Async equivalent |
+|---|---|
+| `enable(path, actor, reason)` | `await engine.enable(...)` |
+| `disable(path, reason, actor)` | `await engine.disable(...)` |
+| `set_maintenance(path, reason, window, actor)` | `await engine.set_maintenance(...)` |
+| `schedule_maintenance(path, window, actor)` | `await engine.schedule_maintenance(...)` |
+| `set_env_only(path, envs, actor)` | `await engine.set_env_only(...)` |
+| `get_global_maintenance()` | `await engine.get_global_maintenance()` |
+| `enable_global_maintenance(reason, ...)` | `await engine.enable_global_maintenance(...)` |
+| `disable_global_maintenance(actor)` | `await engine.disable_global_maintenance(...)` |
+| `set_global_exempt_paths(paths)` | `await engine.set_global_exempt_paths(...)` |
+| `get_rate_limit_hits(path, limit)` | `await engine.get_rate_limit_hits(...)` |
+| `set_rate_limit_policy(path, method, limit, ...)` | `await engine.set_rate_limit_policy(...)` |
+| `delete_rate_limit_policy(path, method, actor)` | `await engine.delete_rate_limit_policy(...)` |
+| `reset_rate_limit(path, method, actor)` | `await engine.reset_rate_limit(...)` |
+| `get_state(path)` | `await engine.get_state(path)` |
+| `list_states()` | `await engine.list_states()` |
+| `get_audit_log(path, limit)` | `await engine.get_audit_log(...)` |
+
+---
+
 ## Scheduled maintenance
 
 ### `schedule_maintenance`
