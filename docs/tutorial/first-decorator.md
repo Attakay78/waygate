@@ -1,8 +1,8 @@
 # Your first decorator
 
-This tutorial shows you how to put a single route into maintenance mode and verify the behaviour.
+This tutorial shows you how to put a single route into maintenance mode and verify the behaviour. The examples use **FastAPI** — the currently supported ASGI adapter.
 
-## 1. Create a simple FastAPI app
+## 1. Create a simple app
 
 ```python title="app.py"
 from fastapi import FastAPI

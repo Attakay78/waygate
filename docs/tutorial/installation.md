@@ -3,14 +3,14 @@
 ## Requirements
 
 - Python **3.11** or higher
-- A FastAPI app (other adapters coming soon)
+- An ASGI web framework (FastAPI is currently supported; Starlette and other ASGI frameworks are on the roadmap)
 
 ---
 
 ## Install with uv (recommended)
 
 ```bash
-# Minimal — core library only (no FastAPI, no CLI, no dashboard)
+# Minimal — core library only (no framework adapter, no CLI, no dashboard)
 uv add api-shield
 
 # FastAPI adapter
@@ -22,7 +22,7 @@ uv add "api-shield[fastapi,cli]"
 # FastAPI + rate limiting
 uv add "api-shield[fastapi,rate-limit]"
 
-# Everything (FastAPI, Redis, dashboard, CLI, admin, rate limiting)
+# Everything (FastAPI adapter, Redis, dashboard, CLI, admin, rate limiting)
 uv add "api-shield[all]"
 ```
 
@@ -38,7 +38,7 @@ pip install "api-shield[all]"
 
 | Extra | What it adds | When to use |
 |---|---|---|
-| `fastapi` | FastAPI adapter (middleware, decorators, router, OpenAPI integration) | Any FastAPI app |
+| `fastapi` | FastAPI adapter (middleware, decorators, router, OpenAPI integration) | FastAPI apps |
 | `redis` | `RedisBackend` for multi-instance deployments | Production with multiple replicas |
 | `dashboard` | Jinja2 + aiofiles for the HTMX dashboard | When mounting the admin UI |
 | `admin` | Unified `ShieldAdmin` (dashboard + REST API) | Recommended for CLI support |

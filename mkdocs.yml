@@ -1,5 +1,5 @@
 site_name: api-shield
-site_description: Route lifecycle management for FastAPI — maintenance mode, env gating, deprecation, and more
+site_description: Route lifecycle management for ASGI Python frameworks — maintenance mode, env gating, deprecation, and more
 site_url: https://attakay78.github.io/api-shield
 repo_url: https://github.com/Attakay78/api-shield
 repo_name: Attakay78/api-shield
@@ -113,6 +113,7 @@ nav:
       - Production Monitoring & Deployment: guides/production.md
       - Distributed Deployments: guides/distributed.md
   - Adapters:
+      - Overview: adapters/index.md
       - FastAPI: adapters/fastapi.md
       - Building Your Own: adapters/custom.md
   - Contributing: contributing.md

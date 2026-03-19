@@ -1,6 +1,8 @@
 # Adding middleware
 
-`ShieldMiddleware` is the enforcement layer. It intercepts every HTTP request, calls `engine.check()`, and returns the appropriate error response when a route is blocked. Without it, decorators register state but nothing enforces it.
+`ShieldMiddleware` is the enforcement layer. It is a standard ASGI middleware that intercepts every HTTP request, calls `engine.check()`, and returns the appropriate error response when a route is blocked. Without it, decorators register state but nothing enforces it.
+
+The examples below use **FastAPI**, but `ShieldMiddleware` works with any [Starlette](https://www.starlette.io/)-compatible ASGI framework.
 
 ---
 
@@ -18,7 +20,7 @@ app.add_middleware(ShieldMiddleware, engine=engine)
 ```
 
 !!! important
-    Add `ShieldMiddleware` **before** including any routers. Middleware is applied in reverse registration order in Starlette/FastAPI, so adding it first ensures it wraps all routes.
+    Add `ShieldMiddleware` **before** including any routers. Middleware is applied in reverse registration order in ASGI frameworks built on Starlette, so adding it first ensures it wraps all routes.
 
 ---
 
@@ -57,7 +59,7 @@ ShieldMiddleware.dispatch()
 
 ## Route registration
 
-The middleware auto-registers routes on first startup by scanning for `__shield_meta__` on route handlers. This works with any router type: plain `APIRouter`, `ShieldRouter`, or routes added directly to the `FastAPI` app.
+The middleware auto-registers routes on first startup by scanning for `__shield_meta__` on route handlers. This works with any router type: plain `APIRouter`, `ShieldRouter`, or routes added directly to the app.
 
 If a route already has persisted state in the backend (for example, written by a previous CLI command), the decorator default is **ignored** and the persisted state wins. This means runtime changes survive restarts.
 
@@ -120,9 +122,9 @@ All error responses from the middleware use a consistent JSON structure:
 
 ---
 
-## OpenAPI integration
+## OpenAPI integration (FastAPI only)
 
-Add OpenAPI filtering to hide disabled and env-gated routes from `/docs` and `/redoc`:
+FastAPI exposes a live OpenAPI schema at `/openapi.json`. Shield can filter it to hide disabled and env-gated routes and annotate maintained or deprecated ones:
 
 ```python
 from shield.fastapi.openapi import apply_shield_to_openapi

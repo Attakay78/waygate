@@ -6,7 +6,7 @@ This page covers `ShieldMiddleware`, which enforces route state on every HTTP re
 
 ## ShieldMiddleware
 
-`ShieldMiddleware` is a Starlette `BaseHTTPMiddleware`. Add it once to your FastAPI app and it automatically intercepts every request, calls `engine.check()`, and returns the appropriate error response when a route is blocked.
+`ShieldMiddleware` is a standard ASGI middleware (Starlette `BaseHTTPMiddleware`). Add it once to your ASGI app and it automatically intercepts every request, calls `engine.check()`, and returns the appropriate error response when a route is blocked. It works with any Starlette-compatible ASGI framework, including FastAPI.
 
 ```python
 from shield.fastapi import ShieldMiddleware
@@ -98,9 +98,9 @@ Link: </v2/users>; rel="successor-version"
 
 ---
 
-## `apply_shield_to_openapi`
+## `apply_shield_to_openapi` (FastAPI only)
 
-Keep your OpenAPI schema accurate by filtering it based on the current route states at runtime. Disabled and env-gated routes are hidden. Maintenance routes are annotated. Deprecated routes are flagged.
+Keep your FastAPI OpenAPI schema accurate by filtering it based on the current route states at runtime. Disabled and env-gated routes are hidden. Maintenance routes are annotated. Deprecated routes are flagged.
 
 ```python
 from shield.fastapi.openapi import apply_shield_to_openapi
@@ -138,9 +138,9 @@ The schema is re-computed on every request to `/openapi.json`, so runtime state 
 
 ---
 
-## `setup_shield_docs`
+## `setup_shield_docs` (FastAPI only)
 
-Enhance `/docs` and `/redoc` with live status indicators that update automatically as route states change.
+Enhance FastAPI's `/docs` and `/redoc` with live status indicators that update automatically as route states change.
 
 ```python
 from shield.fastapi.openapi import apply_shield_to_openapi, setup_shield_docs

@@ -1,6 +1,9 @@
 # FastAPI Adapter
 
-The FastAPI adapter is the primary supported adapter. It provides middleware, decorators, a drop-in router, and OpenAPI integration.
+The FastAPI adapter is the currently supported ASGI adapter. It provides middleware, decorators, a drop-in router, and OpenAPI integration — all built on top of the framework-agnostic `shield.core`.
+
+!!! info "Other ASGI frameworks"
+    api-shield's core and `ShieldMiddleware` are ASGI-native and framework-agnostic. FastAPI-specific features (ShieldRouter, OpenAPI integration, `Depends()` support) live in `shield.fastapi`. Adapters for **Litestar** and plain **Starlette** are on the roadmap. [Open an issue](https://github.com/Attakay78/api-shield/issues) if you need another framework prioritised.
 
 ---
 

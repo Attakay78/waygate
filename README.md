@@ -1,7 +1,7 @@
 <div align="center">
   <img src="api-shield-logo.svg" alt="API Shield" width="600"/>
 
-  <p><strong>Route(API) lifecycle management for Python web frameworks — maintenance mode, environment gating, deprecation, rate limiting, admin panels, and more. No restarts required.</strong></p>
+  <p><strong>Route(API) lifecycle management for ASGI Python web frameworks — maintenance mode, environment gating, deprecation, rate limiting, admin panels, and more. No restarts required.</strong></p>
 
   <a href="https://pypi.org/project/api-shield"><img src="https://img.shields.io/pypi/v/api-shield?color=F59E0B&label=pypi&cacheSeconds=300" alt="PyPI"></a>
   <a href="https://pypi.org/project/api-shield"><img src="https://img.shields.io/pypi/pyversions/api-shield?color=F59E0B" alt="Python versions"></a>
@@ -17,21 +17,34 @@
 
 ## Key features
 
+### Core (`shield.core`)
+
+These features are framework-agnostic and available to any adapter.
+
 | Feature | Description |
 |---|---|
-| 🎨 **Decorator-first DX** | Route state lives next to the route definition, not in a separate config file |
 | ⚡ **Zero-restart control** | State changes take effect immediately — no redeployment or server restart needed |
 | 🔄 **Sync & async** | Full support for both `async def` and plain `def` route handlers — use `await engine.*` or `engine.sync.*` |
 | 🛡️ **Fail-open by default** | If the backend is unreachable, requests pass through. Shield never takes down your API |
 | 🔌 **Pluggable backends** | In-memory (default), file-based JSON, or Redis for multi-instance deployments |
 | 🖥️ **Admin dashboard** | HTMX-powered UI with live SSE updates — no JS framework required |
 | 🖱️ **REST API + CLI** | Full programmatic control from the terminal or CI pipelines — works over HTTPS remotely |
-| 📄 **OpenAPI integration** | Disabled / env-gated routes hidden from `/docs`; deprecated routes flagged automatically |
 | 📋 **Audit log** | Every state change is recorded: who, when, what route, old status → new status |
 | ⏰ **Scheduled windows** | `asyncio`-native scheduler — maintenance windows activate and deactivate automatically |
 | 🔔 **Webhooks** | Fire HTTP POST on every state change — built-in Slack formatter and custom formatters supported |
-| 🎨 **Custom responses** | Return HTML, redirects, or any response shape for blocked routes — per-route or app-wide default |
 | 🚦 **Rate limiting** | Per-IP, per-user, per-API-key, or global counters — tiered limits, burst allowance, runtime mutation |
+
+### Framework adapters
+
+#### FastAPI (`shield.fastapi`) — ✅ supported
+
+| Feature | Description |
+|---|---|
+| 🎨 **Decorator-first DX** | `@maintenance`, `@disabled`, `@env_only`, `@force_active`, `@deprecated`, `@rate_limit` — state lives next to the route |
+| 📄 **OpenAPI integration** | Disabled / env-gated routes hidden from `/docs`; deprecated routes flagged; live maintenance banners in the Swagger UI |
+| 🧩 **Dependency injection** | All decorators work as `Depends()` — enforce shield state per-handler without middleware |
+| 🎨 **Custom responses** | Return HTML, redirects, or any response shape for blocked routes — per-route or app-wide default on the middleware |
+| 🔀 **ShieldRouter** | Drop-in `APIRouter` replacement that auto-registers route metadata with the engine at startup |
 
 ---
 
@@ -43,6 +56,8 @@ uv add "api-shield[all]"
 ```
 
 ## Quickstart
+
+> FastAPI is the currently supported adapter. Litestar, Starlette, Quart, and Django (ASGI) are on the roadmap.
 
 ```python
 from fastapi import FastAPI
@@ -96,7 +111,7 @@ shield global enable --reason "Deploying v2" --exempt /health
 | `@deprecated(sunset, use_instead)` | Still works, injects deprecation headers | 200 |
 | `@force_active` | Bypasses all shield checks | Always 200 |
 | `@rate_limit("100/minute")` | Cap requests per IP, user, API key, or globally | 429 |
-### Custom responses
+### Custom responses (FastAPI)
 
 By default, blocked routes return a structured JSON error body. You can replace it with anything — HTML, a redirect, plain text, or your own JSON — in two ways:
 
@@ -173,6 +188,35 @@ shield rl hits                              # blocked requests log
 ```
 
 Requires `api-shield[rate-limit]`. Powered by [limits](https://limits.readthedocs.io/en/stable/).
+
+---
+
+## Framework support
+
+api-shield is built on the **ASGI** standard. The core (`shield.core`) is completely framework-agnostic and has zero framework imports. Any ASGI framework can be supported — either via a Starlette `BaseHTTPMiddleware` (for Starlette-based frameworks) or a raw ASGI callable for frameworks like Quart and Django that implement the ASGI spec independently.
+
+### ASGI frameworks
+
+| Framework | Status | Adapter |
+|---|---|---|
+| **FastAPI** | ✅ Supported | `shield.fastapi` |
+| **Litestar** | 🔜 Planned | — |
+| **Starlette** | 🔜 Planned | — |
+| **Quart** | 🔜 Planned | — |
+| **Django (ASGI)** | 🔜 Planned | — |
+
+> Want support for another ASGI framework? [Open an issue](https://github.com/Attakay78/api-shield/issues).
+
+### WSGI frameworks (Flask, Django, …)
+
+> [!IMPORTANT]
+> **WSGI support is out of scope for this project.**
+>
+> `api-shield` is an ASGI-native library. Bolting WSGI support in through shims or patches would require a persistent background event loop, thread-bridging hacks, and a fundamentally different middleware model — complexity that would compromise the quality and reliability of both layers.
+>
+> WSGI framework support (Flask, Django, Bottle, …) will be delivered as a **separate, dedicated project** designed from the ground up for the synchronous request model. This keeps both projects clean, well-tested, and maintainable without trade-offs.
+>
+> Watch this repo or [open an issue](https://github.com/Attakay78/api-shield/issues) to be notified when the WSGI companion project launches.
 
 ---
 
