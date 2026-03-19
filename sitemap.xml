@@ -2,90 +2,94 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://attakay78.github.io/api-shield/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/changelog/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/contributing/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
+    </url>
+    <url>
+         <loc>https://attakay78.github.io/api-shield/adapters/</loc>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/adapters/custom/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/adapters/fastapi/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/guides/distributed/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/guides/production/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/reference/backends/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/reference/cli/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/reference/decorators/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/reference/engine/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/reference/exceptions/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/reference/middleware/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/reference/models/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/reference/rate-limiting/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/tutorial/admin-dashboard/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/tutorial/backends/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/tutorial/cli/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/tutorial/first-decorator/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/tutorial/installation/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/tutorial/middleware/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/api-shield/tutorial/rate-limiting/</loc>
-         <lastmod>2026-03-17</lastmod>
+         <lastmod>2026-03-19</lastmod>
     </url>
 </urlset>

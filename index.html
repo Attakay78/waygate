@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Route lifecycle management for FastAPI — maintenance mode, env gating, deprecation, and more">
+        <meta name="description" content="Route lifecycle management for ASGI Python frameworks — maintenance mode, env gating, deprecation, and more">
       
       
       
@@ -305,7 +305,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="adapters/fastapi/" class="md-tabs__link">
+        <a href="adapters/" class="md-tabs__link">
           
   
   
@@ -491,6 +491,51 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Key features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-shieldcore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core (shield.core)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#framework-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Framework adapters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Framework adapters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fastapi-shieldfastapi-supported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FastAPI (shield.fastapi) — ✅ supported
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -501,6 +546,45 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#framework-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Framework support
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Framework support">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#asgi-frameworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ASGI frameworks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wsgi-frameworks-flask-django" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WSGI frameworks (Flask, Django, …)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1243,6 +1327,34 @@
   
   
     <li class="md-nav__item">
+      <a href="adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="adapters/fastapi/" class="md-nav__link">
         
   
@@ -1399,6 +1511,51 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Key features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-shieldcore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core (shield.core)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#framework-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Framework adapters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Framework adapters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fastapi-shieldfastapi-supported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FastAPI (shield.fastapi) — ✅ supported
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1409,6 +1566,45 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#framework-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Framework support
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Framework support">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#asgi-frameworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ASGI frameworks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wsgi-frameworks-flask-django" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        WSGI frameworks (Flask, Django, …)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1463,10 +1659,13 @@
 <p class="admonition-title">Early Access: your feedback shapes the roadmap</p>
 <p><code>api-shield</code> is fully functional and ready to use. We are actively building on a solid foundation and would love to hear from you. If you have feedback, feature ideas, or suggestions, <strong><a href="https://github.com/Attakay78/api-shield/issues">open an issue on GitHub</a></strong>. Every voice helps make the library better for everyone.</p>
 </div>
-<p><strong>Route(API) lifecycle management for Python web frameworks: maintenance mode, environment gating, deprecation, rate limiting, admin panels, and more. No restarts required.</strong></p>
+<p><strong>Route(API) lifecycle management for ASGI Python web frameworks: maintenance mode, environment gating, deprecation, rate limiting, admin panels, and more. No restarts required.</strong></p>
 <p>Most "route lifecycle management" tools are blunt instruments: shut everything down or nothing at all. <code>api-shield</code> treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through middleware, with no redeployment and no server restart.</p>
 <hr />
 <h2 id="30-second-quickstart">30-second quickstart<a class="headerlink" href="#30-second-quickstart" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><strong>FastAPI</strong> is the currently supported adapter. Litestar, Starlette, Quart, and Django (ASGI) are on the roadmap. See <a href="adapters/">Adapters</a> for details.</p>
+</blockquote>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;api-shield[all]&quot;</span>
 </span></code></pre></div>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
@@ -1521,6 +1720,8 @@
 </span></code></pre></div>
 <hr />
 <h2 id="key-features">Key features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
+<h3 id="core-shieldcore">Core (<code>shield.core</code>)<a class="headerlink" href="#core-shieldcore" title="Permanent link">&para;</a></h3>
+<p>These features are framework-agnostic and available to every adapter.</p>
 <table>
 <thead>
 <tr>
@@ -1529,10 +1730,6 @@
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>🎨 <strong>Decorator-first DX</strong></td>
-<td>Route state lives next to the route definition, not in a separate config file</td>
-</tr>
 <tr>
 <td>⚡ <strong>Zero-restart control</strong></td>
 <td>State changes are immediate, with no redeployment needed</td>
@@ -1554,10 +1751,6 @@
 <td>Full programmatic control from the terminal or CI pipelines</td>
 </tr>
 <tr>
-<td>📄 <strong>OpenAPI integration</strong></td>
-<td>Disabled and env-gated routes hidden from <code>/docs</code>; deprecated routes flagged automatically</td>
-</tr>
-<tr>
 <td>📋 <strong>Audit log</strong></td>
 <td>Every state change is recorded: who, when, what route, old status, new status</td>
 </tr>
@@ -1570,12 +1763,40 @@
 <td>Fire HTTP POST on every state change, with a built-in Slack formatter and support for custom formatters</td>
 </tr>
 <tr>
-<td>🎨 <strong>Custom responses</strong></td>
-<td>Return HTML, redirects, or any response shape for blocked routes, per-route or as an app-wide default</td>
-</tr>
-<tr>
 <td>🚦 <strong>Rate limiting</strong></td>
 <td>Per-IP, per-user, per-API-key, or global counters with tiered limits, burst allowance, and runtime policy mutation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="framework-adapters">Framework adapters<a class="headerlink" href="#framework-adapters" title="Permanent link">&para;</a></h3>
+<h4 id="fastapi-shieldfastapi-supported">FastAPI (<code>shield.fastapi</code>) — ✅ supported<a class="headerlink" href="#fastapi-shieldfastapi-supported" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🎨 <strong>Decorator-first DX</strong></td>
+<td><code>@maintenance</code>, <code>@disabled</code>, <code>@env_only</code>, <code>@force_active</code>, <code>@deprecated</code>, <code>@rate_limit</code> — state lives next to the route</td>
+</tr>
+<tr>
+<td>📄 <strong>OpenAPI integration</strong></td>
+<td>Disabled and env-gated routes hidden from <code>/docs</code>; deprecated routes flagged; live maintenance banners in the Swagger UI</td>
+</tr>
+<tr>
+<td>🧩 <strong>Dependency injection</strong></td>
+<td>All decorators work as <code>Depends()</code> — enforce shield state per-handler without middleware</td>
+</tr>
+<tr>
+<td>🎨 <strong>Custom responses</strong></td>
+<td>Return HTML, redirects, or any response shape for blocked routes, per-route or as an app-wide default on the middleware</td>
+</tr>
+<tr>
+<td>🔀 <strong>ShieldRouter</strong></td>
+<td>Drop-in <code>APIRouter</code> replacement that auto-registers route metadata with the engine at startup</td>
 </tr>
 </tbody>
 </table>
@@ -1622,6 +1843,53 @@
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="framework-support">Framework support<a class="headerlink" href="#framework-support" title="Permanent link">&para;</a></h2>
+<h3 id="asgi-frameworks">ASGI frameworks<a class="headerlink" href="#asgi-frameworks" title="Permanent link">&para;</a></h3>
+<p>api-shield is an <strong>ASGI-native</strong> library. The core (<code>shield.core</code>) is framework-agnostic with zero framework imports. Any ASGI framework can be supported — Starlette-based frameworks use <code>BaseHTTPMiddleware</code> directly; frameworks like Quart and Django that implement the ASGI spec independently use a raw ASGI callable adapter instead.</p>
+<table>
+<thead>
+<tr>
+<th>Framework</th>
+<th>Status</th>
+<th>Adapter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FastAPI</strong></td>
+<td>✅ Supported</td>
+<td><code>shield.fastapi</code></td>
+</tr>
+<tr>
+<td><strong>Litestar</strong></td>
+<td>🔜 Planned</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Starlette</strong></td>
+<td>🔜 Planned</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Quart</strong></td>
+<td>🔜 Planned</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Django (ASGI)</strong></td>
+<td>🔜 Planned</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="wsgi-frameworks-flask-django">WSGI frameworks (Flask, Django, …)<a class="headerlink" href="#wsgi-frameworks-flask-django" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">WSGI support is out of scope for this project</p>
+<p><code>api-shield</code> is built on the ASGI standard. Adding WSGI support through shims or thread-bridging patches would require a persistent background event loop, a fundamentally different middleware model, and trade-offs that would compromise reliability for both ASGI and WSGI users.</p>
+<p>WSGI framework support (Flask, Django, Bottle, and others) will be delivered as a <strong>separate, dedicated project</strong> designed from the ground up for the synchronous request model. This keeps both projects clean, well-tested, and free of architectural compromises.</p>
+<p><a href="https://github.com/Attakay78/api-shield/issues">Open an issue</a> or watch this repo to be notified when the WSGI companion project launches.</p>
+</div>
 <hr />
 <h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>

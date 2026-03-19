@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Route lifecycle management for FastAPI — maintenance mode, env gating, deprecation, and more">
+        <meta name="description" content="Route lifecycle management for ASGI Python frameworks — maintenance mode, env gating, deprecation, and more">
       
       
       
@@ -307,7 +307,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../adapters/fastapi/" class="md-tabs__link">
+        <a href="../../adapters/" class="md-tabs__link">
           
   
   
@@ -1053,6 +1053,128 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#global-rate-limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global rate limit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global rate limit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#globalratelimitpolicy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GlobalRateLimitPolicy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engine-methods_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Engine methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engine methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#set_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        delete_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reset_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enable_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enable_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disable_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        disable_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cli-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1116,6 +1238,89 @@
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-shield-global-rate-limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl / shield global-rate-limit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="shield grl / shield global-rate-limit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl get
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl set
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl delete
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl reset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-enable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl enable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-disable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl disable
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1508,6 +1713,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../adapters/fastapi/" class="md-nav__link">
         
   
@@ -1855,6 +2088,128 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#global-rate-limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global rate limit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global rate limit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#globalratelimitpolicy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GlobalRateLimitPolicy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engine-methods_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Engine methods
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Engine methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#set_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        delete_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reset_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enable_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enable_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disable_global_rate_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        disable_global_rate_limit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#cli-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1918,6 +2273,89 @@
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-shield-global-rate-limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl / shield global-rate-limit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="shield grl / shield global-rate-limit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-get" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl get
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl set
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl delete
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl reset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-enable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl enable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield-grl-disable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shield grl disable
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -2377,14 +2815,129 @@
 </span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">limit</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
+<h2 id="global-rate-limit">Global rate limit<a class="headerlink" href="#global-rate-limit" title="Permanent link">&para;</a></h2>
+<p>A global rate limit applies a single policy across <strong>all routes</strong> with higher precedence than per-route limits. It is checked <strong>first</strong> on every request — if the global limit is exceeded the request is rejected immediately and the per-route counter is never touched. Per-route policies only run after the global limit passes (or when the route is exempt, or no global limit is configured).</p>
+<h3 id="globalratelimitpolicy"><code>GlobalRateLimitPolicy</code><a class="headerlink" href="#globalratelimitpolicy" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.rate_limit.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">GlobalRateLimitPolicy</span>
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>limit</code></td>
+<td><code>str</code></td>
+<td>required</td>
+<td>Limit string, e.g. <code>"1000/minute"</code></td>
+</tr>
+<tr>
+<td><code>algorithm</code></td>
+<td><code>str</code></td>
+<td><code>"fixed_window"</code></td>
+<td>Counting algorithm</td>
+</tr>
+<tr>
+<td><code>key_strategy</code></td>
+<td><code>str</code></td>
+<td><code>"ip"</code></td>
+<td>Key strategy: <code>ip</code>, <code>user</code>, <code>api_key</code>, <code>global</code></td>
+</tr>
+<tr>
+<td><code>on_missing_key</code></td>
+<td><code>str \| None</code></td>
+<td>strategy default</td>
+<td>Behaviour when the key extractor returns <code>None</code></td>
+</tr>
+<tr>
+<td><code>burst</code></td>
+<td><code>int</code></td>
+<td><code>0</code></td>
+<td>Extra requests allowed above <code>limit</code></td>
+</tr>
+<tr>
+<td><code>exempt_routes</code></td>
+<td><code>list[str]</code></td>
+<td><code>[]</code></td>
+<td>Routes skipped by the global limit. Bare path (<code>"/health"</code>) exempts all methods; method-prefixed (<code>"GET:/metrics"</code>) exempts that method only</td>
+</tr>
+<tr>
+<td><code>enabled</code></td>
+<td><code>bool</code></td>
+<td><code>True</code></td>
+<td>Whether the policy is currently enforced. <code>False</code> = paused (policy kept, counters not incremented)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="engine-methods_1">Engine methods<a class="headerlink" href="#engine-methods_1" title="Permanent link">&para;</a></h3>
+<h4 id="set_global_rate_limit"><code>set_global_rate_limit</code><a class="headerlink" href="#set_global_rate_limit" title="Permanent link">&para;</a></h4>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_global_rate_limit</span><span class="p">(</span>
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>    <span class="n">limit</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>    <span class="o">*</span><span class="p">,</span>
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>    <span class="n">algorithm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>    <span class="n">key_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>    <span class="n">on_missing_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>    <span class="n">burst</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>    <span class="n">exempt_routes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-29-9"><a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>    <span class="n">actor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
+</span><span id="__span-29-10"><a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>    <span class="n">platform</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span id="__span-29-11"><a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GlobalRateLimitPolicy</span>
+</span></code></pre></div>
+<p>Create or replace the global rate limit policy. Persists to the backend. Logged as <code>global_rl_set</code> (new) or <code>global_rl_updated</code> (replacement).</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">set_global_rate_limit</span><span class="p">(</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>    <span class="s2">&quot;1000/minute&quot;</span><span class="p">,</span>
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>    <span class="n">key_strategy</span><span class="o">=</span><span class="s2">&quot;ip&quot;</span><span class="p">,</span>
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>    <span class="n">exempt_routes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/health&quot;</span><span class="p">,</span> <span class="s2">&quot;GET:/metrics&quot;</span><span class="p">],</span>
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>    <span class="n">actor</span><span class="o">=</span><span class="s2">&quot;alice&quot;</span><span class="p">,</span>
+</span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="p">)</span>
+</span></code></pre></div>
+<hr />
+<h4 id="get_global_rate_limit"><code>get_global_rate_limit</code><a class="headerlink" href="#get_global_rate_limit" title="Permanent link">&para;</a></h4>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_global_rate_limit</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">GlobalRateLimitPolicy</span> <span class="o">|</span> <span class="kc">None</span>
+</span></code></pre></div>
+<p>Return the current policy, or <code>None</code> if not configured.</p>
+<hr />
+<h4 id="delete_global_rate_limit"><code>delete_global_rate_limit</code><a class="headerlink" href="#delete_global_rate_limit" title="Permanent link">&para;</a></h4>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">delete_global_rate_limit</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">actor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;system&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+<p>Remove the global rate limit policy entirely. Logged as <code>global_rl_deleted</code>.</p>
+<hr />
+<h4 id="reset_global_rate_limit"><code>reset_global_rate_limit</code><a class="headerlink" href="#reset_global_rate_limit" title="Permanent link">&para;</a></h4>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reset_global_rate_limit</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">actor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;system&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+<p>Clear all global counters so the limit starts fresh. The policy itself is not removed. Logged as <code>global_rl_reset</code>.</p>
+<hr />
+<h4 id="enable_global_rate_limit"><code>enable_global_rate_limit</code><a class="headerlink" href="#enable_global_rate_limit" title="Permanent link">&para;</a></h4>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">enable_global_rate_limit</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">actor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;system&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+<p>Resume a paused global rate limit policy. No-op if already enabled or not configured. Logged as <code>global_rl_enabled</code>.</p>
+<hr />
+<h4 id="disable_global_rate_limit"><code>disable_global_rate_limit</code><a class="headerlink" href="#disable_global_rate_limit" title="Permanent link">&para;</a></h4>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">disable_global_rate_limit</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">actor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;system&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+<p>Pause the global rate limit without removing it. Requests are no longer counted or blocked by the global policy; per-route policies are unaffected. Logged as <code>global_rl_disabled</code>.</p>
+<hr />
+<h3 id="dashboard">Dashboard<a class="headerlink" href="#dashboard" title="Permanent link">&para;</a></h3>
+<p>The <strong>Rate Limits</strong> page includes a Global Rate Limit card above the policies table.</p>
+<ul>
+<li><strong>Not configured</strong> — compact bar with a "Set Global Limit" button.</li>
+<li><strong>Active</strong> — info card showing limit, algorithm, key strategy, burst, and exempt routes. Action buttons: Pause, Edit, Reset, Remove.</li>
+<li><strong>Paused</strong> — same card with a "Paused" badge (grey) and a Resume button instead of Pause. The limit string is dimmed to indicate it is not being enforced.</li>
+</ul>
+<hr />
 <h2 id="cli-commands">CLI commands<a class="headerlink" href="#cli-commands" title="Permanent link">&para;</a></h2>
 <p><code>shield rl</code> and <code>shield rate-limits</code> are aliases for the same command group — use whichever you prefer.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>list<span class="w">          </span><span class="c1"># short form</span>
-</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>shield<span class="w"> </span>rate-limits<span class="w"> </span>list<span class="w"> </span><span class="c1"># identical</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>list<span class="w">          </span><span class="c1"># short form</span>
+</span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>shield<span class="w"> </span>rate-limits<span class="w"> </span>list<span class="w"> </span><span class="c1"># identical</span>
 </span></code></pre></div>
 <h3 id="shield-rl-list"><code>shield rl list</code><a class="headerlink" href="#shield-rl-list" title="Permanent link">&para;</a></h3>
 <p>Show all registered rate limit policies.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>list
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>list
 </span></code></pre></div>
 <p>Output:</p>
 <table>
@@ -2420,11 +2973,11 @@
 <hr />
 <h3 id="shield-rl-set"><code>shield rl set</code><a class="headerlink" href="#shield-rl-set" title="Permanent link">&para;</a></h3>
 <p>Register or update a policy at runtime. Changes take effect on the next request.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>&lt;route&gt;<span class="w"> </span>&lt;limit&gt;
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>&lt;route&gt;<span class="w"> </span>&lt;limit&gt;
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/public/posts<span class="w"> </span><span class="m">20</span>/minute
-</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/public/posts<span class="w"> </span><span class="m">5</span>/second<span class="w"> </span>--algorithm<span class="w"> </span>fixed_window
-</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/search<span class="w"> </span><span class="m">10</span>/minute<span class="w"> </span>--key<span class="w"> </span>global
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/public/posts<span class="w"> </span><span class="m">20</span>/minute
+</span><span id="__span-39-2"><a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/public/posts<span class="w"> </span><span class="m">5</span>/second<span class="w"> </span>--algorithm<span class="w"> </span>fixed_window
+</span><span id="__span-39-3"><a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a>shield<span class="w"> </span>rl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>GET:/search<span class="w"> </span><span class="m">10</span>/minute<span class="w"> </span>--key<span class="w"> </span>global
 </span></code></pre></div>
 <table>
 <thead>
@@ -2447,18 +3000,18 @@
 <hr />
 <h3 id="shield-rl-reset"><code>shield rl reset</code><a class="headerlink" href="#shield-rl-reset" title="Permanent link">&para;</a></h3>
 <p>Clear all rate limit counters for a route immediately. Clients get their full quota back on the next request.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>reset<span class="w"> </span>GET:/public/posts
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>reset<span class="w"> </span>GET:/public/posts
 </span></code></pre></div>
 <hr />
 <h3 id="shield-rl-delete"><code>shield rl delete</code><a class="headerlink" href="#shield-rl-delete" title="Permanent link">&para;</a></h3>
 <p>Remove a persisted policy override from the backend.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>delete<span class="w"> </span>GET:/public/posts
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-41-1"><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>delete<span class="w"> </span>GET:/public/posts
 </span></code></pre></div>
 <hr />
 <h3 id="shield-rl-hits"><code>shield rl hits</code><a class="headerlink" href="#shield-rl-hits" title="Permanent link">&para;</a></h3>
 <p>Show the blocked requests log.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w">                    </span><span class="c1"># last 20 entries</span>
-</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span><span class="w">         </span><span class="c1"># show more</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-42-1"><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w">                    </span><span class="c1"># last 20 entries</span>
+</span><span id="__span-42-2"><a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a>shield<span class="w"> </span>rl<span class="w"> </span>hits<span class="w"> </span>--limit<span class="w"> </span><span class="m">50</span><span class="w">         </span><span class="c1"># show more</span>
 </span></code></pre></div>
 <table>
 <thead>
@@ -2475,8 +3028,76 @@
 </tbody>
 </table>
 <hr />
+<p>Now add the global rate limit CLI commands section after <code>shield rl hits</code>:</p>
+<hr />
+<h3 id="shield-grl-shield-global-rate-limit"><code>shield grl</code> / <code>shield global-rate-limit</code><a class="headerlink" href="#shield-grl-shield-global-rate-limit" title="Permanent link">&para;</a></h3>
+<p><code>shield grl</code> and <code>shield global-rate-limit</code> are aliases for the global rate limit command group.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-43-1"><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>shield<span class="w"> </span>grl<span class="w"> </span>get<span class="w">           </span><span class="c1"># show current policy</span>
+</span><span id="__span-43-2"><a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a>shield<span class="w"> </span>global-rate-limit<span class="w"> </span>get<span class="w">  </span><span class="c1"># identical</span>
+</span></code></pre></div>
+<h4 id="shield-grl-get"><code>shield grl get</code><a class="headerlink" href="#shield-grl-get" title="Permanent link">&para;</a></h4>
+<p>Show the current global rate limit policy (limit, algorithm, key strategy, burst, exempt routes, enabled state).</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-44-1"><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a>shield<span class="w"> </span>grl<span class="w"> </span>get
+</span></code></pre></div>
+<hr />
+<h4 id="shield-grl-set"><code>shield grl set</code><a class="headerlink" href="#shield-grl-set" title="Permanent link">&para;</a></h4>
+<p>Configure the global rate limit. Creates a new policy or replaces the existing one.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-45-1"><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>shield<span class="w"> </span>grl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>&lt;limit&gt;
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-46-1"><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a>shield<span class="w"> </span>grl<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="m">1000</span>/minute
+</span><span id="__span-46-2"><a id="__codelineno-46-2" name="__codelineno-46-2" href="#__codelineno-46-2"></a>shield<span class="w"> </span>grl<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="m">500</span>/minute<span class="w"> </span>--algorithm<span class="w"> </span>sliding_window<span class="w"> </span>--key<span class="w"> </span>ip
+</span><span id="__span-46-3"><a id="__codelineno-46-3" name="__codelineno-46-3" href="#__codelineno-46-3"></a>shield<span class="w"> </span>grl<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="m">2000</span>/hour<span class="w"> </span>--burst<span class="w"> </span><span class="m">50</span><span class="w"> </span>--exempt<span class="w"> </span>/health<span class="w"> </span>--exempt<span class="w"> </span>GET:/metrics
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--algorithm TEXT</code></td>
+<td>Counting algorithm: <code>fixed_window</code>, <code>sliding_window</code>, <code>moving_window</code>, <code>token_bucket</code></td>
+</tr>
+<tr>
+<td><code>--key TEXT</code></td>
+<td>Key strategy: <code>ip</code>, <code>user</code>, <code>api_key</code>, <code>global</code></td>
+</tr>
+<tr>
+<td><code>--burst INT</code></td>
+<td>Extra requests above the base limit</td>
+</tr>
+<tr>
+<td><code>--exempt TEXT</code></td>
+<td>Exempt route (repeatable). Bare path or <code>METHOD:/path</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h4 id="shield-grl-delete"><code>shield grl delete</code><a class="headerlink" href="#shield-grl-delete" title="Permanent link">&para;</a></h4>
+<p>Remove the global rate limit policy entirely.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-47-1"><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a>shield<span class="w"> </span>grl<span class="w"> </span>delete
+</span></code></pre></div>
+<hr />
+<h4 id="shield-grl-reset"><code>shield grl reset</code><a class="headerlink" href="#shield-grl-reset" title="Permanent link">&para;</a></h4>
+<p>Clear all global rate limit counters. The policy is kept; clients get their full quota back on the next request.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-48-1"><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a>shield<span class="w"> </span>grl<span class="w"> </span>reset
+</span></code></pre></div>
+<hr />
+<h4 id="shield-grl-enable"><code>shield grl enable</code><a class="headerlink" href="#shield-grl-enable" title="Permanent link">&para;</a></h4>
+<p>Resume a paused global rate limit policy.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-49-1"><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a>shield<span class="w"> </span>grl<span class="w"> </span><span class="nb">enable</span>
+</span></code></pre></div>
+<hr />
+<h4 id="shield-grl-disable"><code>shield grl disable</code><a class="headerlink" href="#shield-grl-disable" title="Permanent link">&para;</a></h4>
+<p>Pause the global rate limit without removing it. Per-route policies continue to enforce normally.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-50-1"><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a>shield<span class="w"> </span>grl<span class="w"> </span>disable
+</span></code></pre></div>
+<hr />
 <h2 id="audit-log-integration">Audit log integration<a class="headerlink" href="#audit-log-integration" title="Permanent link">&para;</a></h2>
-<p>Rate limit policy changes are recorded in the same audit log as route state changes. The <code>action</code> field uses one of four values:</p>
+<p>Rate limit policy changes are recorded in the same audit log as route state changes. The <code>action</code> field uses the following values:</p>
+<p><strong>Per-route:</strong></p>
 <table>
 <thead>
 <tr>
@@ -2489,22 +3110,64 @@
 <tr>
 <td><code>rl_policy_set</code></td>
 <td>set</td>
-<td>New policy registered</td>
+<td>New per-route policy registered</td>
 </tr>
 <tr>
 <td><code>rl_policy_updated</code></td>
 <td>update</td>
-<td>Existing policy replaced</td>
+<td>Existing per-route policy replaced</td>
 </tr>
 <tr>
 <td><code>rl_reset</code></td>
 <td>reset</td>
-<td>Counters cleared</td>
+<td>Per-route counters cleared</td>
 </tr>
 <tr>
 <td><code>rl_policy_deleted</code></td>
 <td>delete</td>
-<td>Policy removed</td>
+<td>Per-route policy removed</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Global:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Badge</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>global_rl_set</code></td>
+<td>global set</td>
+<td>Global policy created</td>
+</tr>
+<tr>
+<td><code>global_rl_updated</code></td>
+<td>global update</td>
+<td>Global policy replaced</td>
+</tr>
+<tr>
+<td><code>global_rl_reset</code></td>
+<td>global reset</td>
+<td>Global counters cleared</td>
+</tr>
+<tr>
+<td><code>global_rl_deleted</code></td>
+<td>global delete</td>
+<td>Global policy removed</td>
+</tr>
+<tr>
+<td><code>global_rl_enabled</code></td>
+<td>global enabled</td>
+<td>Policy resumed after pause</td>
+</tr>
+<tr>
+<td><code>global_rl_disabled</code></td>
+<td>global disabled</td>
+<td>Policy paused</td>
 </tr>
 </tbody>
 </table>
@@ -2512,13 +3175,13 @@
 <hr />
 <h2 id="response-headers">Response headers<a class="headerlink" href="#response-headers" title="Permanent link">&para;</a></h2>
 <p>Every request to a rate-limited route (allowed or blocked) receives:</p>
-<div class="language-http highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="err">X-RateLimit-Limit: 10</span>
-</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="err">X-RateLimit-Remaining: 7</span>
-</span><span id="__span-35-3"><a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="err">X-RateLimit-Reset: 1748736120</span>
+<div class="language-http highlight"><pre><span></span><code><span id="__span-51-1"><a id="__codelineno-51-1" name="__codelineno-51-1" href="#__codelineno-51-1"></a><span class="err">X-RateLimit-Limit: 10</span>
+</span><span id="__span-51-2"><a id="__codelineno-51-2" name="__codelineno-51-2" href="#__codelineno-51-2"></a><span class="err">X-RateLimit-Remaining: 7</span>
+</span><span id="__span-51-3"><a id="__codelineno-51-3" name="__codelineno-51-3" href="#__codelineno-51-3"></a><span class="err">X-RateLimit-Reset: 1748736120</span>
 </span></code></pre></div>
 <p>Blocked requests additionally receive:</p>
-<div class="language-http highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">429</span> <span class="ne">Too Many Requests</span>
-</span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="na">Retry-After</span><span class="o">:</span> <span class="l">23</span>
+<div class="language-http highlight"><pre><span></span><code><span id="__span-52-1"><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.1</span> <span class="m">429</span> <span class="ne">Too Many Requests</span>
+</span><span id="__span-52-2"><a id="__codelineno-52-2" name="__codelineno-52-2" href="#__codelineno-52-2"></a><span class="na">Retry-After</span><span class="o">:</span> <span class="l">23</span>
 </span></code></pre></div>
 
 

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Route lifecycle management for FastAPI — maintenance mode, env gating, deprecation, and more">
+        <meta name="description" content="Route lifecycle management for ASGI Python frameworks — maintenance mode, env gating, deprecation, and more">
       
       
       
@@ -307,7 +307,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../adapters/fastapi/" class="md-tabs__link">
+        <a href="../../adapters/" class="md-tabs__link">
           
   
   
@@ -680,10 +680,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#openapi-integration" class="md-nav__link">
+  <a href="#openapi-integration-fastapi-only" class="md-nav__link">
     <span class="md-ellipsis">
       
-        OpenAPI integration
+        OpenAPI integration (FastAPI only)
       
     </span>
   </a>
@@ -1292,6 +1292,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../adapters/fastapi/" class="md-nav__link">
         
   
@@ -1495,10 +1523,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#openapi-integration" class="md-nav__link">
+  <a href="#openapi-integration-fastapi-only" class="md-nav__link">
     <span class="md-ellipsis">
       
-        OpenAPI integration
+        OpenAPI integration (FastAPI only)
       
     </span>
   </a>
@@ -1585,7 +1613,8 @@
 
 
 <h1 id="adding-middleware">Adding middleware<a class="headerlink" href="#adding-middleware" title="Permanent link">&para;</a></h1>
-<p><code>ShieldMiddleware</code> is the enforcement layer. It intercepts every HTTP request, calls <code>engine.check()</code>, and returns the appropriate error response when a route is blocked. Without it, decorators register state but nothing enforces it.</p>
+<p><code>ShieldMiddleware</code> is the enforcement layer. It is a standard ASGI middleware that intercepts every HTTP request, calls <code>engine.check()</code>, and returns the appropriate error response when a route is blocked. Without it, decorators register state but nothing enforces it.</p>
+<p>The examples below use <strong>FastAPI</strong>, but <code>ShieldMiddleware</code> works with any <a href="https://www.starlette.io/">Starlette</a>-compatible ASGI framework.</p>
 <hr />
 <h2 id="basic-setup">Basic setup<a class="headerlink" href="#basic-setup" title="Permanent link">&para;</a></h2>
 <div class="language-python highlight"><span class="filename">app.py</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
@@ -1599,7 +1628,7 @@
 </span></code></pre></div>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p>Add <code>ShieldMiddleware</code> <strong>before</strong> including any routers. Middleware is applied in reverse registration order in Starlette/FastAPI, so adding it first ensures it wraps all routes.</p>
+<p>Add <code>ShieldMiddleware</code> <strong>before</strong> including any routers. Middleware is applied in reverse registration order in ASGI frameworks built on Starlette, so adding it first ensures it wraps all routes.</p>
 </div>
 <hr />
 <h2 id="what-the-middleware-does">What the middleware does<a class="headerlink" href="#what-the-middleware-does" title="Permanent link">&para;</a></h2>
@@ -1632,7 +1661,7 @@
 </span></code></pre></div>
 <hr />
 <h2 id="route-registration">Route registration<a class="headerlink" href="#route-registration" title="Permanent link">&para;</a></h2>
-<p>The middleware auto-registers routes on first startup by scanning for <code>__shield_meta__</code> on route handlers. This works with any router type: plain <code>APIRouter</code>, <code>ShieldRouter</code>, or routes added directly to the <code>FastAPI</code> app.</p>
+<p>The middleware auto-registers routes on first startup by scanning for <code>__shield_meta__</code> on route handlers. This works with any router type: plain <code>APIRouter</code>, <code>ShieldRouter</code>, or routes added directly to the app.</p>
 <p>If a route already has persisted state in the backend (for example, written by a previous CLI command), the decorator default is <strong>ignored</strong> and the persisted state wins. This means runtime changes survive restarts.</p>
 <hr />
 <h2 id="paths-excluded-from-checks">Paths excluded from checks<a class="headerlink" href="#paths-excluded-from-checks" title="Permanent link">&para;</a></h2>
@@ -1706,8 +1735,8 @@
 </tbody>
 </table>
 <hr />
-<h2 id="openapi-integration">OpenAPI integration<a class="headerlink" href="#openapi-integration" title="Permanent link">&para;</a></h2>
-<p>Add OpenAPI filtering to hide disabled and env-gated routes from <code>/docs</code> and <code>/redoc</code>:</p>
+<h2 id="openapi-integration-fastapi-only">OpenAPI integration (FastAPI only)<a class="headerlink" href="#openapi-integration-fastapi-only" title="Permanent link">&para;</a></h2>
+<p>FastAPI exposes a live OpenAPI schema at <code>/openapi.json</code>. Shield can filter it to hide disabled and env-gated routes and annotate maintained or deprecated ones:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.fastapi.openapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_shield_to_openapi</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">apply_shield_to_openapi</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">engine</span><span class="p">)</span>  <span class="c1"># call after add_middleware</span>

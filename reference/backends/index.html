@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Route lifecycle management for FastAPI — maintenance mode, env gating, deprecation, and more">
+        <meta name="description" content="Route lifecycle management for ASGI Python frameworks — maintenance mode, env gating, deprecation, and more">
       
       
       
@@ -307,7 +307,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../adapters/fastapi/" class="md-tabs__link">
+        <a href="../../adapters/" class="md-tabs__link">
           
   
   
@@ -1130,6 +1130,39 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;delete_rate_limit_policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield.core.backends.base.ShieldBackend.get_global_rate_limit_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_global_rate_limit_policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield.core.backends.base.ShieldBackend.set_global_rate_limit_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;set_global_rate_limit_policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield.core.backends.base.ShieldBackend.delete_global_rate_limit_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;delete_global_rate_limit_policy
       
     </span>
   </a>
@@ -2175,6 +2208,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../adapters/fastapi/" class="md-nav__link">
         
   
@@ -2543,6 +2604,39 @@
     <span class="md-ellipsis">
       
         <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;delete_rate_limit_policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield.core.backends.base.ShieldBackend.get_global_rate_limit_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;get_global_rate_limit_policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield.core.backends.base.ShieldBackend.set_global_rate_limit_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;set_global_rate_limit_policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shield.core.backends.base.ShieldBackend.delete_global_rate_limit_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;delete_global_rate_limit_policy
       
     </span>
   </a>
@@ -3921,6 +4015,78 @@ the same path/method pair.</p>
         <p>Remove the persisted rate limit policy for <em>path</em>/<em>method</em>.</p>
 <p>No-op if no policy is stored for that pair.
 Default implementation is a no-op.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="shield.core.backends.base.ShieldBackend.get_global_rate_limit_policy" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_global_rate_limit_policy</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+<a href="#shield.core.backends.base.ShieldBackend.get_global_rate_limit_policy" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_global_rate_limit_policy</span><span class="p">()</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the persisted global rate limit policy dict, or <code>None</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="shield.core.backends.base.ShieldBackend.set_global_rate_limit_policy" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">set_global_rate_limit_policy</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+<a href="#shield.core.backends.base.ShieldBackend.set_global_rate_limit_policy" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set_global_rate_limit_policy</span><span class="p">(</span><span class="n">policy_data</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Persist <em>policy_data</em> as the global rate limit policy.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="shield.core.backends.base.ShieldBackend.delete_global_rate_limit_policy" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">delete_global_rate_limit_policy</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+<a href="#shield.core.backends.base.ShieldBackend.delete_global_rate_limit_policy" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete_global_rate_limit_policy</span><span class="p">()</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Remove the persisted global rate limit policy.</p>
 
 
     </div>

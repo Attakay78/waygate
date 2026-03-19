@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Route lifecycle management for FastAPI — maintenance mode, env gating, deprecation, and more">
+        <meta name="description" content="Route lifecycle management for ASGI Python frameworks — maintenance mode, env gating, deprecation, and more">
       
       
       
@@ -307,7 +307,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../adapters/fastapi/" class="md-tabs__link">
+        <a href="../../adapters/" class="md-tabs__link">
           
   
   
@@ -1281,6 +1281,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../adapters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../adapters/fastapi/" class="md-nav__link">
         
   
@@ -1566,11 +1594,11 @@
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Python <strong>3.11</strong> or higher</li>
-<li>A FastAPI app (other adapters coming soon)</li>
+<li>An ASGI web framework (FastAPI is currently supported; Starlette and other ASGI frameworks are on the roadmap)</li>
 </ul>
 <hr />
 <h2 id="install-with-uv-recommended">Install with uv (recommended)<a class="headerlink" href="#install-with-uv-recommended" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Minimal — core library only (no FastAPI, no CLI, no dashboard)</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Minimal — core library only (no framework adapter, no CLI, no dashboard)</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>uv<span class="w"> </span>add<span class="w"> </span>api-shield
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># FastAPI adapter</span>
@@ -1582,7 +1610,7 @@
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># FastAPI + rate limiting</span>
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;api-shield[fastapi,rate-limit]&quot;</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># Everything (FastAPI, Redis, dashboard, CLI, admin, rate limiting)</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># Everything (FastAPI adapter, Redis, dashboard, CLI, admin, rate limiting)</span>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;api-shield[all]&quot;</span>
 </span></code></pre></div>
 <h2 id="install-with-pip">Install with pip<a class="headerlink" href="#install-with-pip" title="Permanent link">&para;</a></h2>
@@ -1602,7 +1630,7 @@
 <tr>
 <td><code>fastapi</code></td>
 <td>FastAPI adapter (middleware, decorators, router, OpenAPI integration)</td>
-<td>Any FastAPI app</td>
+<td>FastAPI apps</td>
 </tr>
 <tr>
 <td><code>redis</code></td>
