@@ -77,6 +77,16 @@ CI runs a `css` job that rebuilds from scratch and fails the PR if the committed
 feat/my-feature  →  develop  →  (release PR)  →  main  →  vX.Y.Z tag
 ```
 
+### Merge strategies
+
+| PR direction | Strategy | Who |
+|---|---|---|
+| `feat/*` → `develop` | Squash and merge | Contributors |
+| `develop` → `main` | Merge commit | Administrators only |
+| `main` → `develop` (sync) | Fast-forward (terminal) | Administrators only |
+
+### For contributors
+
 1. Branch off `develop`:
    ```bash
    git checkout develop
@@ -93,7 +103,21 @@ feat/my-feature  →  develop  →  (release PR)  →  main  →  vX.Y.Z tag
    rebuild: update shield.min.css
    ```
 
-3. Push and open a PR against `develop`.
+3. Push and open a PR against `develop`. GitHub will squash your commits on merge.
+
+### For administrators/core contributors only
+
+After a release PR (`develop` → `main`) is merged, sync `develop` back to `main` via fast-forward. This keeps `develop` in sync and prevents the "branch behind" warning from accumulating.
+
+```bash
+git checkout develop
+git pull origin develop
+git fetch origin
+git merge --ff-only origin/main
+git push origin develop
+```
+
+> **Note:** `--ff-only` ensures no new merge commit is created on `develop`. If the fast-forward fails, do not force it — investigate why the branches have diverged before proceeding.
 
 ---
 

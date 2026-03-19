@@ -84,11 +84,40 @@ git commit -m "rebuild: update shield.min.css"
 feat/my-feature  →  develop  →  (release PR)  →  main  →  vX.Y.Z tag
 ```
 
+### Merge strategies
+
+| PR direction | Strategy | Who |
+|---|---|---|
+| `feat/*` → `develop` | Squash and merge | Contributors |
+| `develop` → `main` | Merge commit | Administrators only |
+| `main` → `develop` (sync) | Fast-forward (terminal) | Administrators only |
+
+### For contributors
+
 ```bash
 git checkout develop
 git pull
 git checkout -b feat/my-feature
 ```
+
+Open a PR against `develop` when ready. GitHub will squash your commits on merge.
+
+### For administrators/core contributors only
+
+After every release PR (`develop` → `main`) is merged, fast-forward `develop` to `main` to keep them in sync:
+
+```bash
+git checkout develop
+git pull origin develop
+git fetch origin
+git merge --ff-only origin/main
+git push origin develop
+```
+
+!!! warning "Administrators only"
+    This operation requires branch protection bypass privileges on `develop`. Do not attempt this as a regular contributor — open a PR instead.
+
+> `--ff-only` ensures no new merge commit is created on `develop`. If it fails, do not force it — investigate the divergence first.
 
 ---
 
