@@ -96,6 +96,21 @@ shield global disable   # restore normal operation
 
 ---
 
+## Environment gating
+
+Restrict a route to specific environments at runtime without redeploying.
+
+```bash
+shield env set /api/debug dev                    # allow only the "dev" environment
+shield env set /api/internal dev staging         # allow dev and staging
+shield env clear /api/debug                      # remove the gate, restore to ACTIVE
+```
+
+!!! note
+    The engine's `current_env` is set at startup (`ShieldEngine(current_env="prod")`). Requests from an environment not in `allowed_envs` receive a `403 ENV_GATED` response. `shield env clear` is equivalent to calling `shield enable` — it transitions the route back to `ACTIVE`.
+
+---
+
 ## Rate limits
 
 Manage rate limit policies and view blocked requests. Requires `api-shield[rate-limit]` on the server.

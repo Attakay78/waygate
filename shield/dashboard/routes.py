@@ -407,6 +407,54 @@ async def global_maintenance_disable(request: Request) -> HTMLResponse:
     return HTMLResponse(_render_global_widget(tpl, config, prefix))
 
 
+async def modal_env_gate(request: Request) -> HTMLResponse:
+    """Return the env-gate modal form pre-filled with the current allowed envs."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    path_key = request.path_params["path_key"]
+    route_path = _decode_path(path_key)
+    slug = path_slug(route_path)
+
+    try:
+        state = await engine.get_state(route_path)
+        current_envs = ", ".join(state.allowed_envs or [])
+    except Exception:
+        current_envs = ""
+
+    html = tpl.env.get_template("partials/modal_env_gate.html").render(
+        route_path=route_path,
+        path_slug=slug,
+        submit_path=f"{prefix}/env/{path_key}",
+        current_envs=current_envs,
+    )
+    return HTMLResponse(html)
+
+
+async def env_gate(request: Request) -> HTMLResponse:
+    """Apply env-gating from form data and return the updated route row.
+
+    Expected form fields: ``envs`` — comma-separated environment names.
+    """
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    route_path = _decode_path(request.path_params["path_key"])
+
+    form_data = await request.form()
+    raw = str(form_data.get("envs", ""))
+    envs = [e.strip() for e in raw.replace(",", " ").split() if e.strip()]
+
+    try:
+        new_state = await engine.set_env_only(
+            route_path, envs, actor=_actor(request), platform=_platform(request)
+        )
+    except RouteProtectedException:
+        new_state = await engine.get_state(route_path)
+
+    return HTMLResponse(_render_route_row(tpl, new_state, prefix))
+
+
 async def action_modal(request: Request) -> HTMLResponse:
     """Return the styled action confirmation modal content.
 

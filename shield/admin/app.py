@@ -281,6 +281,7 @@ def ShieldAdmin(
             Route("/routes", _dash.routes_partial),
             Route("/modal/global/enable", _dash.modal_global_enable),
             Route("/modal/global/disable", _dash.modal_global_disable),
+            Route("/modal/env/{path_key}", _dash.modal_env_gate),
             Route("/modal/{action}/{path_key}", _dash.action_modal),
             Route(
                 "/global-maintenance/enable",
@@ -295,6 +296,7 @@ def ShieldAdmin(
             Route("/toggle/{path_key}", _dash.toggle, methods=["POST"]),
             Route("/disable/{path_key}", _dash.disable, methods=["POST"]),
             Route("/enable/{path_key}", _dash.enable, methods=["POST"]),
+            Route("/env/{path_key}", _dash.env_gate, methods=["POST"]),
             Route("/schedule", _dash.schedule, methods=["POST"]),
             Route("/schedule/{path_key}", _dash.cancel_schedule, methods=["DELETE"]),
             Route("/audit", _dash.audit_page),

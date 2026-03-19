@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 - **`engine.sync` — synchronous proxy for sync route handlers and background threads**: every async engine method (`enable`, `disable`, `set_maintenance`, `schedule_maintenance`, `set_env_only`, `enable_global_maintenance`, `disable_global_maintenance`, `set_rate_limit_policy`, `delete_rate_limit_policy`, `reset_rate_limit`, `get_state`, `list_states`, `get_audit_log`) is now mirrored on `engine.sync` using `anyio.from_thread.run()`, the same mechanism the shield decorators use internally. Use `engine.sync.*` from plain `def` FastAPI handlers (which FastAPI runs in a worker thread automatically) and background threads — no event-loop wiring required.
+- **Env-gate management from dashboard and CLI**: routes can now have their environment gate set or cleared at runtime — without redeployment — via the dashboard "Env Gate" button (opens an inline modal) and the new `shield env set` / `shield env clear` CLI commands.
+
 ### Documentation
 
 - Reframed all docs and README as ASGI-first; expanded framework support tables to include Litestar, Starlette, Quart, and Django (ASGI) as planned adapters; added a dedicated Adapters overview page with a clear explanation of why WSGI frameworks (Flask, Django WSGI, Bottle) are out of scope for this project and will be supported in a separate dedicated library.

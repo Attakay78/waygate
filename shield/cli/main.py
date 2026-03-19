@@ -761,6 +761,100 @@ def global_exempt_remove(
 
 
 # ---------------------------------------------------------------------------
+# Env gate command group  (shield env ...)
+# ---------------------------------------------------------------------------
+
+env_app = typer.Typer(
+    name="env",
+    help="Manage environment-gating for routes.",
+    no_args_is_help=True,
+)
+cli.add_typer(env_app, name="env")
+
+
+@env_app.command("set")
+def env_set(
+    route: str = typer.Argument(..., help="Route: /path or METHOD:/path"),
+    envs: list[str] = typer.Argument(
+        ..., help="Environment names to allow (e.g. dev staging prod)."
+    ),
+    reason: str = typer.Option("", "--reason", "-r", help="Optional note for the audit log."),
+) -> None:
+    """Restrict a route to specific environments.
+
+    Only requests where the engine's current_env matches one of the given
+    environments will be allowed through.  All other environments receive 403.
+
+    Examples:
+
+    \b
+      shield env set /api/debug dev
+      shield env set /api/internal dev staging
+    """
+
+    async def _run_env_set() -> None:
+        key = _parse_route(route)
+        client = make_client()
+        try:
+            keys_to_apply = [key]
+            state = await client.env_gate(key, list(envs))
+            states = [state]
+        except ShieldClientError as exc:
+            if not exc.ambiguous_matches:
+                raise
+            keys_to_apply = _confirm_ambiguous(exc.ambiguous_matches, "env")
+            states = [await client.env_gate(k, list(envs)) for k in keys_to_apply]
+
+        for k, state in zip(keys_to_apply, states):
+            allowed = ", ".join(state.get("allowed_envs") or [])
+            console.print(
+                f"[blue]🔒[/blue] {k} → [blue]{state['status'].upper()}[/blue]"
+                + (f"  [dim]({allowed})[/dim]" if allowed else "")
+            )
+        if reason:
+            console.print(f"  Reason: {reason}")
+
+    _run(_run_env_set)
+
+
+@env_app.command("clear")
+def env_clear(
+    route: str = typer.Argument(..., help="Route: /path or METHOD:/path"),
+    reason: str = typer.Option("", "--reason", "-r", help="Optional note for the audit log."),
+) -> None:
+    """Remove env-gating from a route, restoring it to active status.
+
+    Examples:
+
+    \b
+      shield env clear /api/debug
+    """
+
+    async def _run_env_clear() -> None:
+        key = _parse_route(route)
+        client = make_client()
+        try:
+            keys_to_apply = [key]
+            state = await client.enable(key, reason=reason)
+            states = [state]
+        except ShieldClientError as exc:
+            if not exc.ambiguous_matches:
+                raise
+            keys_to_apply = _confirm_ambiguous(exc.ambiguous_matches, "env clear")
+            states = [await client.enable(k, reason=reason) for k in keys_to_apply]
+
+        for k, state in zip(keys_to_apply, states):
+            console.print(
+                f"[green]✓[/green] {k} → [green]{state['status'].upper()}[/green]"
+                "  [dim](env gate removed)[/dim]"
+            )
+        if reason:
+            console.print(f"  Reason: {reason}")
+
+    _run(_run_env_clear)
+
+
+# ---------------------------------------------------------------------------
 # Rate limits command group  (shield rate-limits ...)
 # ---------------------------------------------------------------------------
 

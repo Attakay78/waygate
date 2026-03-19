@@ -99,6 +99,7 @@ The dashboard renders all registered routes with live status badges:
 - **Enable**: restore route to `ACTIVE`
 - **Maintenance**: put in maintenance with optional reason + window
 - **Disable**: permanently disable with reason
+- **Env Gate**: open a modal to set the allowed environments (comma-separated). The current `allowed_envs` list is pre-filled. Submitting updates the route to `ENV_GATED` immediately; leaving the field empty and submitting is the same as calling `enable` to clear the gate.
 
 ### Live updates (SSE)
 
@@ -146,6 +147,7 @@ The same mount exposes a JSON API used by the `shield` CLI:
 | `POST` | `/api/routes/{key}/enable` | Enable a route |
 | `POST` | `/api/routes/{key}/disable` | Disable a route |
 | `POST` | `/api/routes/{key}/maintenance` | Put route in maintenance |
+| `POST` | `/api/routes/{key}/env` | Set env gate (`{"envs": ["dev", "staging"]}`) |
 | `POST` | `/api/routes/{key}/schedule` | Schedule a maintenance window |
 | `DELETE` | `/api/routes/{key}/schedule` | Cancel a scheduled window |
 | `GET` | `/api/audit` | Audit log (`?route=` and `?limit=` params) |

@@ -181,6 +181,15 @@ class ShieldClient:
             )
             return cast(dict[str, Any], self._check(resp))
 
+    async def env_gate(self, path_key: str, envs: list[str]) -> dict[str, Any]:
+        """POST /api/routes/{path_key}/env — restrict a route to specific environments."""
+        async with self._make_client() as c:
+            resp = await c.post(
+                f"/api/routes/{_encode_path(path_key)}/env",
+                json={"envs": envs},
+            )
+            return cast(dict[str, Any], self._check(resp))
+
     async def cancel_schedule(self, path_key: str) -> dict[str, Any]:
         """DELETE /api/routes/{path_key}/schedule — cancel a scheduled window."""
         async with self._make_client() as c:
