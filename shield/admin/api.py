@@ -430,3 +430,82 @@ async def delete_rate_limit_policy_api(request: Request) -> JSONResponse:
     method, path = raw_key.split(":", 1)
     await engine.delete_rate_limit_policy(path=path, method=method, actor=actor)
     return JSONResponse({"ok": True, "path": path, "method": method})
+
+
+# ---------------------------------------------------------------------------
+# Global rate limit
+# ---------------------------------------------------------------------------
+
+
+async def get_global_rate_limit(request: Request) -> JSONResponse:
+    """GET /api/global-rate-limit — current global rate limit policy."""
+    policy = await _engine(request).get_global_rate_limit()
+    if policy is None:
+        return JSONResponse({"enabled": False, "policy": None})
+    return JSONResponse({"enabled": policy.enabled, "policy": policy.model_dump(mode="json")})
+
+
+async def set_global_rate_limit_api(request: Request) -> JSONResponse:
+    """POST /api/global-rate-limit — set or update the global rate limit policy."""
+    engine = _engine(request)
+    actor = _actor(request)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
+
+    limit = body.get("limit")
+    if not limit:
+        return JSONResponse({"error": "limit is required"}, status_code=400)
+
+    exempt = body.get("exempt_routes", [])
+    if not isinstance(exempt, list):
+        return JSONResponse({"error": "exempt_routes must be a list"}, status_code=400)
+
+    try:
+        policy = await engine.set_global_rate_limit(
+            limit=limit,
+            algorithm=body.get("algorithm"),
+            key_strategy=body.get("key_strategy"),
+            on_missing_key=body.get("on_missing_key"),
+            burst=int(body.get("burst", 0)),
+            exempt_routes=exempt,
+            actor=actor,
+            platform=_platform(request),
+        )
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+    return JSONResponse(policy.model_dump(mode="json"), status_code=201)
+
+
+async def delete_global_rate_limit_api(request: Request) -> JSONResponse:
+    """DELETE /api/global-rate-limit — remove the global rate limit policy."""
+    engine = _engine(request)
+    actor = _actor(request)
+    await engine.delete_global_rate_limit(actor=actor, platform=_platform(request))
+    return JSONResponse({"ok": True})
+
+
+async def reset_global_rate_limit_api(request: Request) -> JSONResponse:
+    """DELETE /api/global-rate-limit/reset — reset global rate limit counters."""
+    engine = _engine(request)
+    actor = _actor(request)
+    await engine.reset_global_rate_limit(actor=actor, platform=_platform(request))
+    return JSONResponse({"ok": True})
+
+
+async def enable_global_rate_limit_api(request: Request) -> JSONResponse:
+    """POST /api/global-rate-limit/enable — resume a paused global rate limit."""
+    engine = _engine(request)
+    actor = _actor(request)
+    await engine.enable_global_rate_limit(actor=actor, platform=_platform(request))
+    return JSONResponse({"ok": True})
+
+
+async def disable_global_rate_limit_api(request: Request) -> JSONResponse:
+    """POST /api/global-rate-limit/disable — pause the global rate limit."""
+    engine = _engine(request)
+    actor = _actor(request)
+    await engine.disable_global_rate_limit(actor=actor, platform=_platform(request))
+    return JSONResponse({"ok": True})

@@ -6,12 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [Unreleased]
+## [0.7.0]
 
 ### Added
 
 - **`engine.sync` — synchronous proxy for sync route handlers and background threads**: every async engine method (`enable`, `disable`, `set_maintenance`, `schedule_maintenance`, `set_env_only`, `enable_global_maintenance`, `disable_global_maintenance`, `set_rate_limit_policy`, `delete_rate_limit_policy`, `reset_rate_limit`, `get_state`, `list_states`, `get_audit_log`) is now mirrored on `engine.sync` using `anyio.from_thread.run()`, the same mechanism the shield decorators use internally. Use `engine.sync.*` from plain `def` FastAPI handlers (which FastAPI runs in a worker thread automatically) and background threads — no event-loop wiring required.
 - **Env-gate management from dashboard and CLI**: routes can now have their environment gate set or cleared at runtime — without redeployment — via the dashboard "Env Gate" button (opens an inline modal) and the new `shield env set` / `shield env clear` CLI commands.
+- **Global rate limit** (`engine.set_global_rate_limit`): a single rate limit policy applied across all routes with higher precedence than per-route limits — checked first, so a request blocked globally never touches a per-route counter. Supports all key strategies, burst allowance, and per-route exemptions (`exempt_routes`). Configurable from the dashboard Rate Limits page and the new `shield grl` CLI command group (`get`, `set`, `delete`, `reset`, `enable`, `disable`).
+- **Global rate limit pause / resume** (`engine.disable_global_rate_limit` / `engine.enable_global_rate_limit`): suspend enforcement without removing the policy, then resume it later. Per-route policies are always unaffected.
 
 ### Documentation
 
@@ -144,7 +146,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `shield` CLI with direct backend access
 - `shield status`, `shield enable`, `shield disable`, `shield maintenance`, `shield schedule`, `shield log`
 
-[Unreleased]: https://github.com/Attakay78/api-shield/compare/v0.5.0...HEAD
+[0.7.0]: https://github.com/Attakay78/api-shield/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/Attakay78/api-shield/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Attakay78/api-shield/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Attakay78/api-shield/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Attakay78/api-shield/compare/v0.2.0...v0.3.0

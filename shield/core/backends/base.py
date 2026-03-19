@@ -224,6 +224,45 @@ class ShieldBackend(ABC):
         Default implementation is a no-op.
         """
 
+    # ------------------------------------------------------------------
+    # Global rate limit policy persistence — concrete default implementations
+    #
+    # Stored as a sentinel RouteState with path ``_GLOBAL_RL_KEY``.
+    # The ``GlobalRateLimitPolicy`` is JSON-serialised into the ``reason``
+    # field.  Same pattern as global maintenance config — no subclass changes
+    # required for existing backends.
+    # ------------------------------------------------------------------
+
+    async def get_global_rate_limit_policy(self) -> dict[str, Any] | None:
+        """Return the persisted global rate limit policy dict, or ``None``."""
+        _GLOBAL_RL_KEY = "__shield:global_rl__"
+        try:
+            state = await self.get_state(_GLOBAL_RL_KEY)
+            import json
+
+            return dict(json.loads(state.reason))
+        except (KeyError, Exception):
+            return None
+
+    async def set_global_rate_limit_policy(self, policy_data: dict[str, Any]) -> None:
+        """Persist *policy_data* as the global rate limit policy."""
+        import json
+
+        _GLOBAL_RL_KEY = "__shield:global_rl__"
+        from shield.core.models import RouteStatus
+
+        sentinel = RouteState(
+            path=_GLOBAL_RL_KEY,
+            status=RouteStatus.ACTIVE,
+            reason=json.dumps(policy_data),
+        )
+        await self.set_state(_GLOBAL_RL_KEY, sentinel)
+
+    async def delete_global_rate_limit_policy(self) -> None:
+        """Remove the persisted global rate limit policy."""
+        _GLOBAL_RL_KEY = "__shield:global_rl__"
+        await self.delete_state(_GLOBAL_RL_KEY)
+
     async def subscribe_rate_limit_policy(self) -> AsyncIterator[dict[str, Any]]:
         """Stream rate limit policy changes as they occur.
 

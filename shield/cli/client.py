@@ -298,6 +298,63 @@ class ShieldClient:
             resp = await c.delete(f"/api/rate-limits/{path_key}")
             return cast(dict[str, Any], self._check(resp))
 
+    # ------------------------------------------------------------------
+    # Global rate limit
+    # ------------------------------------------------------------------
+
+    async def get_global_rate_limit(self) -> dict[str, Any]:
+        """GET /api/global-rate-limit — current global rate limit policy."""
+        async with self._make_client() as c:
+            resp = await c.get("/api/global-rate-limit")
+            return cast(dict[str, Any], self._check(resp))
+
+    async def set_global_rate_limit(
+        self,
+        limit: str,
+        *,
+        algorithm: str | None = None,
+        key_strategy: str | None = None,
+        burst: int = 0,
+        exempt_routes: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """POST /api/global-rate-limit — set or update the global rate limit policy."""
+        payload: dict[str, Any] = {
+            "limit": limit,
+            "burst": burst,
+            "exempt_routes": exempt_routes or [],
+        }
+        if algorithm:
+            payload["algorithm"] = algorithm
+        if key_strategy:
+            payload["key_strategy"] = key_strategy
+        async with self._make_client() as c:
+            resp = await c.post("/api/global-rate-limit", json=payload)
+            return cast(dict[str, Any], self._check(resp))
+
+    async def delete_global_rate_limit(self) -> dict[str, Any]:
+        """DELETE /api/global-rate-limit — remove the global rate limit policy."""
+        async with self._make_client() as c:
+            resp = await c.delete("/api/global-rate-limit")
+            return cast(dict[str, Any], self._check(resp))
+
+    async def reset_global_rate_limit(self) -> dict[str, Any]:
+        """DELETE /api/global-rate-limit/reset — reset global rate limit counters."""
+        async with self._make_client() as c:
+            resp = await c.delete("/api/global-rate-limit/reset")
+            return cast(dict[str, Any], self._check(resp))
+
+    async def enable_global_rate_limit(self) -> dict[str, Any]:
+        """POST /api/global-rate-limit/enable — resume a paused global rate limit."""
+        async with self._make_client() as c:
+            resp = await c.post("/api/global-rate-limit/enable")
+            return cast(dict[str, Any], self._check(resp))
+
+    async def disable_global_rate_limit(self) -> dict[str, Any]:
+        """POST /api/global-rate-limit/disable — pause the global rate limit."""
+        async with self._make_client() as c:
+            resp = await c.post("/api/global-rate-limit/disable")
+            return cast(dict[str, Any], self._check(resp))
+
 
 def make_client(
     transport: httpx.AsyncBaseTransport | None = None,

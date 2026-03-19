@@ -1083,5 +1083,167 @@ def rl_delete(
     _run(_run_rl_delete)
 
 
+# ---------------------------------------------------------------------------
+# Global rate limit command group  (shield global-rate-limit ...)
+# ---------------------------------------------------------------------------
+
+grl_app = typer.Typer(
+    name="global-rate-limit",
+    help="Manage the global rate limit policy applied to all routes.",
+    no_args_is_help=True,
+)
+cli.add_typer(grl_app, name="global-rate-limit")
+cli.add_typer(grl_app, name="grl")
+
+
+@grl_app.command("get")
+def grl_get() -> None:
+    """Show the current global rate limit policy."""
+
+    async def _run_grl_get() -> None:
+        result = await make_client().get_global_rate_limit()
+        policy = result.get("policy")
+        if not policy:
+            console.print("[dim]No global rate limit policy configured.[/dim]")
+            return
+
+        table = Table(box=box.ROUNDED, show_header=True, header_style="bold")
+        table.add_column("Field", style="dim")
+        table.add_column("Value")
+
+        table.add_row("Limit", f"[magenta]{policy.get('limit', '—')}[/magenta]")
+        table.add_row("Algorithm", policy.get("algorithm", "—"))
+        table.add_row("Key Strategy", policy.get("key_strategy", "—"))
+        table.add_row("Burst", str(policy.get("burst", 0)))
+        table.add_row("Enabled", "[green]yes[/green]" if policy.get("enabled") else "[red]no[/red]")
+        exempt = policy.get("exempt_routes") or []
+        table.add_row("Exempt Routes", "\n".join(exempt) if exempt else "[dim](none)[/dim]")
+        console.print(table)
+
+    _run(_run_grl_get)
+
+
+@grl_app.command("set")
+def grl_set(
+    limit: str = typer.Argument(..., help="Rate limit string, e.g. 1000/minute"),
+    algorithm: str | None = typer.Option(
+        None,
+        "--algorithm",
+        "-a",
+        help="Algorithm: fixed_window, sliding_window, moving_window, token_bucket.",
+    ),
+    key_strategy: str | None = typer.Option(
+        None,
+        "--key",
+        "-k",
+        help="Key strategy: ip, user, api_key, global, custom.",
+    ),
+    burst: int = typer.Option(0, "--burst", "-b", help="Burst allowance (extra requests)."),
+    exempt: list[str] | None = typer.Option(
+        None,
+        "--exempt",
+        "-e",
+        help=(
+            "Route to exempt from the global limit.  Repeat for multiple routes.  "
+            "Use /path to exempt all methods, or METHOD:/path for a specific method."
+        ),
+    ),
+) -> None:
+    """Set or update the global rate limit policy.
+
+    The policy applies to every route that is not explicitly exempted.
+    Persisted to the backend so it survives restarts.  Examples:
+
+    \b
+      shield grl set 1000/minute
+      shield grl set 500/minute --key ip --exempt /health --exempt GET:/api/internal
+      shield grl set 200/hour --algorithm sliding_window --burst 20
+    """
+
+    async def _run_grl_set() -> None:
+        result = await make_client().set_global_rate_limit(
+            limit=limit,
+            algorithm=algorithm,
+            key_strategy=key_strategy,
+            burst=burst,
+            exempt_routes=list(exempt) if exempt else [],
+        )
+        key_strat = result.get("key_strategy", "ip")
+        algo = result.get("algorithm", "")
+        console.print(
+            f"[green]✓[/green] Global rate limit set: "
+            f"[bold]{result.get('limit')}[/bold] ({algo}, key={key_strat})"
+        )
+        exempt_list = result.get("exempt_routes") or []
+        if exempt_list:
+            console.print(f"  Exempt routes: [dim]{', '.join(exempt_list)}[/dim]")
+
+    _run(_run_grl_set)
+
+
+@grl_app.command("delete")
+def grl_delete() -> None:
+    """Remove the global rate limit policy.
+
+    Clears the policy from the backend.  In-process counters are not
+    affected — use ``grl reset`` to clear them too.
+    """
+
+    async def _run_grl_delete() -> None:
+        result = await make_client().delete_global_rate_limit()
+        if result.get("ok"):
+            console.print("[green]✓[/green] Global rate limit policy removed.")
+        else:
+            console.print(f"[yellow]?[/yellow] {result}")
+
+    _run(_run_grl_delete)
+
+
+@grl_app.command("reset")
+def grl_reset() -> None:
+    """Reset global rate limit counters.
+
+    Clears all counters so the limit starts fresh.  The policy itself
+    is not removed — use ``grl delete`` for that.
+    """
+
+    async def _run_grl_reset() -> None:
+        result = await make_client().reset_global_rate_limit()
+        if result.get("ok"):
+            console.print("[green]✓[/green] Global rate limit counters reset.")
+        else:
+            console.print(f"[yellow]?[/yellow] {result}")
+
+    _run(_run_grl_reset)
+
+
+@grl_app.command("enable")
+def grl_enable() -> None:
+    """Resume a paused global rate limit policy."""
+
+    async def _run_grl_enable() -> None:
+        result = await make_client().enable_global_rate_limit()
+        if result.get("ok"):
+            console.print("[green]✓[/green] Global rate limit resumed.")
+        else:
+            console.print(f"[yellow]?[/yellow] {result}")
+
+    _run(_run_grl_enable)
+
+
+@grl_app.command("disable")
+def grl_disable() -> None:
+    """Pause the global rate limit policy without removing it."""
+
+    async def _run_grl_disable() -> None:
+        result = await make_client().disable_global_rate_limit()
+        if result.get("ok"):
+            console.print("[green]✓[/green] Global rate limit paused.")
+        else:
+            console.print(f"[yellow]?[/yellow] {result}")
+
+    _run(_run_grl_disable)
+
+
 if __name__ == "__main__":
     cli()

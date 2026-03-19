@@ -1,6 +1,6 @@
 [project]
 name = "api-shield"
-version = "0.6.0"
+version = "0.7.0"
 description = "Route lifecycle management for APIs — maintenance mode, env gating, deprecation, and more"
 readme = "README.md"
 license = { text = "MIT" }

@@ -41,13 +41,25 @@
         "rl_policy_set":     "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
         "rl_policy_updated": "bg-amber-50 text-amber-700 ring-amber-600/20",
         "rl_reset":          "bg-sky-50 text-sky-700 ring-sky-600/20",
-        "rl_policy_deleted": "bg-red-50 text-red-700 ring-red-600/20"
+        "rl_policy_deleted": "bg-red-50 text-red-700 ring-red-600/20",
+        "global_rl_set":     "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
+        "global_rl_updated": "bg-amber-50 text-amber-700 ring-amber-600/20",
+        "global_rl_reset":   "bg-sky-50 text-sky-700 ring-sky-600/20",
+        "global_rl_deleted": "bg-red-50 text-red-700 ring-red-600/20",
+        "global_rl_enabled": "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+        "global_rl_disabled":"bg-slate-100 text-slate-500 ring-slate-400/20"
     } %}
     {% set rl_action_labels = {
         "rl_policy_set":     "set",
         "rl_policy_updated": "update",
         "rl_reset":          "reset",
-        "rl_policy_deleted": "delete"
+        "rl_policy_deleted": "delete",
+        "global_rl_set":     "global set",
+        "global_rl_updated": "global update",
+        "global_rl_reset":   "global reset",
+        "global_rl_deleted": "global delete",
+        "global_rl_enabled": "global enabled",
+        "global_rl_disabled":"global disabled"
     } %}
     <td class="px-4 py-3" data-label="Change">
         {% if entry.action in rl_action_labels %}

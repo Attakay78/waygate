@@ -262,6 +262,46 @@ class RateLimitResult(BaseModel):
     """Which ``OnMissingKey`` behaviour fired, if any."""
 
 
+class GlobalRateLimitPolicy(BaseModel):
+    """Global rate limiting policy applied to all routes unless exempted.
+
+    When set, every request that is not in ``exempt_routes`` is checked
+    against this policy **in addition to** any per-route policy.
+
+    The global check uses a dedicated storage namespace (``__global__``) so
+    counters are independent of per-route counters.
+
+    Parameters
+    ----------
+    limit:
+        Rate limit in ``limits`` format, e.g. ``"1000/minute"``.
+    algorithm:
+        Algorithm to use for counting.  Defaults to FIXED_WINDOW.
+    key_strategy:
+        How to derive the per-request bucket key.  Defaults to IP.
+    on_missing_key:
+        What to do when the key strategy cannot produce a key.
+        When ``None``, the per-strategy default from ``STRATEGY_DEFAULTS`` is used.
+    burst:
+        Extra requests allowed above the base limit (additive).
+    exempt_routes:
+        Routes that bypass the global limit.  Each entry is either a bare
+        path (``"/health"``, all methods) or a method-prefixed path
+        (``"GET:/api/internal"``).
+    enabled:
+        Whether the global limit is actively enforced.  Set to ``False``
+        to temporarily disable without deleting the policy.
+    """
+
+    limit: str
+    algorithm: RateLimitAlgorithm = RateLimitAlgorithm.FIXED_WINDOW
+    key_strategy: RateLimitKeyStrategy = RateLimitKeyStrategy.IP
+    on_missing_key: OnMissingKey | None = None
+    burst: int = 0
+    exempt_routes: list[str] = Field(default_factory=list)
+    enabled: bool = True
+
+
 class RateLimitHit(BaseModel):
     """Record of a single blocked request.
 

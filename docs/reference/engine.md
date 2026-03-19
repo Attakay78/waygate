@@ -325,6 +325,12 @@ FastAPI automatically runs sync handlers in a worker thread, which is exactly th
 | `set_rate_limit_policy(path, method, limit, ...)` | `await engine.set_rate_limit_policy(...)` |
 | `delete_rate_limit_policy(path, method, actor)` | `await engine.delete_rate_limit_policy(...)` |
 | `reset_rate_limit(path, method, actor)` | `await engine.reset_rate_limit(...)` |
+| `set_global_rate_limit(limit, ...)` | `await engine.set_global_rate_limit(...)` |
+| `get_global_rate_limit()` | `await engine.get_global_rate_limit()` |
+| `delete_global_rate_limit(actor)` | `await engine.delete_global_rate_limit(...)` |
+| `reset_global_rate_limit(actor)` | `await engine.reset_global_rate_limit(...)` |
+| `enable_global_rate_limit(actor)` | `await engine.enable_global_rate_limit(...)` |
+| `disable_global_rate_limit(actor)` | `await engine.disable_global_rate_limit(...)` |
 | `get_state(path)` | `await engine.get_state(path)` |
 | `list_states()` | `await engine.list_states()` |
 | `get_audit_log(path, limit)` | `await engine.get_audit_log(...)` |
@@ -541,6 +547,80 @@ async def list_rate_limit_policies() -> list[RateLimitPolicy]
 ```
 
 Return all registered rate limit policies.
+
+---
+
+## Global rate limit
+
+A single policy applied across all routes with higher precedence than per-route limits. Checked first on every request — a request blocked by the global limit never touches the per-route counter. Per-route checks only run after the global limit passes (or the route is exempt, or no global limit is configured).
+
+### `set_global_rate_limit`
+
+```python
+async def set_global_rate_limit(
+    limit: str,
+    *,
+    algorithm: str | None = None,
+    key_strategy: str | None = None,
+    on_missing_key: str | None = None,
+    burst: int = 0,
+    exempt_routes: list[str] | None = None,
+    actor: str = "system",
+    platform: str = "",
+) -> GlobalRateLimitPolicy
+```
+
+Create or replace the global rate limit policy. Logged as `global_rl_set` or `global_rl_updated`.
+
+---
+
+### `get_global_rate_limit`
+
+```python
+async def get_global_rate_limit() -> GlobalRateLimitPolicy | None
+```
+
+Return the current policy, or `None` if not configured.
+
+---
+
+### `delete_global_rate_limit`
+
+```python
+async def delete_global_rate_limit(*, actor: str = "system") -> None
+```
+
+Remove the global policy. Logged as `global_rl_deleted`.
+
+---
+
+### `reset_global_rate_limit`
+
+```python
+async def reset_global_rate_limit(*, actor: str = "system") -> None
+```
+
+Clear all global counters. Policy is kept. Logged as `global_rl_reset`.
+
+---
+
+### `enable_global_rate_limit`
+
+```python
+async def enable_global_rate_limit(*, actor: str = "system") -> None
+```
+
+Resume a paused global policy. No-op if already enabled. Logged as `global_rl_enabled`.
+
+---
+
+### `disable_global_rate_limit`
+
+```python
+async def disable_global_rate_limit(*, actor: str = "system") -> None
+```
+
+Pause the global policy without removing it. Per-route policies are unaffected. Logged as `global_rl_disabled`.
 
 ---
 

@@ -222,6 +222,52 @@ class _SyncProxy:
             self._engine.reset_rate_limit(path, method=method, actor=actor, platform=platform)
         )
 
+    def set_global_rate_limit(
+        self,
+        limit: str,
+        *,
+        algorithm: str | None = None,
+        key_strategy: str | None = None,
+        on_missing_key: str | None = None,
+        burst: int = 0,
+        exempt_routes: list[str] | None = None,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> Any:
+        """Sync version of :meth:`ShieldEngine.set_global_rate_limit`."""
+        return self._run(
+            self._engine.set_global_rate_limit(
+                limit,
+                algorithm=algorithm,
+                key_strategy=key_strategy,
+                on_missing_key=on_missing_key,
+                burst=burst,
+                exempt_routes=exempt_routes,
+                actor=actor,
+                platform=platform,
+            )
+        )
+
+    def get_global_rate_limit(self) -> Any:
+        """Sync version of :meth:`ShieldEngine.get_global_rate_limit`."""
+        return self._run(self._engine.get_global_rate_limit())
+
+    def delete_global_rate_limit(self, *, actor: str = "system", platform: str = "system") -> None:
+        """Sync version of :meth:`ShieldEngine.delete_global_rate_limit`."""
+        self._run(self._engine.delete_global_rate_limit(actor=actor, platform=platform))
+
+    def reset_global_rate_limit(self, *, actor: str = "system", platform: str = "system") -> None:
+        """Sync version of :meth:`ShieldEngine.reset_global_rate_limit`."""
+        self._run(self._engine.reset_global_rate_limit(actor=actor, platform=platform))
+
+    def enable_global_rate_limit(self, *, actor: str = "system", platform: str = "system") -> None:
+        """Sync version of :meth:`ShieldEngine.enable_global_rate_limit`."""
+        self._run(self._engine.enable_global_rate_limit(actor=actor, platform=platform))
+
+    def disable_global_rate_limit(self, *, actor: str = "system", platform: str = "system") -> None:
+        """Sync version of :meth:`ShieldEngine.disable_global_rate_limit`."""
+        self._run(self._engine.disable_global_rate_limit(actor=actor, platform=platform))
+
     # ------------------------------------------------------------------
     # Read-only queries
     # ------------------------------------------------------------------
@@ -295,6 +341,7 @@ class ShieldEngine:
         self._default_rate_limit_algorithm: Any = default_rate_limit_algorithm
         self._rate_limiter: Any = None  # ShieldRateLimiter | None
         self._rate_limit_policies: dict[str, Any] = {}  # "METHOD:/path" → RateLimitPolicy
+        self._global_rate_limit_policy: Any = None  # GlobalRateLimitPolicy | None
         # Sync proxy — created once, reused on every engine.sync access.
         self.sync: _SyncProxy = _SyncProxy(self)
 
@@ -567,8 +614,9 @@ class ShieldEngine:
             # Rate limit check still runs for deprecated routes.
             return await self._run_rate_limit_check(path, method or "", context)
 
-        # Rate limiting runs after all lifecycle checks so that maintenance /
-        # disabled routes short-circuit before touching counters.
+        # Rate limiting runs after all lifecycle checks (maintenance / disabled
+        # routes short-circuit before touching any counters).  Within the rate
+        # limit check, the global limit is evaluated first.
         await self._run_rate_limit_check(path, method or "", context)
 
     async def _run_rate_limit_check(
@@ -576,30 +624,108 @@ class ShieldEngine:
     ) -> Any:
         """Run the rate limit check for *path*/*method* if a policy is registered.
 
+        Applies the global rate limit first (higher precedence), then the
+        per-route policy.  A request blocked by the global limit never
+        touches the per-route counter.
+
         Returns the ``RateLimitResult`` (or ``None`` when no policy applies).
         Raises ``RateLimitExceededException`` when the limit is exceeded.
         """
-        if self._rate_limiter is None:
-            return None
-
-        policy_key = f"{method.upper()}:{path}" if method else f"ALL:{path}"
-        policy = self._rate_limit_policies.get(policy_key)
-        if policy is None:
-            return None
-
         request = (context or {}).get("request")
-        custom_key_func = getattr(policy, "_custom_key_func", None)
+
+        # Global rate limit takes precedence — checked first, same model as
+        # global maintenance.  If the global limit is exceeded the per-route
+        # check never runs and the per-route counter is not touched.
+        grl = self._global_rate_limit_policy
+        if grl is not None and grl.enabled:
+            if not self._is_globally_exempt(path, method, grl.exempt_routes):
+                await self._run_global_rate_limit_check(path, method, request, grl)
+
+        # Per-route check — only reached when the global limit passed (or the
+        # route is exempt from the global limit, or no global limit is set).
+        route_result: Any = None
+        if self._rate_limiter is not None:
+            policy_key = f"{method.upper()}:{path}" if method else f"ALL:{path}"
+            policy = self._rate_limit_policies.get(policy_key)
+            if policy is not None:
+                custom_key_func = getattr(policy, "_custom_key_func", None)
+                result = await self._rate_limiter.check(
+                    path=path,
+                    method=method or "GET",
+                    request=request,
+                    policy=policy,
+                    custom_key_func=custom_key_func,
+                )
+                if not result.allowed:
+                    await self._record_rate_limit_hit(path, method or "GET", policy, result)
+                    raise RateLimitExceededException(
+                        limit=result.limit,
+                        retry_after_seconds=result.retry_after_seconds,
+                        reset_at=result.reset_at,
+                        remaining=0,
+                        key=result.key,
+                    )
+                route_result = result
+
+        return route_result
+
+    def _is_globally_exempt(self, path: str, method: str, exempt_routes: list[str]) -> bool:
+        """Return ``True`` if *path*/*method* is in the global exempt list.
+
+        Each entry in *exempt_routes* is either:
+        * a bare path (``"/health"``) — exempts all methods, or
+        * a method-prefixed path (``"GET:/api/internal"``) — exempts that
+          specific method only.
+        """
+        upper_method = method.upper() if method else ""
+        for entry in exempt_routes:
+            if ":" in entry and not entry.startswith("/"):
+                em, _, ep = entry.partition(":")
+                if em.upper() == upper_method and ep == path:
+                    return True
+            else:
+                if entry == path:
+                    return True
+        return False
+
+    async def _run_global_rate_limit_check(
+        self,
+        path: str,
+        method: str,
+        request: Any,
+        grl_policy: Any,
+    ) -> None:
+        """Check the global rate limit for *path*/*method*.
+
+        Uses ``__global__`` as the virtual path so all routes share the
+        same counter namespace.  Raises ``RateLimitExceededException``
+        when the limit is exceeded.
+        """
+        # Ensure the rate limiter is initialised without polluting
+        # _rate_limit_policies with a fake "ALL:__global__" route entry.
+        await self._ensure_rate_limiter()
+
+        from shield.core.rate_limit.models import RateLimitPolicy
+
+        grl_as_policy = RateLimitPolicy(
+            path="__global__",
+            method="ALL",
+            limit=grl_policy.limit,
+            algorithm=grl_policy.algorithm,
+            key_strategy=grl_policy.key_strategy,
+            on_missing_key=grl_policy.on_missing_key,
+            burst=grl_policy.burst,
+        )
 
         result = await self._rate_limiter.check(
-            path=path,
-            method=method or "GET",
+            path="__global__",
+            method="ALL",
             request=request,
-            policy=policy,
-            custom_key_func=custom_key_func,
+            policy=grl_as_policy,
         )
 
         if not result.allowed:
-            await self._record_rate_limit_hit(path, method or "GET", policy, result)
+            await self._record_rate_limit_hit(path, method or "ALL", grl_as_policy, result)
             raise RateLimitExceededException(
                 limit=result.limit,
                 retry_after_seconds=result.retry_after_seconds,
@@ -607,8 +733,6 @@ class ShieldEngine:
                 remaining=0,
                 key=result.key,
             )
-
-        return result
 
     async def _resolve_state(self, path: str, method: str | None) -> RouteState | None:
         """Return the applicable ``RouteState`` for *path* / *method*.
@@ -1160,6 +1284,39 @@ class ShieldEngine:
     # Rate limiting
     # ------------------------------------------------------------------
 
+    async def _ensure_rate_limiter(self) -> None:
+        """Lazily initialise the rate limiter without registering any policy.
+
+        Safe to call multiple times — no-op once the limiter exists.
+        """
+        if self._rate_limiter is not None:
+            return
+        try:
+            from shield.core.rate_limit.limiter import ShieldRateLimiter
+            from shield.core.rate_limit.storage import create_rate_limit_storage
+
+            storage = create_rate_limit_storage(
+                self.backend,
+                self._rate_limit_backend,
+                snapshot_interval_seconds=self._rate_limit_snapshot_interval,
+            )
+            from shield.core.rate_limit.models import RateLimitAlgorithm
+
+            algo = self._default_rate_limit_algorithm or RateLimitAlgorithm.FIXED_WINDOW
+            self._rate_limiter = ShieldRateLimiter(
+                storage=storage,
+                default_algorithm=algo,
+            )
+            # Kick off storage background tasks (e.g. FileRateLimitStorage
+            # snapshot writer) now, in async context, so they are running
+            # before the first request rather than lazily per-increment.
+            await self._rate_limiter.startup()
+        except ImportError:
+            raise ImportError(
+                "Rate limiting requires the 'limits' library. "
+                "Install it with: pip install api-shield[rate-limit]"
+            ) from None
+
     async def register_rate_limit(
         self,
         path: str,
@@ -1182,33 +1339,7 @@ class ShieldEngine:
         policy:
             A ``RateLimitPolicy`` instance describing the limit.
         """
-        if self._rate_limiter is None:
-            try:
-                from shield.core.rate_limit.limiter import ShieldRateLimiter
-                from shield.core.rate_limit.storage import create_rate_limit_storage
-
-                storage = create_rate_limit_storage(
-                    self.backend,
-                    self._rate_limit_backend,
-                    snapshot_interval_seconds=self._rate_limit_snapshot_interval,
-                )
-                from shield.core.rate_limit.models import RateLimitAlgorithm
-
-                algo = self._default_rate_limit_algorithm or RateLimitAlgorithm.FIXED_WINDOW
-                self._rate_limiter = ShieldRateLimiter(
-                    storage=storage,
-                    default_algorithm=algo,
-                )
-                # Kick off storage background tasks (e.g. FileRateLimitStorage
-                # snapshot writer) now, in async context, so they are running
-                # before the first request rather than lazily per-increment.
-                await self._rate_limiter.startup()
-            except ImportError:
-                raise ImportError(
-                    "Rate limiting requires the 'limits' library. "
-                    "Install it with: pip install api-shield[rate-limit]"
-                ) from None
-
+        await self._ensure_rate_limiter()
         key = f"{method.upper()}:{path}"
         self._rate_limit_policies[key] = policy
 
@@ -1388,6 +1519,177 @@ class ShieldEngine:
                 )
             except Exception:
                 logger.exception("shield: failed to restore rate limit policy %r", policy_data)
+
+        # Also restore the global rate limit policy if one was persisted.
+        await self._restore_global_rate_limit_policy()
+
+    async def _restore_global_rate_limit_policy(self) -> None:
+        """Load the persisted global rate limit policy from the backend."""
+        try:
+            policy_data = await self.backend.get_global_rate_limit_policy()
+        except Exception:
+            logger.exception("shield: failed to restore global rate limit policy from backend")
+            return
+
+        if not policy_data:
+            return
+
+        try:
+            from shield.core.rate_limit.models import GlobalRateLimitPolicy
+
+            self._global_rate_limit_policy = GlobalRateLimitPolicy.model_validate(policy_data)
+            logger.info(
+                "shield: restored global rate limit policy (%s)",
+                self._global_rate_limit_policy.limit,
+            )
+        except Exception:
+            logger.exception("shield: failed to parse persisted global rate limit policy")
+
+    async def set_global_rate_limit(
+        self,
+        limit: str,
+        *,
+        algorithm: str | None = None,
+        key_strategy: str | None = None,
+        on_missing_key: str | None = None,
+        burst: int = 0,
+        exempt_routes: list[str] | None = None,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> Any:
+        """Set or update the global rate limit policy.
+
+        The global policy applies to every route that is not listed in
+        *exempt_routes*.  Persisted so the policy survives restarts.
+
+        Returns the ``GlobalRateLimitPolicy`` instance.
+        """
+        from shield.core.rate_limit.models import (
+            GlobalRateLimitPolicy,
+            OnMissingKey,
+            RateLimitAlgorithm,
+            RateLimitKeyStrategy,
+        )
+
+        algo = RateLimitAlgorithm(algorithm) if algorithm else RateLimitAlgorithm.FIXED_WINDOW
+        key_strat = RateLimitKeyStrategy(key_strategy) if key_strategy else RateLimitKeyStrategy.IP
+        omk = OnMissingKey(on_missing_key) if on_missing_key else None
+
+        is_update = self._global_rate_limit_policy is not None
+        policy = GlobalRateLimitPolicy(
+            limit=limit,
+            algorithm=algo,
+            key_strategy=key_strat,
+            on_missing_key=omk,
+            burst=burst,
+            exempt_routes=exempt_routes or [],
+            enabled=True,
+        )
+        self._global_rate_limit_policy = policy
+        await self.backend.set_global_rate_limit_policy(policy.model_dump(mode="json"))
+        logger.info(
+            "shield: global rate limit policy %s (%s) by %s",
+            "updated" if is_update else "set",
+            limit,
+            actor,
+        )
+        await self._audit_rl(
+            path="__global_rl__",
+            action="global_rl_updated" if is_update else "global_rl_set",
+            actor=actor,
+            reason=f"{limit} · {algo} · {key_strat}",
+            platform=platform,
+        )
+        return policy
+
+    async def get_global_rate_limit(self) -> Any:
+        """Return the current ``GlobalRateLimitPolicy``, or ``None``."""
+        return self._global_rate_limit_policy
+
+    async def delete_global_rate_limit(
+        self,
+        *,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> None:
+        """Remove the global rate limit policy.
+
+        Clears the in-process policy and removes the persisted entry.
+        """
+        self._global_rate_limit_policy = None
+        await self.backend.delete_global_rate_limit_policy()
+        logger.info("shield: global rate limit policy deleted by %s", actor)
+        await self._audit_rl(
+            path="__global_rl__",
+            action="global_rl_deleted",
+            actor=actor,
+            platform=platform,
+        )
+
+    async def reset_global_rate_limit(
+        self,
+        *,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> None:
+        """Reset global rate limit counters.
+
+        Clears the ``__global__`` counter namespace so the rate limit
+        starts fresh.  The policy itself is not removed.
+        """
+        if self._rate_limiter is None:
+            return
+        await self._rate_limiter.reset(path="__global__", method="ALL")
+        await self._audit_rl(
+            path="__global_rl__",
+            action="global_rl_reset",
+            actor=actor,
+            platform=platform,
+        )
+
+    async def enable_global_rate_limit(
+        self,
+        *,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> None:
+        """Re-enable a paused global rate limit policy."""
+        if self._global_rate_limit_policy is None or self._global_rate_limit_policy.enabled:
+            return
+        self._global_rate_limit_policy = self._global_rate_limit_policy.model_copy(
+            update={"enabled": True}
+        )
+        await self.backend.set_global_rate_limit_policy(
+            self._global_rate_limit_policy.model_dump(mode="json")
+        )
+        await self._audit_rl(
+            path="__global_rl__",
+            action="global_rl_enabled",
+            actor=actor,
+            platform=platform,
+        )
+
+    async def disable_global_rate_limit(
+        self,
+        *,
+        actor: str = "system",
+        platform: str = "system",
+    ) -> None:
+        """Pause (disable) the global rate limit policy without removing it."""
+        if self._global_rate_limit_policy is None or not self._global_rate_limit_policy.enabled:
+            return
+        self._global_rate_limit_policy = self._global_rate_limit_policy.model_copy(
+            update={"enabled": False}
+        )
+        await self.backend.set_global_rate_limit_policy(
+            self._global_rate_limit_policy.model_dump(mode="json")
+        )
+        await self._audit_rl(
+            path="__global_rl__",
+            action="global_rl_disabled",
+            actor=actor,
+            platform=platform,
+        )
 
     # ------------------------------------------------------------------
     # Read methods

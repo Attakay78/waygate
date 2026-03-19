@@ -1,7 +1,7 @@
 {% for hit in hits %}
 <tr class="hover:bg-slate-50/70 transition-colors border-t border-slate-100">
     <td class="px-5 py-3 text-xs text-slate-500 font-mono whitespace-nowrap">
-        {{ hit.timestamp.strftime('%H:%M:%S') if hit.timestamp else '—' }}
+        {{ hit.timestamp.strftime('%Y-%m-%d %H:%M:%S') if hit.timestamp else '—' }}
     </td>
     <td class="px-4 py-3" data-label="Route">
         <div class="flex items-center gap-2">

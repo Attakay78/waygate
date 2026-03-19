@@ -349,6 +349,117 @@ for p in policies:
 
 ---
 
+## Global rate limit
+
+A global rate limit applies a single policy across **all routes** with higher precedence than per-route limits. It is checked **first** on every request — if the global limit is exceeded the request is rejected immediately and the per-route counter is never touched. Per-route policies only run after the global limit passes (or when the route is exempt, or no global limit is configured).
+
+### `GlobalRateLimitPolicy`
+
+```python
+from shield.core.rate_limit.models import GlobalRateLimitPolicy
+```
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `limit` | `str` | required | Limit string, e.g. `"1000/minute"` |
+| `algorithm` | `str` | `"fixed_window"` | Counting algorithm |
+| `key_strategy` | `str` | `"ip"` | Key strategy: `ip`, `user`, `api_key`, `global` |
+| `on_missing_key` | `str \| None` | strategy default | Behaviour when the key extractor returns `None` |
+| `burst` | `int` | `0` | Extra requests allowed above `limit` |
+| `exempt_routes` | `list[str]` | `[]` | Routes skipped by the global limit. Bare path (`"/health"`) exempts all methods; method-prefixed (`"GET:/metrics"`) exempts that method only |
+| `enabled` | `bool` | `True` | Whether the policy is currently enforced. `False` = paused (policy kept, counters not incremented) |
+
+### Engine methods
+
+#### `set_global_rate_limit`
+
+```python
+async def set_global_rate_limit(
+    limit: str,
+    *,
+    algorithm: str | None = None,
+    key_strategy: str | None = None,
+    on_missing_key: str | None = None,
+    burst: int = 0,
+    exempt_routes: list[str] | None = None,
+    actor: str = "system",
+    platform: str = "",
+) -> GlobalRateLimitPolicy
+```
+
+Create or replace the global rate limit policy. Persists to the backend. Logged as `global_rl_set` (new) or `global_rl_updated` (replacement).
+
+```python
+await engine.set_global_rate_limit(
+    "1000/minute",
+    key_strategy="ip",
+    exempt_routes=["/health", "GET:/metrics"],
+    actor="alice",
+)
+```
+
+---
+
+#### `get_global_rate_limit`
+
+```python
+async def get_global_rate_limit() -> GlobalRateLimitPolicy | None
+```
+
+Return the current policy, or `None` if not configured.
+
+---
+
+#### `delete_global_rate_limit`
+
+```python
+async def delete_global_rate_limit(*, actor: str = "system") -> None
+```
+
+Remove the global rate limit policy entirely. Logged as `global_rl_deleted`.
+
+---
+
+#### `reset_global_rate_limit`
+
+```python
+async def reset_global_rate_limit(*, actor: str = "system") -> None
+```
+
+Clear all global counters so the limit starts fresh. The policy itself is not removed. Logged as `global_rl_reset`.
+
+---
+
+#### `enable_global_rate_limit`
+
+```python
+async def enable_global_rate_limit(*, actor: str = "system") -> None
+```
+
+Resume a paused global rate limit policy. No-op if already enabled or not configured. Logged as `global_rl_enabled`.
+
+---
+
+#### `disable_global_rate_limit`
+
+```python
+async def disable_global_rate_limit(*, actor: str = "system") -> None
+```
+
+Pause the global rate limit without removing it. Requests are no longer counted or blocked by the global policy; per-route policies are unaffected. Logged as `global_rl_disabled`.
+
+---
+
+### Dashboard
+
+The **Rate Limits** page includes a Global Rate Limit card above the policies table.
+
+- **Not configured** — compact bar with a "Set Global Limit" button.
+- **Active** — info card showing limit, algorithm, key strategy, burst, and exempt routes. Action buttons: Pause, Edit, Reset, Remove.
+- **Paused** — same card with a "Paused" badge (grey) and a Resume button instead of Pause. The limit string is dimmed to indicate it is not being enforced.
+
+---
+
 ## CLI commands
 
 `shield rl` and `shield rate-limits` are aliases for the same command group — use whichever you prefer.
@@ -432,16 +543,115 @@ shield rl hits --limit 50         # show more
 
 ---
 
+Now add the global rate limit CLI commands section after `shield rl hits`:
+
+---
+
+### `shield grl` / `shield global-rate-limit`
+
+`shield grl` and `shield global-rate-limit` are aliases for the global rate limit command group.
+
+```bash
+shield grl get           # show current policy
+shield global-rate-limit get  # identical
+```
+
+#### `shield grl get`
+
+Show the current global rate limit policy (limit, algorithm, key strategy, burst, exempt routes, enabled state).
+
+```bash
+shield grl get
+```
+
+---
+
+#### `shield grl set`
+
+Configure the global rate limit. Creates a new policy or replaces the existing one.
+
+```bash
+shield grl set <limit>
+```
+
+```bash
+shield grl set 1000/minute
+shield grl set 500/minute --algorithm sliding_window --key ip
+shield grl set 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
+```
+
+| Option | Description |
+|---|---|
+| `--algorithm TEXT` | Counting algorithm: `fixed_window`, `sliding_window`, `moving_window`, `token_bucket` |
+| `--key TEXT` | Key strategy: `ip`, `user`, `api_key`, `global` |
+| `--burst INT` | Extra requests above the base limit |
+| `--exempt TEXT` | Exempt route (repeatable). Bare path or `METHOD:/path` |
+
+---
+
+#### `shield grl delete`
+
+Remove the global rate limit policy entirely.
+
+```bash
+shield grl delete
+```
+
+---
+
+#### `shield grl reset`
+
+Clear all global rate limit counters. The policy is kept; clients get their full quota back on the next request.
+
+```bash
+shield grl reset
+```
+
+---
+
+#### `shield grl enable`
+
+Resume a paused global rate limit policy.
+
+```bash
+shield grl enable
+```
+
+---
+
+#### `shield grl disable`
+
+Pause the global rate limit without removing it. Per-route policies continue to enforce normally.
+
+```bash
+shield grl disable
+```
+
+---
+
 ## Audit log integration
 
-Rate limit policy changes are recorded in the same audit log as route state changes. The `action` field uses one of four values:
+Rate limit policy changes are recorded in the same audit log as route state changes. The `action` field uses the following values:
+
+**Per-route:**
 
 | Action | Badge | When |
 |---|---|---|
-| `rl_policy_set` | set | New policy registered |
-| `rl_policy_updated` | update | Existing policy replaced |
-| `rl_reset` | reset | Counters cleared |
-| `rl_policy_deleted` | delete | Policy removed |
+| `rl_policy_set` | set | New per-route policy registered |
+| `rl_policy_updated` | update | Existing per-route policy replaced |
+| `rl_reset` | reset | Per-route counters cleared |
+| `rl_policy_deleted` | delete | Per-route policy removed |
+
+**Global:**
+
+| Action | Badge | When |
+|---|---|---|
+| `global_rl_set` | global set | Global policy created |
+| `global_rl_updated` | global update | Global policy replaced |
+| `global_rl_reset` | global reset | Global counters cleared |
+| `global_rl_deleted` | global delete | Global policy removed |
+| `global_rl_enabled` | global enabled | Policy resumed after pause |
+| `global_rl_disabled` | global disabled | Policy paused |
 
 View in the dashboard at `/shield/audit` or via `shield log`.
 

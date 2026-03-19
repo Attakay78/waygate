@@ -309,11 +309,93 @@ shield rl hits --route /api/pay   # filter to one route
 
 ---
 
+## Global rate limit commands
+
+`shield grl` and `shield global-rate-limit` are aliases for the same command group. Requires `api-shield[rate-limit]` on the server.
+
+```bash
+shield grl get
+shield global-rate-limit get   # identical
+```
+
+### `shield grl get`
+
+Show the current global rate limit policy, including limit, algorithm, key strategy, burst, exempt routes, and enabled state.
+
+```bash
+shield grl get
+```
+
+---
+
+### `shield grl set`
+
+Configure the global rate limit. Creates a new policy or replaces the existing one.
+
+```bash
+shield grl set <limit>
+```
+
+```bash
+shield grl set 1000/minute
+shield grl set 500/minute --algorithm sliding_window --key ip
+shield grl set 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
+```
+
+| Option | Description |
+|---|---|
+| `--algorithm TEXT` | Counting algorithm: `fixed_window`, `sliding_window`, `moving_window`, `token_bucket` |
+| `--key TEXT` | Key strategy: `ip`, `user`, `api_key`, `global` |
+| `--burst INT` | Extra requests above the base limit |
+| `--exempt TEXT` | Exempt route (repeatable). Bare path (`/health`) or method-prefixed (`GET:/metrics`) |
+
+---
+
+### `shield grl delete`
+
+Remove the global rate limit policy entirely.
+
+```bash
+shield grl delete
+```
+
+---
+
+### `shield grl reset`
+
+Clear all global rate limit counters. The policy is kept; clients get their full quota back on the next request.
+
+```bash
+shield grl reset
+```
+
+---
+
+### `shield grl enable`
+
+Resume a paused global rate limit policy.
+
+```bash
+shield grl enable
+```
+
+---
+
+### `shield grl disable`
+
+Pause the global rate limit without removing it. Per-route policies continue to enforce normally.
+
+```bash
+shield grl disable
+```
+
+---
+
 ## Audit log
 
 ### `shield log`
 
-Display the audit log, newest entries first. The `Status` column shows `old > new` for route state changes and a coloured action label (`set`, `update`, `reset`, `delete`) for rate limit policy changes.
+Display the audit log, newest entries first. The `Status` column shows `old > new` for route state changes and a coloured action label for rate limit policy changes (including global RL actions such as `global set`, `global reset`, `global enabled`, `global disabled`).
 
 ```bash
 shield log                          # page 1, 20 rows
