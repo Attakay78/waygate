@@ -7,23 +7,27 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  custom_dir: docs/overrides
   logo: assets/logo.svg
   favicon: assets/logo.svg
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: amber
+      primary: white
       accent: orange
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: amber
+      primary: black
       accent: orange
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+  font:
+    text: Geist
+    code: Geist Mono
   features:
     - navigation.tabs
     - navigation.tabs.sticky
@@ -131,3 +135,7 @@ extra:
 
 extra_css:
   - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mermaid-init.js
+  - https://unpkg.com/mermaid@11/dist/mermaid.min.js

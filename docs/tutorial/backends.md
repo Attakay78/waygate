@@ -107,20 +107,22 @@ Best for: multi-instance / load-balanced production deployments.
 
 When you run multiple independent services, a dedicated **Shield Server** acts as the centralised control plane. Each service connects to it via **ShieldSDK**, which keeps an in-process cache synced over a persistent SSE connection — so enforcement never touches the network per request.
 
-```
-┌────────────────────────────────┐
-│  Shield Server (port 9000)     │
-│  ShieldServer(backend=...)     │
-│  Dashboard, REST API, SSE      │
-└──────────────┬─────────────────┘
-               │  HTTP + SSE
-     ┌─────────┴──────────┐
-     ▼                    ▼
-┌──────────────┐  ┌──────────────┐
-│ payments-app │  │ orders-app   │
-│ ShieldSDK    │  │ ShieldSDK    │
-│ (local cache)│  │ (local cache)│
-└──────────────┘  └──────────────┘
+```mermaid
+graph TD
+    subgraph server["Shield Server  •  port 9000"]
+        SS["ShieldServer(backend=...)\nDashboard · REST API · SSE"]
+    end
+
+    SS -->|HTTP + SSE| P
+    SS -->|HTTP + SSE| O
+
+    subgraph P["payments-app"]
+        PS["ShieldSDK\nlocal cache"]
+    end
+
+    subgraph O["orders-app"]
+        OS["ShieldSDK\nlocal cache"]
+    end
 ```
 
 **Shield Server setup:**
