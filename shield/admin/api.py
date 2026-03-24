@@ -936,7 +936,7 @@ async def create_flag(request: Request) -> JSONResponse:
     if existing is not None:
         return _err(f"Flag '{flag.key}' already exists. Use PUT to update.", 409)
 
-    await _engine(request).save_flag(flag)
+    await _engine(request).save_flag(flag, actor=_actor(request), platform=_platform(request))
     return JSONResponse(flag.model_dump(mode="json"), status_code=201)
 
 
@@ -964,7 +964,7 @@ async def update_flag(request: Request) -> JSONResponse:
     except Exception as exc:
         return _err(f"Invalid flag definition: {exc}")
 
-    await _engine(request).save_flag(flag)
+    await _engine(request).save_flag(flag, actor=_actor(request), platform=_platform(request))
     return JSONResponse(flag.model_dump(mode="json"))
 
 
@@ -1005,7 +1005,7 @@ async def patch_flag(request: Request) -> JSONResponse:
     if isinstance(updated.fallthrough, str) and updated.fallthrough not in variation_names:
         return _err(f"fallthrough '{updated.fallthrough}' does not match any variation name")
 
-    await _engine(request).save_flag(updated)
+    await _engine(request).save_flag(updated, actor=_actor(request), platform=_platform(request))
     return JSONResponse(updated.model_dump(mode="json"))
 
 
@@ -1018,7 +1018,9 @@ async def enable_flag(request: Request) -> JSONResponse:
     if flag is None:
         return _err(f"Flag '{key}' not found", 404)
     flag = flag.model_copy(update={"enabled": True})
-    await _engine(request).save_flag(flag)
+    await _engine(request).save_flag(
+        flag, actor=_actor(request), platform=_platform(request), action="flag_enabled"
+    )
     return JSONResponse(flag.model_dump(mode="json"))
 
 
@@ -1031,7 +1033,9 @@ async def disable_flag(request: Request) -> JSONResponse:
     if flag is None:
         return _err(f"Flag '{key}' not found", 404)
     flag = flag.model_copy(update={"enabled": False})
-    await _engine(request).save_flag(flag)
+    await _engine(request).save_flag(
+        flag, actor=_actor(request), platform=_platform(request), action="flag_disabled"
+    )
     return JSONResponse(flag.model_dump(mode="json"))
 
 
@@ -1043,7 +1047,7 @@ async def delete_flag(request: Request) -> JSONResponse:
     existing = await _engine(request).get_flag(key)
     if existing is None:
         return _err(f"Flag '{key}' not found", 404)
-    await _engine(request).delete_flag(key)
+    await _engine(request).delete_flag(key, actor=_actor(request), platform=_platform(request))
     return JSONResponse({"ok": True, "deleted": key})
 
 
@@ -1144,7 +1148,7 @@ async def create_segment(request: Request) -> JSONResponse:
     if existing is not None:
         return _err(f"Segment '{segment.key}' already exists. Use PUT to update.", 409)
 
-    await _engine(request).save_segment(segment)
+    await _engine(request).save_segment(segment, actor=_actor(request), platform=_platform(request))
     return JSONResponse(segment.model_dump(mode="json"), status_code=201)
 
 
@@ -1171,7 +1175,7 @@ async def update_segment(request: Request) -> JSONResponse:
     except Exception as exc:
         return _err(f"Invalid segment definition: {exc}")
 
-    await _engine(request).save_segment(segment)
+    await _engine(request).save_segment(segment, actor=_actor(request), platform=_platform(request))
     return JSONResponse(segment.model_dump(mode="json"))
 
 
@@ -1183,5 +1187,5 @@ async def delete_segment(request: Request) -> JSONResponse:
     existing = await _engine(request).get_segment(key)
     if existing is None:
         return _err(f"Segment '{key}' not found", 404)
-    await _engine(request).delete_segment(key)
+    await _engine(request).delete_segment(key, actor=_actor(request), platform=_platform(request))
     return JSONResponse({"ok": True, "deleted": key})

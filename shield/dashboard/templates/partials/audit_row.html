@@ -50,7 +50,15 @@
         "global_rl_reset":   "bg-sky-50 text-sky-700 ring-sky-600/20",
         "global_rl_deleted": "bg-red-50 text-red-700 ring-red-600/20",
         "global_rl_enabled": "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-        "global_rl_disabled":"bg-slate-100 text-slate-500 ring-slate-400/20"
+        "global_rl_disabled":"bg-slate-100 text-slate-500 ring-slate-400/20",
+        "flag_created":      "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+        "flag_updated":      "bg-amber-50 text-amber-700 ring-amber-600/20",
+        "flag_enabled":      "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+        "flag_disabled":     "bg-slate-100 text-slate-500 ring-slate-400/20",
+        "flag_deleted":      "bg-red-50 text-red-700 ring-red-600/20",
+        "segment_created":   "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+        "segment_updated":   "bg-amber-50 text-amber-700 ring-amber-600/20",
+        "segment_deleted":   "bg-red-50 text-red-700 ring-red-600/20"
     } %}
     {% set rl_action_labels = {
         "rl_policy_set":     "set",
@@ -62,7 +70,15 @@
         "global_rl_reset":   "global reset",
         "global_rl_deleted": "global delete",
         "global_rl_enabled": "global enabled",
-        "global_rl_disabled":"global disabled"
+        "global_rl_disabled":"global disabled",
+        "flag_created":      "created",
+        "flag_updated":      "updated",
+        "flag_enabled":      "enabled",
+        "flag_disabled":     "disabled",
+        "flag_deleted":      "deleted",
+        "segment_created":   "created",
+        "segment_updated":   "updated",
+        "segment_deleted":   "deleted"
     } %}
     <td class="px-4 py-3" data-label="Change">
         {% if entry.action in rl_action_labels %}

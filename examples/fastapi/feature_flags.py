@@ -131,7 +131,8 @@ async def _seed_flags() -> None:
                 RolloutVariation(variation="off", weight=80_000),
             ],
             targets={"on": ["beta_tester_1", "beta_tester_2"]},
-        )
+        ),
+        audit=False,
     )
 
     # ------------------------------------------------------------------
@@ -166,7 +167,8 @@ async def _seed_flags() -> None:
                     variation="dark",
                 )
             ],
-        )
+        ),
+        audit=False,
     )
 
     # ------------------------------------------------------------------
@@ -200,7 +202,8 @@ async def _seed_flags() -> None:
                     variation="large",
                 )
             ],
-        )
+        ),
+        audit=False,
     )
 
     # ------------------------------------------------------------------
@@ -241,7 +244,8 @@ async def _seed_flags() -> None:
                     variation="eu",
                 ),
             ],
-        )
+        ),
+        audit=False,
     )
 
     # ------------------------------------------------------------------
@@ -280,7 +284,8 @@ async def _seed_flags() -> None:
             ],
             off_variation="v1",
             fallthrough="v1",
-        )
+        ),
+        audit=False,
     )
 
 

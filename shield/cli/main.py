@@ -664,12 +664,28 @@ def log_cmd(
             "rl_policy_updated": "update",
             "rl_reset": "reset",
             "rl_policy_deleted": "delete",
+            "flag_created": "created",
+            "flag_updated": "updated",
+            "flag_enabled": "enabled",
+            "flag_disabled": "disabled",
+            "flag_deleted": "deleted",
+            "segment_created": "created",
+            "segment_updated": "updated",
+            "segment_deleted": "deleted",
         }
         _rl_action_colours = {
             "rl_policy_set": "green",
             "rl_policy_updated": "yellow",
             "rl_reset": "cyan",
             "rl_policy_deleted": "red",
+            "flag_created": "green",
+            "flag_updated": "yellow",
+            "flag_enabled": "green",
+            "flag_disabled": "dim",
+            "flag_deleted": "red",
+            "segment_created": "green",
+            "segment_updated": "yellow",
+            "segment_deleted": "red",
         }
 
         table = Table(box=box.ROUNDED, show_header=True, header_style="bold")

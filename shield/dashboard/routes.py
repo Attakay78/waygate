@@ -1393,7 +1393,9 @@ async def flag_enable(request: Request) -> Response:
     if flag is None:
         return HTMLResponse("<tr><td>Flag not found</td></tr>", status_code=404)
     flag = flag.model_copy(update={"enabled": True})
-    await engine.save_flag(flag)
+    await engine.save_flag(
+        flag, actor=_actor(request), platform=_platform(request), action="flag_enabled"
+    )
     return tpl.TemplateResponse(
         request,
         "partials/flag_row.html",
@@ -1411,7 +1413,9 @@ async def flag_disable(request: Request) -> Response:
     if flag is None:
         return HTMLResponse("<tr><td>Flag not found</td></tr>", status_code=404)
     flag = flag.model_copy(update={"enabled": False})
-    await engine.save_flag(flag)
+    await engine.save_flag(
+        flag, actor=_actor(request), platform=_platform(request), action="flag_disabled"
+    )
     return tpl.TemplateResponse(
         request,
         "partials/flag_row.html",
@@ -1423,7 +1427,7 @@ async def flag_delete(request: Request) -> Response:
     """DELETE /flags/{key} — delete a flag; return empty response (HTMX removes row)."""
     engine = _engine(request)
     key = request.path_params["key"]
-    await engine.delete_flag(key)
+    await engine.delete_flag(key, actor=_actor(request), platform=_platform(request))
     return HTMLResponse("")
 
 
@@ -1504,7 +1508,7 @@ async def flag_create_form(request: Request) -> Response:
         fallthrough=fallthrough,
         enabled=True,
     )
-    await engine.save_flag(flag)
+    await engine.save_flag(flag, actor=_actor(request), platform=_platform(request))
     return tpl.TemplateResponse(
         request,
         "partials/flag_row.html",
@@ -1611,7 +1615,7 @@ async def flag_settings_save(request: Request) -> Response:
     name = str(form.get("name", flag.name)).strip() or flag.name
     description = str(form.get("description", flag.description or "")).strip()
     updated = flag.model_copy(update={"name": name, "description": description})
-    await engine.save_flag(updated)
+    await engine.save_flag(updated, actor=_actor(request), platform=_platform(request))
     _svg = (
         "<svg class='w-4 h-4' fill='none' viewBox='0 0 24 24'"
         " stroke='currentColor' stroke-width='2.5'>"
@@ -1704,7 +1708,7 @@ async def flag_variations_save(request: Request) -> Response:
         patch["fallthrough"] = variations[0].name
 
     updated = flag.model_copy(update=patch)
-    await engine.save_flag(updated)
+    await engine.save_flag(updated, actor=_actor(request), platform=_platform(request))
     _svg = (
         "<svg class='w-4 h-4' fill='none' viewBox='0 0 24 24'"
         " stroke='currentColor' stroke-width='2.5'>"
@@ -1822,7 +1826,7 @@ async def flag_targeting_save(request: Request) -> Response:
         )
 
     updated = flag.model_copy(update=patch)
-    await engine.save_flag(updated)
+    await engine.save_flag(updated, actor=_actor(request), platform=_platform(request))
     _svg = (
         "<svg class='w-4 h-4' fill='none' viewBox='0 0 24 24'"
         " stroke='currentColor' stroke-width='2.5'>"
@@ -1871,7 +1875,7 @@ async def flag_prerequisites_save(request: Request) -> Response:
         prereqs.append(Prerequisite(flag_key=flag_key, variation=variation))
 
     updated = flag.model_copy(update={"prerequisites": prereqs})
-    await engine.save_flag(updated)
+    await engine.save_flag(updated, actor=_actor(request), platform=_platform(request))
     _svg = (
         "<svg class='w-4 h-4' fill='none' viewBox='0 0 24 24'"
         " stroke='currentColor' stroke-width='2.5'>"
@@ -1907,7 +1911,7 @@ async def flag_targets_save(request: Request) -> Response:
                 targets[variation_name] = keys
 
     updated = flag.model_copy(update={"targets": targets})
-    await engine.save_flag(updated)
+    await engine.save_flag(updated, actor=_actor(request), platform=_platform(request))
     _svg = (
         "<svg class='w-4 h-4' fill='none' viewBox='0 0 24 24'"
         " stroke='currentColor' stroke-width='2.5'>"
@@ -2017,7 +2021,7 @@ async def segment_create_form(request: Request) -> Response:
     from shield.core.feature_flags.models import Segment
 
     segment = Segment(key=key, name=name)
-    await engine.save_segment(segment)
+    await engine.save_segment(segment, actor=_actor(request), platform=_platform(request))
     return tpl.TemplateResponse(
         request,
         "partials/segment_row.html",
@@ -2030,7 +2034,7 @@ async def segment_delete(request: Request) -> Response:
     """DELETE /segments/{key} — delete segment; return empty (HTMX removes row)."""
     engine = _engine(request)
     key = request.path_params["key"]
-    await engine.delete_segment(key)
+    await engine.delete_segment(key, actor=_actor(request), platform=_platform(request))
     return HTMLResponse("")
 
 
@@ -2051,7 +2055,7 @@ async def segment_save_form(request: Request) -> Response:
     included = [k.strip() for k in included_raw.splitlines() if k.strip()]
     excluded = [k.strip() for k in excluded_raw.splitlines() if k.strip()]
     segment = segment.model_copy(update={"included": included, "excluded": excluded})
-    await engine.save_segment(segment)
+    await engine.save_segment(segment, actor=_actor(request), platform=_platform(request))
     return tpl.TemplateResponse(
         request,
         "partials/segment_row.html",
@@ -2106,7 +2110,7 @@ async def segment_rule_add(request: Request) -> Response:
 
     rules = list(segment.rules) + [rule]
     segment = segment.model_copy(update={"rules": rules})
-    await engine.save_segment(segment)
+    await engine.save_segment(segment, actor=_actor(request), platform=_platform(request))
     return tpl.TemplateResponse(
         request,
         "partials/segment_rules_section.html",
@@ -2127,7 +2131,7 @@ async def segment_rule_delete(request: Request) -> Response:
 
     rules = [r for r in segment.rules if r.id != rule_id]
     segment = segment.model_copy(update={"rules": rules})
-    await engine.save_segment(segment)
+    await engine.save_segment(segment, actor=_actor(request), platform=_platform(request))
     return tpl.TemplateResponse(
         request,
         "partials/segment_rules_section.html",

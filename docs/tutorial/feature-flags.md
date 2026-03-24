@@ -84,6 +84,16 @@ enabled = await engine.flag_client.get_boolean_value("new-checkout", False, ctx)
 
 Rollout weights are integers out of `100_000`. The above gives exactly 20% to `"on"` and 80% to `"off"`. Bucketing is deterministic: the same `user_id` always lands in the same bucket.
 
+!!! tip "Seeding flags at startup"
+    When pre-loading flags in a lifespan or startup function, pass `audit=False` so these programmatic writes do not appear in the audit log:
+    ```python
+    @asynccontextmanager
+    async def lifespan(_):
+        await engine.save_flag(FeatureFlag(key="new-checkout", ...), audit=False)
+        yield
+    ```
+    Flags created or updated through the dashboard, REST API, or CLI always audit regardless of this parameter.
+
 ---
 
 ## Flag types
@@ -259,6 +269,8 @@ await engine.save_segment(Segment(
     excluded=["test_account", "demo_user"],  # always excluded, overrides rules
 ))
 ```
+
+Pass `audit=False` when seeding segments at startup, same as with flags.
 
 ### Segment evaluation order
 

@@ -54,12 +54,24 @@ Accepts `EvaluationContext` objects or plain dicts (`{"targeting_key": user_id, 
 
 ---
 
-### `await engine.save_flag(flag)`
+### `await engine.save_flag(flag, *, actor, platform, action, audit)`
 
-Create or replace a flag.
+Create or replace a flag. Writes an audit log entry unless `audit=False`.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `flag` | `FeatureFlag` | required | Flag to persist |
+| `actor` | `str` | `"system"` | Identity recorded in the audit log |
+| `platform` | `str` | `""` | Surface recorded in the audit log (`"dashboard"`, `"cli"`, etc.) |
+| `action` | `str \| None` | `None` | Override the audit action string. Defaults to `flag_created` or `flag_updated` based on whether the flag already existed |
+| `audit` | `bool` | `True` | Set to `False` to skip writing an audit log entry. Use this for startup seeds and programmatic initialization |
 
 ```python
+# Normal save — audited
 await engine.save_flag(FeatureFlag(key="my-flag", ...))
+
+# Startup seed — no audit entry
+await engine.save_flag(FeatureFlag(key="my-flag", ...), audit=False)
 ```
 
 ---
@@ -76,15 +88,34 @@ Return all flags as a list.
 
 ---
 
-### `await engine.delete_flag(key)`
+### `await engine.delete_flag(key, *, actor, platform, audit)`
 
-Delete a flag.
+Delete a flag. Writes an audit log entry unless `audit=False`.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `key` | `str` | required | Key of the flag to delete |
+| `actor` | `str` | `"system"` | Identity recorded in the audit log |
+| `platform` | `str` | `""` | Surface recorded in the audit log |
+| `audit` | `bool` | `True` | Set to `False` to skip the audit entry |
 
 ---
 
-### `await engine.save_segment(segment)`
+### `await engine.save_segment(segment, *, actor, platform, audit)`
 
-Create or replace a segment.
+Create or replace a segment. Writes an audit log entry unless `audit=False`.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `segment` | `Segment` | required | Segment to persist |
+| `actor` | `str` | `"system"` | Identity recorded in the audit log |
+| `platform` | `str` | `""` | Surface recorded in the audit log |
+| `audit` | `bool` | `True` | Set to `False` to skip writing an audit log entry. Use this for startup seeds and programmatic initialization |
+
+```python
+# Startup seed — no audit entry
+await engine.save_segment(Segment(key="beta-users", ...), audit=False)
+```
 
 ---
 
@@ -100,9 +131,16 @@ Return all segments as a list.
 
 ---
 
-### `await engine.delete_segment(key)`
+### `await engine.delete_segment(key, *, actor, platform, audit)`
 
-Delete a segment.
+Delete a segment. Writes an audit log entry unless `audit=False`.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `key` | `str` | required | Key of the segment to delete |
+| `actor` | `str` | `"system"` | Identity recorded in the audit log |
+| `platform` | `str` | `""` | Surface recorded in the audit log |
+| `audit` | `bool` | `True` | Set to `False` to skip the audit entry |
 
 ---
 

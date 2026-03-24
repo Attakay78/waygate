@@ -681,17 +681,46 @@ class ShieldEngine:
         flags = await self.backend.load_all_flags()
         return next((f for f in flags if f.key == key), None)
 
-    async def save_flag(self, flag: Any) -> None:
+    async def save_flag(
+        self,
+        flag: Any,
+        actor: str = "system",
+        platform: str = "",
+        action: str | None = None,
+        audit: bool = True,
+    ) -> None:
         """Persist *flag* to the backend and update the provider cache."""
+        existing = await self.get_flag(flag.key)
+        default_action = "flag_created" if existing is None else "flag_updated"
         await self.backend.save_flag(flag)
         if self._flag_provider is not None:
             self._flag_provider.upsert_flag(flag)
+        if audit:
+            await self._audit_rl(
+                path=f"flag:{flag.key}",
+                action=action or default_action,
+                actor=actor,
+                platform=platform,
+            )
 
-    async def delete_flag(self, key: str) -> None:
+    async def delete_flag(
+        self,
+        key: str,
+        actor: str = "system",
+        platform: str = "",
+        audit: bool = True,
+    ) -> None:
         """Delete a flag by *key* from the backend and provider cache."""
         await self.backend.delete_flag(key)
         if self._flag_provider is not None:
             self._flag_provider.delete_flag(key)
+        if audit:
+            await self._audit_rl(
+                path=f"flag:{key}",
+                action="flag_deleted",
+                actor=actor,
+                platform=platform,
+            )
 
     async def list_segments(self) -> list[Any]:
         """Return all segments from the provider cache (or backend)."""
@@ -706,17 +735,45 @@ class ShieldEngine:
         segments = await self.backend.load_all_segments()
         return next((s for s in segments if s.key == key), None)
 
-    async def save_segment(self, segment: Any) -> None:
+    async def save_segment(
+        self,
+        segment: Any,
+        actor: str = "system",
+        platform: str = "",
+        audit: bool = True,
+    ) -> None:
         """Persist *segment* to the backend and update the provider cache."""
+        existing = await self.get_segment(segment.key)
+        action = "segment_created" if existing is None else "segment_updated"
         await self.backend.save_segment(segment)
         if self._flag_provider is not None:
             self._flag_provider.upsert_segment(segment)
+        if audit:
+            await self._audit_rl(
+                path=f"segment:{segment.key}",
+                action=action,
+                actor=actor,
+                platform=platform,
+            )
 
-    async def delete_segment(self, key: str) -> None:
+    async def delete_segment(
+        self,
+        key: str,
+        actor: str = "system",
+        platform: str = "",
+        audit: bool = True,
+    ) -> None:
         """Delete a segment by *key* from the backend and provider cache."""
         await self.backend.delete_segment(key)
         if self._flag_provider is not None:
             self._flag_provider.delete_segment(key)
+        if audit:
+            await self._audit_rl(
+                path=f"segment:{key}",
+                action="segment_deleted",
+                actor=actor,
+                platform=platform,
+            )
 
     async def _run_global_config_listener(self) -> None:
         """Background coroutine: invalidate the global config cache on remote changes.
