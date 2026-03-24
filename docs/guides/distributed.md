@@ -50,16 +50,14 @@ State is written to a JSON (or YAML/TOML) file on disk. The file survives restar
 
 `FileBackend` maintains a **write-through in-memory cache**. All reads are served from `_states: dict[str, Any]` in memory, with zero file I/O on the hot path. Writes update the dict immediately (O(1)) and schedule a **debounced flush** (50ms window) to disk. State mutations (`set_state`, `delete_state`) bypass the debounce and flush synchronously for durability.
 
-```
-Request path:                 Write path:
-                              engine.disable()
-engine.check()                    │
-    │                         backend.set_state()
-backend.get_state()               │
-    │                         _states[path] = new_state   ← O(1), immediate
-_states[path]  ← O(1)            │
-    │                         _flush_to_disk()             ← sync, immediate
-return RouteState             └── write JSON to disk
+```mermaid
+graph LR
+    subgraph read["Read path"]
+        RC["engine.check()"] --> RB["backend.get_state()"] --> RM["_states&#91;path&#93;\nO(1) lookup"] --> RR["return RouteState"]
+    end
+    subgraph write["Write path"]
+        WC["engine.disable()"] --> WB["backend.set_state()"] --> WM["_states&#91;path&#93; = new_state\nO(1), immediate"] --> WD["_flush_to_disk()\nwrite JSON to disk"]
+    end
 ```
 
 ### The multi-instance problem
@@ -76,16 +74,14 @@ This is intentional. Adding a file watcher introduces serious problems:
 
 `FileBackend` is designed for the **single-instance + CLI** pattern:
 
-```
-┌─────────────────────────────────┐
-│  One app instance               │
-│  ┌──────────────────────────┐   │
-│  │  ShieldEngine            │   │
-│  │  (FileBackend)           │───┼──→  shield-state.json
-│  └──────────────────────────┘   │              ▲
-└─────────────────────────────────┘              │
-                                    shield CLI (reads same file,
-                                    writes via REST API to app)
+```mermaid
+graph LR
+    subgraph app["Single app instance"]
+        E["ShieldEngine\n(FileBackend)"]
+    end
+    E -->|reads/writes| F["shield-state.json"]
+    CLI["shield CLI"] -->|REST API| E
+    CLI -.->|reads same file| F
 ```
 
 The CLI talks to the app's `ShieldAdmin` REST API. The API writes to the in-memory cache (which flushes to disk). The file persists across restarts. This is the complete, correct workflow for `FileBackend`. No cross-instance sync is needed because there is only one instance.
@@ -135,19 +131,19 @@ The risk in a multi-instance deployment: Instance A enables global maintenance a
 
 This is solved through a dedicated invalidation channel:
 
-```
-Instance A                         Redis                    Instance B
-─────────                          ─────                    ─────────
-engine.enable_global_maintenance()
-  │
-  ├── backend.set_global_config()
-  │     ├── set_state(__shield:global__, sentinel)
-  │     └── PUBLISH shield:global_invalidate "1"  ──────→  _run_global_config_listener()
-  │                                                              │
-  └── _invalidate_global_config_cache()                    _invalidate_global_config_cache()
-                                                                 │
-                                                           next check() re-fetches
-                                                           GlobalMaintenanceConfig from Redis
+```mermaid
+sequenceDiagram
+    participant A as Instance A
+    participant R as Redis
+    participant B as Instance B
+
+    A->>R: set_global_config()
+    A->>R: SET shield:global__ sentinel
+    A->>R: PUBLISH shield:global_invalidate "1"
+    R-->>B: _run_global_config_listener()
+    A->>A: _invalidate_global_config_cache()
+    B->>B: _invalidate_global_config_cache()
+    Note over B: next check() re-fetches<br/>GlobalMaintenanceConfig from Redis
 ```
 
 `ShieldEngine.start()` creates a background `asyncio.Task` that runs `_run_global_config_listener()`. This task iterates `backend.subscribe_global_config()` indefinitely. Each message arrival from `shield:global_invalidate` triggers an immediate cache flush. The next `engine.check()` call re-fetches `GlobalMaintenanceConfig` from Redis, observing the change made by Instance A.
@@ -167,16 +163,17 @@ Rate limit policies (`@rate_limit` limits, algorithm, key strategy) are cached i
 
 This is solved with the same invalidation pattern used for global maintenance:
 
-```
-Instance A                         Redis                    Instance B
-─────────                          ─────                    ─────────
-engine.set_rate_limit_policy(...)
-  │
-  ├── _rate_limit_policies[key] = new_policy   (local update)
-  ├── SET shield:rlpolicy:{key}  ──────────────────────────→ (persisted)
-  └── PUBLISH shield:rl-policy-change  ──────────────────→  _run_rl_policy_listener()
-        {"action": "set", "key": "GET:/api/orders",              │
-         "policy": {...}}                                   _rate_limit_policies[key] = new_policy
+```mermaid
+sequenceDiagram
+    participant A as Instance A
+    participant R as Redis
+    participant B as Instance B
+
+    A->>A: _rate_limit_policies[key] = new_policy
+    A->>R: SET shield:rlpolicy:{key}
+    A->>R: PUBLISH shield:rl-policy-change
+    R-->>B: _run_rl_policy_listener()
+    B->>B: _rate_limit_policies[key] = new_policy
 ```
 
 `ShieldEngine.start()` creates a `shield-rl-policy-listener` background task. Each message on `shield:rl-policy-change` carries the full policy payload (for `set`) or just the key (for `delete`), so the receiving instance applies the delta directly without an extra Redis round-trip.
@@ -189,30 +186,23 @@ For `FileBackend`, `subscribe_rate_limit_policy()` raises `NotImplementedError`.
 
 Here is the complete flow for a request arriving at Instance B when Instance A has placed `/api/payments` in maintenance:
 
-```
-Instance A                         Redis                    Instance B
-─────────                          ─────                    ─────────
-engine.set_maintenance("/api/payments")
-  │
-  └── backend.set_state("GET:/api/payments", state)
-        ├── SET shield:state:GET:/api/payments  ──────────→ (key updated in Redis)
-        ├── SADD shield:route-index             ──────────→ (index updated)
-        └── PUBLISH shield:changes              ──────────→ dashboard SSE subscriber
-                                                             yields RouteState to clients
+```mermaid
+sequenceDiagram
+    participant A as Instance A
+    participant R as Redis
+    participant B as Instance B
+    participant C as Client
 
-                                                POST /api/payments
-                                                     │
-                                                engine.check("/api/payments", "POST")
-                                                     │
-                                                backend.get_state("GET:/api/payments")
-                                                     │
-                                                GET shield:state:GET:/api/payments  ←──── Redis
-                                                     │
-                                                RouteState(status=MAINTENANCE)
-                                                     │
-                                                raise MaintenanceException
-                                                     │
-                                                ShieldMiddleware → 503 JSON response
+    A->>R: SET shield:state:GET:/api/payments
+    A->>R: SADD shield:route-index
+    A->>R: PUBLISH shield:changes
+    R-->>B: dashboard SSE subscriber notified
+
+    C->>B: POST /api/payments
+    B->>R: GET shield:state:GET:/api/payments
+    R-->>B: RouteState(status=MAINTENANCE)
+    B->>B: raise MaintenanceException
+    B-->>C: 503 JSON response
 ```
 
 There is no in-process cache for per-route state. Every `engine.check()` call on `RedisBackend` is a single `GET` command. Round-trip latency on a local Redis is typically under 0.5ms, well within the < 2ms budget defined in the performance spec.
@@ -227,20 +217,32 @@ When the window's `start` time arrives, every instance independently calls `engi
 
 Without deduplication, webhooks would fire once per instance per event: three instances would mean three `maintenance_on` deliveries for a single window activation. api-shield prevents this with a `SET NX` claim in Redis before any HTTP POST is sent.
 
-```
-Window activates simultaneously on all instances
-│
-├── Instance A: _dispatch_webhooks("maintenance_on", "/api/pay", state)
-│     ├── dedup_key = sha256("maintenance_on:/api/pay:{...state...}")
-│     ├── SET shield:webhook:dedup:{key} 1 NX EX 60  → "OK"  ✅ claimed
-│     └── POST http://example.com/hook  (fires)
-│
-├── Instance B: _dispatch_webhooks("maintenance_on", "/api/pay", state)
-│     ├── dedup_key = sha256("maintenance_on:/api/pay:{...state...}")  ← identical
-│     ├── SET shield:webhook:dedup:{key} 1 NX EX 60  → nil  ❌ already claimed
-│     └── skip  (no POST)
-│
-└── Instance C: same as B — skips
+```mermaid
+sequenceDiagram
+    participant W as Maintenance window activates
+    participant A as Instance A
+    participant B as Instance B
+    participant C as Instance C
+    participant R as Redis
+
+    W->>A: schedule fires
+    W->>B: schedule fires
+    W->>C: schedule fires
+
+    A->>A: dedup_key = sha256(event + state)
+    A->>R: SET shield:webhook:dedup:{key} NX EX 60
+    R-->>A: OK (claimed)
+    A->>A: POST webhook fires ✅
+
+    B->>B: dedup_key = sha256(event + state)
+    B->>R: SET shield:webhook:dedup:{key} NX EX 60
+    R-->>B: nil (already claimed)
+    B->>B: skip ❌
+
+    C->>C: dedup_key = sha256(event + state)
+    C->>R: SET shield:webhook:dedup:{key} NX EX 60
+    R-->>C: nil (already claimed)
+    C->>C: skip ❌
 ```
 
 The dedup key is a SHA-256 hash of `event + path + serialised RouteState`. Because the scheduler produces an identical `RouteState` on all instances for the same window activation (same path, same status, same window start/end), the key is fleet-wide deterministic. Only the first instance to win the atomic `SET NX` fires.
@@ -271,15 +273,18 @@ data: {"type": "rl_policy", "action": "delete", "key": "GET:/api/pay"}
 
 When `ShieldServerBackend` receives an `rl_policy` event, it updates its local `_rl_policy_cache` and notifies the engine's existing `_run_rl_policy_listener()` background task, which applies the policy change to `engine._rate_limit_policies` immediately. The propagation path is:
 
-```
-shield rl set GET:/api/pay 100/minute
-  → Shield Server engine.set_rate_limit_policy()
-  → MemoryBackend._rl_policy_subscribers (asyncio.Queue fan-out)
-  → sdk_events SSE stream (typed envelope)
-  → ShieldServerBackend._listen_sse() (background task)
-  → _run_rl_policy_listener() (background task)
-  → engine._rate_limit_policies updated
-  → next request enforces new limit  ← typically < 5 ms end-to-end on a LAN
+```mermaid
+flowchart TD
+    CLI["shield rl set GET:/api/pay 100/min"]
+    SS["ShieldServer\nengine.set_rate_limit_policy()"]
+    MB["MemoryBackend\nasyncio.Queue fan-out"]
+    SSE["sdk_events SSE stream"]
+    BG["ShieldServerBackend\n_listen_sse()"]
+    RL["_run_rl_policy_listener()"]
+    UP["engine._rate_limit_policies updated"]
+    REQ["Next request enforces new limit\nin under 5ms — no network hop"]
+
+    CLI --> SS --> MB --> SSE --> BG --> RL --> UP --> REQ
 ```
 
 Per-request enforcement reads `engine._rate_limit_policies` synchronously — no network hop, no lock, zero added latency.
@@ -288,18 +293,13 @@ Per-request enforcement reads `engine._rate_limit_policies` synchronously — no
 
 ## Choosing the right backend
 
-```
-Do you need state to survive a restart?
-│
-├── No  → MemoryBackend (development / tests)
-│
-└── Yes
-    │
-    Do you run more than one instance?
-    │
-    ├── No  → FileBackend (simple single-instance prod)
-    │
-    └── Yes → RedisBackend (multi-instance / load-balanced prod)
+```mermaid
+flowchart TD
+    A{"State survive\na restart?"}
+    A -->|No| MB["MemoryBackend\ndevelopment / tests"]
+    A -->|Yes| B{"More than\none instance?"}
+    B -->|No| FB["FileBackend\nsingle-instance prod"]
+    B -->|Yes| RB["RedisBackend\nmulti-instance / load-balanced"]
 ```
 
 ---
