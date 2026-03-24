@@ -48,8 +48,8 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Geist:300,300i,400,400i,700,700i%7CGeist+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Geist";--md-code-font:"Geist Mono"}</style>
       
     
     
@@ -73,7 +73,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="orange">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="orange">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -130,7 +130,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -140,7 +140,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="amber" data-md-color-accent="orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -2323,6 +2323,8 @@
               
               <article class="md-content__inner md-typeset">
                 
+  
+    
                   
 
 
@@ -2342,30 +2344,36 @@
 </ul>
 <hr />
 <h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>                    ┌─────────────────────────────────┐
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>   CLI / Browser    │  Shield Server (port 9000)      │
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>   ─────────────→   │  ShieldServer(backend=...)       │
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                    │                                 │
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                    │  /          dashboard UI         │
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>                    │  /api/...   REST API (CLI)       │
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                    │  /api/sdk/events  SSE stream     │
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                    └────────────┬────────────────────┘
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                                 │  HTTP + SSE
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>              ┌──────────────────┼──────────────────┐
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>              ▼                  ▼                  ▼
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>   ┌──────────────────┐ ┌──────────────────┐  ┌──────────────────┐
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>   │ payments-app     │ │ orders-app       │  │ any-other-app    │
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>   │ port 8000        │ │ port 8002        │  │ ...              │
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>   │                  │ │                  │  │                  │
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>   │ ShieldSDK        │ │ ShieldSDK        │  │ ShieldSDK        │
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>   │ app_id=          │ │ app_id=          │  │ app_id=          │
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>   │ &quot;payments-svc&quot;   │ │ &quot;orders-svc&quot;     │  │ ...              │
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>   │                  │ │                  │  │                  │
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>   │ local cache      │ │ local cache      │  │ local cache      │
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>   │ (zero-latency    │ │ (zero-latency    │  │ (zero-latency    │
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>   │  enforcement)    │ │  enforcement)    │  │  enforcement)    │
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>   └──────────────────┘ └──────────────────┘  └──────────────────┘
-</span></code></pre></div>
+<pre class="mermaid"><code>graph TD
+    CB["CLI / Browser"]
+
+    subgraph server["Shield Server  •  port 9000"]
+        SS["ShieldServer(backend=...)"]
+        UI["/  &amp;nbsp; Dashboard UI"]
+        API["/api/...  &amp;nbsp; REST API"]
+        SSE["/api/sdk/events  &amp;nbsp; SSE stream"]
+    end
+
+    CB --&gt; SS
+    SS --- UI
+    SS --- API
+    SS --- SSE
+
+    SSE --&gt;|HTTP + SSE| P
+    SSE --&gt;|HTTP + SSE| O
+    SSE --&gt;|HTTP + SSE| X
+
+    subgraph P["payments-app  •  port 8000"]
+        PS["ShieldSDK\napp_id='payments-svc'\nlocal cache"]
+    end
+
+    subgraph O["orders-app  •  port 8002"]
+        OS["ShieldSDK\napp_id='orders-svc'\nlocal cache"]
+    end
+
+    subgraph X["any-other-app"]
+        XS["ShieldSDK\napp_id='...'\nlocal cache"]
+    end</code></pre>
 <p><strong>Key properties:</strong></p>
 <ul>
 <li>The Shield Server is the single source of truth for route state.</li>
@@ -2376,57 +2384,57 @@
 <hr />
 <h2 id="quick-setup">Quick setup<a class="headerlink" href="#quick-setup" title="Permanent link">&para;</a></h2>
 <h3 id="1-shield-server">1. Shield Server<a class="headerlink" href="#1-shield-server" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><span class="filename">shield_server_app.py</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.server</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShieldServer</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.backends.memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">MemoryBackend</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># MemoryBackend is fine for development.</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Use FileBackend for state persistence or RedisBackend for HA.</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">backend</span><span class="o">=</span><span class="n">MemoryBackend</span><span class="p">(),</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;secret&quot;</span><span class="p">),</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="c1"># secret_key=&quot;stable-key-for-persistent-tokens&quot;,</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="c1"># token_expiry=86400,   # 24 h</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">)</span>
+<div class="language-python highlight"><span class="filename">shield_server_app.py</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.server</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShieldServer</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.backends.memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">MemoryBackend</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># MemoryBackend is fine for development.</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Use FileBackend for state persistence or RedisBackend for HA.</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">backend</span><span class="o">=</span><span class="n">MemoryBackend</span><span class="p">(),</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;secret&quot;</span><span class="p">),</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="c1"># secret_key=&quot;stable-key-for-persistent-tokens&quot;,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="c1"># token_expiry=86400,   # 24 h</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">)</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uvicorn<span class="w"> </span>shield_server_app:shield_app<span class="w"> </span>--port<span class="w"> </span><span class="m">9000</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uvicorn<span class="w"> </span>shield_server_app:shield_app<span class="w"> </span>--port<span class="w"> </span><span class="m">9000</span>
 </span></code></pre></div>
 <h3 id="2-service-app">2. Service app<a class="headerlink" href="#2-service-app" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><span class="filename">payments_app.py</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShieldSDK</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShieldRouter</span><span class="p">,</span> <span class="n">maintenance</span><span class="p">,</span> <span class="n">force_active</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">sdk</span> <span class="o">=</span> <span class="n">ShieldSDK</span><span class="p">(</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">server_url</span><span class="o">=</span><span class="s2">&quot;http://localhost:9000&quot;</span><span class="p">,</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="c1"># token=&quot;&lt;long-lived-service-token&gt;&quot;,</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">reconnect_delay</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="p">)</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="n">sdk</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>   <span class="c1"># wires ShieldMiddleware + startup/shutdown hooks</span>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
-</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="n">router</span> <span class="o">=</span> <span class="n">ShieldRouter</span><span class="p">(</span><span class="n">engine</span><span class="o">=</span><span class="n">sdk</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span>
-</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
-</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/health&quot;</span><span class="p">)</span>
-</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="nd">@force_active</span>
-</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">health</span><span class="p">():</span>
-</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">}</span>
-</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>
-</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/api/payments&quot;</span><span class="p">)</span>
-</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="nd">@maintenance</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;Payment processor upgrade&quot;</span><span class="p">)</span>
-</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_payments</span><span class="p">():</span>
-</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;payments&quot;</span><span class="p">:</span> <span class="p">[]}</span>
-</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>
-</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="n">app</span><span class="o">.</span><span class="n">include_router</span><span class="p">(</span><span class="n">router</span><span class="p">)</span>
+<div class="language-python highlight"><span class="filename">payments_app.py</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShieldSDK</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShieldRouter</span><span class="p">,</span> <span class="n">maintenance</span><span class="p">,</span> <span class="n">force_active</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">sdk</span> <span class="o">=</span> <span class="n">ShieldSDK</span><span class="p">(</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">server_url</span><span class="o">=</span><span class="s2">&quot;http://localhost:9000&quot;</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="c1"># token=&quot;&lt;long-lived-service-token&gt;&quot;,</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">reconnect_delay</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">)</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">sdk</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>   <span class="c1"># wires ShieldMiddleware + startup/shutdown hooks</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="n">router</span> <span class="o">=</span> <span class="n">ShieldRouter</span><span class="p">(</span><span class="n">engine</span><span class="o">=</span><span class="n">sdk</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/health&quot;</span><span class="p">)</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="nd">@force_active</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">health</span><span class="p">():</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">}</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="nd">@router</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/api/payments&quot;</span><span class="p">)</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="nd">@maintenance</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;Payment processor upgrade&quot;</span><span class="p">)</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_payments</span><span class="p">():</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;payments&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="n">app</span><span class="o">.</span><span class="n">include_router</span><span class="p">(</span><span class="n">router</span><span class="p">)</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>uvicorn<span class="w"> </span>payments_app:app<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uvicorn<span class="w"> </span>payments_app:app<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
 </span></code></pre></div>
 <h3 id="3-cli">3. CLI<a class="headerlink" href="#3-cli" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>shield<span class="w"> </span>config<span class="w"> </span>set-url<span class="w"> </span>http://localhost:9000
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>shield<span class="w"> </span>login<span class="w"> </span>admin<span class="w">              </span><span class="c1"># password: secret</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>shield<span class="w"> </span>services<span class="w">                 </span><span class="c1"># list all connected services</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>shield<span class="w"> </span>status<span class="w"> </span>--service<span class="w"> </span>payments-service
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>shield<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>/api/payments
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>shield<span class="w"> </span>config<span class="w"> </span>set-url<span class="w"> </span>http://localhost:9000
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>shield<span class="w"> </span>login<span class="w"> </span>admin<span class="w">              </span><span class="c1"># password: secret</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>shield<span class="w"> </span>services<span class="w">                 </span><span class="c1"># list all connected services</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>shield<span class="w"> </span>status<span class="w"> </span>--service<span class="w"> </span>payments-service
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>shield<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>/api/payments
 </span></code></pre></div>
 <hr />
 <h2 id="sdkattachapp-what-it-does"><code>sdk.attach(app)</code> — what it does<a class="headerlink" href="#sdkattachapp-what-it-does" title="Permanent link">&para;</a></h2>
@@ -2440,71 +2448,71 @@
 <h2 id="multi-service-cli-workflow">Multi-service CLI workflow<a class="headerlink" href="#multi-service-cli-workflow" title="Permanent link">&para;</a></h2>
 <h3 id="shield_service-env-var"><code>SHIELD_SERVICE</code> env var<a class="headerlink" href="#shield_service-env-var" title="Permanent link">&para;</a></h3>
 <p>Set once, and every subsequent command (<code>status</code>, <code>enable</code>, <code>disable</code>, <code>maintenance</code>, <code>schedule</code>) scopes itself to that service automatically:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SHIELD_SERVICE</span><span class="o">=</span>payments-service
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>shield<span class="w"> </span>status<span class="w">               </span><span class="c1"># only payments routes</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>shield<span class="w"> </span>disable<span class="w"> </span>GET:/api/payments<span class="w"> </span>--reason<span class="w"> </span><span class="s2">&quot;hotfix&quot;</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>shield<span class="w"> </span><span class="nb">enable</span><span class="w">  </span>GET:/api/payments
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>shield<span class="w"> </span>current-service<span class="w">      </span><span class="c1"># confirm active context</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SHIELD_SERVICE</span><span class="o">=</span>payments-service
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>shield<span class="w"> </span>status<span class="w">               </span><span class="c1"># only payments routes</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>shield<span class="w"> </span>disable<span class="w"> </span>GET:/api/payments<span class="w"> </span>--reason<span class="w"> </span><span class="s2">&quot;hotfix&quot;</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>shield<span class="w"> </span><span class="nb">enable</span><span class="w">  </span>GET:/api/payments
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>shield<span class="w"> </span>current-service<span class="w">      </span><span class="c1"># confirm active context</span>
 </span></code></pre></div>
 <p>An explicit <code>--service</code> flag always overrides the env var:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SHIELD_SERVICE</span><span class="o">=</span>payments-service
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>shield<span class="w"> </span>status<span class="w"> </span>--service<span class="w"> </span>orders-service<span class="w">   </span><span class="c1"># acts on orders, ignores env var</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SHIELD_SERVICE</span><span class="o">=</span>payments-service
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>shield<span class="w"> </span>status<span class="w"> </span>--service<span class="w"> </span>orders-service<span class="w">   </span><span class="c1"># acts on orders, ignores env var</span>
 </span></code></pre></div>
 <h3 id="unscoped-commands">Unscoped commands<a class="headerlink" href="#unscoped-commands" title="Permanent link">&para;</a></h3>
 <p>Clear <code>SHIELD_SERVICE</code> to operate across all services at once:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">unset</span><span class="w"> </span>SHIELD_SERVICE
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>shield<span class="w"> </span>status<span class="w">               </span><span class="c1"># routes from all services</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>shield<span class="w"> </span>audit<span class="w">                </span><span class="c1"># audit log across all services</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>shield<span class="w"> </span>global<span class="w"> </span>disable<span class="w"> </span>--reason<span class="w"> </span><span class="s2">&quot;emergency maintenance&quot;</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>shield<span class="w"> </span>global<span class="w"> </span><span class="nb">enable</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">unset</span><span class="w"> </span>SHIELD_SERVICE
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>shield<span class="w"> </span>status<span class="w">               </span><span class="c1"># routes from all services</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>shield<span class="w"> </span>audit<span class="w">                </span><span class="c1"># audit log across all services</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>shield<span class="w"> </span>global<span class="w"> </span>disable<span class="w"> </span>--reason<span class="w"> </span><span class="s2">&quot;emergency maintenance&quot;</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>shield<span class="w"> </span>global<span class="w"> </span><span class="nb">enable</span>
 </span></code></pre></div>
 <hr />
 <h2 id="global-maintenance-in-multi-service-environments">Global maintenance in multi-service environments<a class="headerlink" href="#global-maintenance-in-multi-service-environments" title="Permanent link">&para;</a></h2>
 <p><code>shield global enable</code> and <code>shield global disable</code> operate on the Shield Server and affect <strong>every route across every connected service</strong> simultaneously. Use this for fleet-wide outages or deployments where all services must be taken offline at once.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Block all routes on all services</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>shield<span class="w"> </span>global<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">&quot;Deploying v3&quot;</span><span class="w"> </span>--exempt<span class="w"> </span>/health<span class="w"> </span>--exempt<span class="w"> </span>/ready
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Restore all routes</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>shield<span class="w"> </span>global<span class="w"> </span>disable
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Block all routes on all services</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>shield<span class="w"> </span>global<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--reason<span class="w"> </span><span class="s2">&quot;Deploying v3&quot;</span><span class="w"> </span>--exempt<span class="w"> </span>/health<span class="w"> </span>--exempt<span class="w"> </span>/ready
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># Restore all routes</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>shield<span class="w"> </span>global<span class="w"> </span>disable
 </span></code></pre></div>
 <hr />
 <h2 id="per-service-maintenance">Per-service maintenance<a class="headerlink" href="#per-service-maintenance" title="Permanent link">&para;</a></h2>
 <p>Per-service maintenance puts <strong>all routes of one service</strong> into maintenance mode without affecting other services. SDK clients with a matching <code>app_id</code> receive the sentinel over SSE and treat all their routes as in maintenance — no individual route changes needed.</p>
 <h3 id="from-the-engine-programmatic">From the engine (programmatic)<a class="headerlink" href="#from-the-engine-programmatic" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Put payments-service into maintenance</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">enable_service_maintenance</span><span class="p">(</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;DB migration&quot;</span><span class="p">,</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="n">exempt_paths</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/health&quot;</span><span class="p">],</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="p">)</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="c1"># Restore</span>
-</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">disable_service_maintenance</span><span class="p">(</span><span class="s2">&quot;payments-service&quot;</span><span class="p">)</span>
-</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
-</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="c1"># Inspect</span>
-</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="n">cfg</span> <span class="o">=</span> <span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">get_service_maintenance</span><span class="p">(</span><span class="s2">&quot;payments-service&quot;</span><span class="p">)</span>
-</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="nb">print</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">enabled</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Put payments-service into maintenance</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">enable_service_maintenance</span><span class="p">(</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    <span class="n">reason</span><span class="o">=</span><span class="s2">&quot;DB migration&quot;</span><span class="p">,</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    <span class="n">exempt_paths</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;/health&quot;</span><span class="p">],</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="p">)</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="c1"># Restore</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">disable_service_maintenance</span><span class="p">(</span><span class="s2">&quot;payments-service&quot;</span><span class="p">)</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="c1"># Inspect</span>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="n">cfg</span> <span class="o">=</span> <span class="k">await</span> <span class="n">engine</span><span class="o">.</span><span class="n">get_service_maintenance</span><span class="p">(</span><span class="s2">&quot;payments-service&quot;</span><span class="p">)</span>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="nb">print</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">enabled</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="from-the-rest-api">From the REST API<a class="headerlink" href="#from-the-rest-api" title="Permanent link">&para;</a></h3>
-<div class="language-http highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="err">POST /api/services/payments-service/maintenance/enable</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="err">Authorization: Bearer &lt;token&gt;</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="err">Content-Type: application/json</span>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="err">{&quot;reason&quot;: &quot;DB migration&quot;, &quot;exempt_paths&quot;: [&quot;/health&quot;]}</span>
+<div class="language-http highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="err">POST /api/services/payments-service/maintenance/enable</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="err">Authorization: Bearer &lt;token&gt;</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="err">Content-Type: application/json</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="err">{&quot;reason&quot;: &quot;DB migration&quot;, &quot;exempt_paths&quot;: [&quot;/health&quot;]}</span>
 </span></code></pre></div>
-<div class="language-http highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="err">POST /api/services/payments-service/maintenance/disable</span>
+<div class="language-http highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="err">POST /api/services/payments-service/maintenance/disable</span>
 </span></code></pre></div>
 <h3 id="from-the-cli">From the CLI<a class="headerlink" href="#from-the-cli" title="Permanent link">&para;</a></h3>
 <p><code>shield sm</code> and <code>shield service-maintenance</code> are aliases for the same command group:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Enable — all routes of payments-service return 503</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>shield<span class="w"> </span>sm<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>payments-service<span class="w"> </span>--reason<span class="w"> </span><span class="s2">&quot;DB migration&quot;</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>shield<span class="w"> </span>sm<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>payments-service<span class="w"> </span>--reason<span class="w"> </span><span class="s2">&quot;Upgrade&quot;</span><span class="w"> </span>--exempt<span class="w"> </span>/health
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="c1"># Check current state</span>
-</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>shield<span class="w"> </span>sm<span class="w"> </span>status<span class="w"> </span>payments-service
-</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>
-</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="c1"># Restore</span>
-</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>shield<span class="w"> </span>sm<span class="w"> </span>disable<span class="w"> </span>payments-service
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Enable — all routes of payments-service return 503</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>shield<span class="w"> </span>sm<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>payments-service<span class="w"> </span>--reason<span class="w"> </span><span class="s2">&quot;DB migration&quot;</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>shield<span class="w"> </span>sm<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>payments-service<span class="w"> </span>--reason<span class="w"> </span><span class="s2">&quot;Upgrade&quot;</span><span class="w"> </span>--exempt<span class="w"> </span>/health
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="c1"># Check current state</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>shield<span class="w"> </span>sm<span class="w"> </span>status<span class="w"> </span>payments-service
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="c1"># Restore</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>shield<span class="w"> </span>sm<span class="w"> </span>disable<span class="w"> </span>payments-service
 </span></code></pre></div>
 <h3 id="from-the-dashboard">From the dashboard<a class="headerlink" href="#from-the-dashboard" title="Permanent link">&para;</a></h3>
 <p>Open the Routes page and select the service using the service filter. A <strong>Service Maintenance</strong> card appears with Enable and Disable controls.</p>
@@ -2513,8 +2521,8 @@
 <p>Health and readiness endpoints should always be decorated with <code>@force_active</code> so they are never affected by global or per-service maintenance mode.</p>
 </div>
 <h3 id="useful-discovery-commands">Useful discovery commands<a class="headerlink" href="#useful-discovery-commands" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>shield<span class="w"> </span>services<span class="w">             </span><span class="c1"># list all services registered with the Shield Server</span>
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>shield<span class="w"> </span>current-service<span class="w">      </span><span class="c1"># show the active SHIELD_SERVICE context</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>shield<span class="w"> </span>services<span class="w">             </span><span class="c1"># list all services registered with the Shield Server</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>shield<span class="w"> </span>current-service<span class="w">      </span><span class="c1"># show the active SHIELD_SERVICE context</span>
 </span></code></pre></div>
 <hr />
 <h2 id="backend-choice-for-the-shield-server">Backend choice for the Shield Server<a class="headerlink" href="#backend-choice-for-the-shield-server" title="Permanent link">&para;</a></h2>
@@ -2545,28 +2553,28 @@
 </tr>
 </tbody>
 </table>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Development</span>
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">MemoryBackend</span><span class="p">(),</span> <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;secret&quot;</span><span class="p">))</span>
-</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
-</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="c1"># Production — persistent single node</span>
-</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.backends.file</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileBackend</span>
-</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">FileBackend</span><span class="p">(</span><span class="s2">&quot;shield-state.json&quot;</span><span class="p">),</span> <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;secret&quot;</span><span class="p">))</span>
-</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>
-</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="c1"># Production — HA / load-balanced Shield Server</span>
-</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.backends.redis</span><span class="w"> </span><span class="kn">import</span> <span class="n">RedisBackend</span>
-</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">RedisBackend</span><span class="p">(</span><span class="s2">&quot;redis://redis:6379/0&quot;</span><span class="p">),</span> <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;secret&quot;</span><span class="p">))</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># Development</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">MemoryBackend</span><span class="p">(),</span> <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;secret&quot;</span><span class="p">))</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1"># Production — persistent single node</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.backends.file</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileBackend</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">FileBackend</span><span class="p">(</span><span class="s2">&quot;shield-state.json&quot;</span><span class="p">),</span> <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;secret&quot;</span><span class="p">))</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="c1"># Production — HA / load-balanced Shield Server</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.backends.redis</span><span class="w"> </span><span class="kn">import</span> <span class="n">RedisBackend</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">RedisBackend</span><span class="p">(</span><span class="s2">&quot;redis://redis:6379/0&quot;</span><span class="p">),</span> <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;secret&quot;</span><span class="p">))</span>
 </span></code></pre></div>
 <hr />
 <h2 id="shared-rate-limit-counters-across-sdk-replicas">Shared rate limit counters across SDK replicas<a class="headerlink" href="#shared-rate-limit-counters-across-sdk-replicas" title="Permanent link">&para;</a></h2>
 <p>When a service runs multiple replicas (e.g. three <code>payments-app</code> pods), each SDK client enforces rate limits independently using its own in-process counters. This means a <code>100/minute</code> limit is enforced as 100 per replica — effectively <code>100 × num_replicas</code> across the fleet.</p>
 <p>To enforce the limit <strong>across all replicas combined</strong>, pass a shared <code>RedisBackend</code> as <code>rate_limit_backend</code>:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.backends.redis</span><span class="w"> </span><span class="kn">import</span> <span class="n">RedisBackend</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
-</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="n">sdk</span> <span class="o">=</span> <span class="n">ShieldSDK</span><span class="p">(</span>
-</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    <span class="n">server_url</span><span class="o">=</span><span class="s2">&quot;http://shield-server:9000&quot;</span><span class="p">,</span>
-</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
-</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    <span class="n">rate_limit_backend</span><span class="o">=</span><span class="n">RedisBackend</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;redis://redis:6379/1&quot;</span><span class="p">),</span>
-</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.backends.redis</span><span class="w"> </span><span class="kn">import</span> <span class="n">RedisBackend</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="n">sdk</span> <span class="o">=</span> <span class="n">ShieldSDK</span><span class="p">(</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    <span class="n">server_url</span><span class="o">=</span><span class="s2">&quot;http://shield-server:9000&quot;</span><span class="p">,</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    <span class="n">rate_limit_backend</span><span class="o">=</span><span class="n">RedisBackend</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;redis://redis:6379/1&quot;</span><span class="p">),</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="p">)</span>
 </span></code></pre></div>
 <p>Use a <strong>different Redis database</strong> (or a different Redis instance) from the one used by the Shield Server's backend to avoid key collisions.</p>
 <h3 id="full-deployment-matrix">Full deployment matrix<a class="headerlink" href="#full-deployment-matrix" title="Permanent link">&para;</a></h3>
@@ -2609,22 +2617,22 @@
 <hr />
 <h2 id="per-service-rate-limits">Per-service rate limits<a class="headerlink" href="#per-service-rate-limits" title="Permanent link">&para;</a></h2>
 <p>A per-service rate limit applies a single policy to <strong>all routes of one service</strong> without configuring each route individually. It is checked after the all-services global rate limit and before any per-route limit:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>global maintenance -&gt; service maintenance -&gt; global rate limit -&gt; service rate limit -&gt; per-route rate limit
-</span></code></pre></div>
+<pre class="mermaid"><code>flowchart LR
+    GM["global\nmaintenance"] --&gt; SM["service\nmaintenance"] --&gt; GL["global\nrate limit"] --&gt; SL["service\nrate limit"] --&gt; RL["per-route\nrate limit"]</code></pre>
 <p>Configure it with the <code>shield srl</code> CLI (also available as <code>shield service-rate-limit</code>):</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Cap all payments-service routes at 1000 per minute per IP</span>
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>shield<span class="w"> </span>srl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>payments-service<span class="w"> </span><span class="m">1000</span>/minute
-</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
-</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="c1"># With options</span>
-</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>shield<span class="w"> </span>srl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>payments-service<span class="w"> </span><span class="m">500</span>/minute<span class="w"> </span>--algorithm<span class="w"> </span>sliding_window<span class="w"> </span>--key<span class="w"> </span>ip
-</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>shield<span class="w"> </span>srl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>payments-service<span class="w"> </span><span class="m">2000</span>/hour<span class="w"> </span>--burst<span class="w"> </span><span class="m">50</span><span class="w"> </span>--exempt<span class="w"> </span>/health<span class="w"> </span>--exempt<span class="w"> </span>GET:/metrics
-</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>
-</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="c1"># Inspect, pause, reset counters, remove</span>
-</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>shield<span class="w"> </span>srl<span class="w"> </span>get<span class="w">     </span>payments-service
-</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>shield<span class="w"> </span>srl<span class="w"> </span>disable<span class="w"> </span>payments-service
-</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>shield<span class="w"> </span>srl<span class="w"> </span><span class="nb">enable</span><span class="w">  </span>payments-service
-</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>shield<span class="w"> </span>srl<span class="w"> </span>reset<span class="w">   </span>payments-service
-</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a>shield<span class="w"> </span>srl<span class="w"> </span>delete<span class="w">  </span>payments-service
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Cap all payments-service routes at 1000 per minute per IP</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>shield<span class="w"> </span>srl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>payments-service<span class="w"> </span><span class="m">1000</span>/minute
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1"># With options</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>shield<span class="w"> </span>srl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>payments-service<span class="w"> </span><span class="m">500</span>/minute<span class="w"> </span>--algorithm<span class="w"> </span>sliding_window<span class="w"> </span>--key<span class="w"> </span>ip
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>shield<span class="w"> </span>srl<span class="w"> </span><span class="nb">set</span><span class="w"> </span>payments-service<span class="w"> </span><span class="m">2000</span>/hour<span class="w"> </span>--burst<span class="w"> </span><span class="m">50</span><span class="w"> </span>--exempt<span class="w"> </span>/health<span class="w"> </span>--exempt<span class="w"> </span>GET:/metrics
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="c1"># Inspect, pause, reset counters, remove</span>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>shield<span class="w"> </span>srl<span class="w"> </span>get<span class="w">     </span>payments-service
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>shield<span class="w"> </span>srl<span class="w"> </span>disable<span class="w"> </span>payments-service
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>shield<span class="w"> </span>srl<span class="w"> </span><span class="nb">enable</span><span class="w">  </span>payments-service
+</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>shield<span class="w"> </span>srl<span class="w"> </span>reset<span class="w">   </span>payments-service
+</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>shield<span class="w"> </span>srl<span class="w"> </span>delete<span class="w">  </span>payments-service
 </span></code></pre></div>
 <p>From the dashboard: open the <strong>Rate Limits</strong> tab and select a service using the service filter. A <strong>Service Rate Limit</strong> card appears above the policies table with controls to configure, pause, reset, and remove the policy.</p>
 <p>The service rate limit uses the same <code>GlobalRateLimitPolicy</code> model as the all-services global rate limit. It is stored in the backend under a sentinel key and survives Shield Server restarts on <code>FileBackend</code> or <code>RedisBackend</code>.</p>
@@ -2636,12 +2644,12 @@
 <h2 id="sse-event-types">SSE event types<a class="headerlink" href="#sse-event-types" title="Permanent link">&para;</a></h2>
 <p>The Shield Server's <code>GET /api/sdk/events</code> stream carries two event types:</p>
 <h3 id="route-state-changes">Route state changes<a class="headerlink" href="#route-state-changes" title="Permanent link">&para;</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>data: {&quot;type&quot;: &quot;state&quot;, &quot;payload&quot;: {...RouteState JSON...}}
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>data: {&quot;type&quot;: &quot;state&quot;, &quot;payload&quot;: {...RouteState JSON...}}
 </span></code></pre></div>
 <p>Emitted whenever a route is enabled, disabled, put in maintenance, etc. The SDK client updates its local cache and the change is visible on the very next <code>engine.check()</code> call.</p>
 <h3 id="rate-limit-policy-changes">Rate limit policy changes<a class="headerlink" href="#rate-limit-policy-changes" title="Permanent link">&para;</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>data: {&quot;type&quot;: &quot;rl_policy&quot;, &quot;action&quot;: &quot;set&quot;,    &quot;key&quot;: &quot;GET:/api/pay&quot;, &quot;policy&quot;: {...}}
-</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>data: {&quot;type&quot;: &quot;rl_policy&quot;, &quot;action&quot;: &quot;delete&quot;, &quot;key&quot;: &quot;GET:/api/pay&quot;}
+<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>data: {&quot;type&quot;: &quot;rl_policy&quot;, &quot;action&quot;: &quot;set&quot;,    &quot;key&quot;: &quot;GET:/api/pay&quot;, &quot;policy&quot;: {...}}
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>data: {&quot;type&quot;: &quot;rl_policy&quot;, &quot;action&quot;: &quot;delete&quot;, &quot;key&quot;: &quot;GET:/api/pay&quot;}
 </span></code></pre></div>
 <p>Emitted whenever <code>shield rl set</code> or <code>shield rl delete</code> (or the dashboard) changes a rate limit policy. The SDK client applies the change to its local <code>engine._rate_limit_policies</code> dict immediately via the existing <code>_run_rl_policy_listener()</code> background task.</p>
 <p>Both event types are delivered over the same persistent SSE connection. Propagation latency is the SSE round-trip — typically under 5 ms on a LAN.</p>
@@ -2649,58 +2657,58 @@
 <h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
 <h3 id="no-auth-development">No auth (development)<a class="headerlink" href="#no-auth-development" title="Permanent link">&para;</a></h3>
 <p>If <code>auth</code> is omitted, the Shield Server is open — no credentials required anywhere:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">MemoryBackend</span><span class="p">())</span>  <span class="c1"># no auth=</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">MemoryBackend</span><span class="p">())</span>  <span class="c1"># no auth=</span>
 </span></code></pre></div>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">sdk</span> <span class="o">=</span> <span class="n">ShieldSDK</span><span class="p">(</span>
-</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>    <span class="n">server_url</span><span class="o">=</span><span class="s2">&quot;http://shield-server:9000&quot;</span><span class="p">,</span>
-</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>    <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
-</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>    <span class="c1"># no token, username, or password needed</span>
-</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">sdk</span> <span class="o">=</span> <span class="n">ShieldSDK</span><span class="p">(</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>    <span class="n">server_url</span><span class="o">=</span><span class="s2">&quot;http://shield-server:9000&quot;</span><span class="p">,</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>    <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>    <span class="c1"># no token, username, or password needed</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="dashboard-and-cli-users">Dashboard and CLI users<a class="headerlink" href="#dashboard-and-cli-users" title="Permanent link">&para;</a></h3>
 <p>Use <code>auth=("admin", "secret")</code> for a single admin user, or pass a list for multiple users:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span>
-</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>    <span class="n">backend</span><span class="o">=</span><span class="n">MemoryBackend</span><span class="p">(),</span>
-</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>    <span class="n">auth</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;alice&quot;</span><span class="p">,</span> <span class="s2">&quot;pw1&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;bob&quot;</span><span class="p">,</span> <span class="s2">&quot;pw2&quot;</span><span class="p">)],</span>
-</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>    <span class="n">backend</span><span class="o">=</span><span class="n">MemoryBackend</span><span class="p">(),</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>    <span class="n">auth</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;alice&quot;</span><span class="p">,</span> <span class="s2">&quot;pw1&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;bob&quot;</span><span class="p">,</span> <span class="s2">&quot;pw2&quot;</span><span class="p">)],</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="p">)</span>
 </span></code></pre></div>
 <p>Human users authenticate via the dashboard login form or <code>shield login</code> in the CLI. Their sessions last <code>token_expiry</code> seconds (default 24 h).</p>
 <h3 id="sdk-service-authentication">SDK service authentication<a class="headerlink" href="#sdk-service-authentication" title="Permanent link">&para;</a></h3>
 <p>SDK service apps have two options for authenticating with the Shield Server.</p>
 <h4 id="option-1-auto-login-with-credentials-recommended">Option 1 — Auto-login with credentials (recommended)<a class="headerlink" href="#option-1-auto-login-with-credentials-recommended" title="Permanent link">&para;</a></h4>
 <p>Pass <code>username</code> and <code>password</code> directly to <code>ShieldSDK</code>. On startup the SDK calls <code>POST /api/auth/login</code> with <code>platform="sdk"</code> and obtains a long-lived token automatically — no manual token management required:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShieldSDK</span>
-</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
-</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="n">sdk</span> <span class="o">=</span> <span class="n">ShieldSDK</span><span class="p">(</span>
-</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>    <span class="n">server_url</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_SERVER_URL&quot;</span><span class="p">],</span>
-</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>    <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
-</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>    <span class="n">username</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_USERNAME&quot;</span><span class="p">],</span>
-</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>    <span class="n">password</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_PASSWORD&quot;</span><span class="p">],</span>
-</span><span id="__span-24-9"><a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShieldSDK</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="n">sdk</span> <span class="o">=</span> <span class="n">ShieldSDK</span><span class="p">(</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>    <span class="n">server_url</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_SERVER_URL&quot;</span><span class="p">],</span>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>    <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>    <span class="n">username</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_USERNAME&quot;</span><span class="p">],</span>
+</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>    <span class="n">password</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_PASSWORD&quot;</span><span class="p">],</span>
+</span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="p">)</span>
 </span></code></pre></div>
 <p>Store credentials in your secrets manager or CI/CD environment variables and inject them at deploy time. The token is obtained once on startup and lives for <code>sdk_token_expiry</code> seconds (default 1 year) so the service never needs re-authentication.</p>
 <h4 id="option-2-pre-issued-token">Option 2 — Pre-issued token<a class="headerlink" href="#option-2-pre-issued-token" title="Permanent link">&para;</a></h4>
 <p>Generate a token once via the CLI and pass it directly:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>shield<span class="w"> </span>config<span class="w"> </span>set-url<span class="w"> </span>http://shield-server:9000
-</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>shield<span class="w"> </span>login<span class="w"> </span>admin
-</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="c1"># Copy the token from ~/.shield/config.json</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>shield<span class="w"> </span>config<span class="w"> </span>set-url<span class="w"> </span>http://shield-server:9000
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>shield<span class="w"> </span>login<span class="w"> </span>admin
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="c1"># Copy the token from ~/.shield/config.json</span>
 </span></code></pre></div>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">sdk</span> <span class="o">=</span> <span class="n">ShieldSDK</span><span class="p">(</span>
-</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>    <span class="n">server_url</span><span class="o">=</span><span class="s2">&quot;http://shield-server:9000&quot;</span><span class="p">,</span>
-</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>    <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
-</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>    <span class="n">token</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_TOKEN&quot;</span><span class="p">],</span>
-</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">sdk</span> <span class="o">=</span> <span class="n">ShieldSDK</span><span class="p">(</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>    <span class="n">server_url</span><span class="o">=</span><span class="s2">&quot;http://shield-server:9000&quot;</span><span class="p">,</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>    <span class="n">app_id</span><span class="o">=</span><span class="s2">&quot;payments-service&quot;</span><span class="p">,</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>    <span class="n">token</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_TOKEN&quot;</span><span class="p">],</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="separate-token-lifetimes">Separate token lifetimes<a class="headerlink" href="#separate-token-lifetimes" title="Permanent link">&para;</a></h3>
 <p><code>token_expiry</code> and <code>sdk_token_expiry</code> are independent so human sessions can be short while service tokens are long-lived:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span>
-</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>    <span class="n">backend</span><span class="o">=</span><span class="n">RedisBackend</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;REDIS_URL&quot;</span><span class="p">]),</span>
-</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>    <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_ADMIN_PASSWORD&quot;</span><span class="p">]),</span>
-</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>    <span class="n">secret_key</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_SECRET_KEY&quot;</span><span class="p">],</span>
-</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>    <span class="n">token_expiry</span><span class="o">=</span><span class="mi">3600</span><span class="p">,</span>          <span class="c1"># dashboard / CLI users: 1 hour</span>
-</span><span id="__span-27-6"><a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>    <span class="n">sdk_token_expiry</span><span class="o">=</span><span class="mi">31536000</span><span class="p">,</span>  <span class="c1"># SDK service tokens: 1 year (default)</span>
-</span><span id="__span-27-7"><a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="n">shield_app</span> <span class="o">=</span> <span class="n">ShieldServer</span><span class="p">(</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>    <span class="n">backend</span><span class="o">=</span><span class="n">RedisBackend</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;REDIS_URL&quot;</span><span class="p">]),</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>    <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_ADMIN_PASSWORD&quot;</span><span class="p">]),</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>    <span class="n">secret_key</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SHIELD_SECRET_KEY&quot;</span><span class="p">],</span>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>    <span class="n">token_expiry</span><span class="o">=</span><span class="mi">3600</span><span class="p">,</span>          <span class="c1"># dashboard / CLI users: 1 hour</span>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>    <span class="n">sdk_token_expiry</span><span class="o">=</span><span class="mi">31536000</span><span class="p">,</span>  <span class="c1"># SDK service tokens: 1 year (default)</span>
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="p">)</span>
 </span></code></pre></div>
 <table>
 <thead>
@@ -2765,6 +2773,8 @@
 
 
                 
+  
+
               </article>
             </div>
           
@@ -2782,6 +2792,8 @@
         
       </main>
       
+  
+    
         <footer class="md-footer">
   
     
@@ -2867,6 +2879,8 @@
   </div>
 </footer>
       
+  
+
     </div>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
@@ -2879,8 +2893,25 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.tabs.link", "content.code.annotate", "content.code.copy", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
+  
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
+        <script src="../../javascripts/mermaid-init.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
+      
     
+  
+  <script>
+    (function () {
+      document.querySelectorAll('.mermaid').forEach(function (el) {
+        if (!el.dataset.mermaidSrc) {
+          el.dataset.mermaidSrc = el.textContent.trim();
+        }
+      });
+    })();
+  </script>
+  
+
   </body>
 </html>

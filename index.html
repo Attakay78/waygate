@@ -46,8 +46,8 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Geist:300,300i,400,400i,700,700i%7CGeist+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Geist";--md-code-font:"Geist Mono"}</style>
       
     
     
@@ -71,18 +71,13 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="orange">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="orange">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
-      
-        
-        <a href="#api-shield" class="md-skip">
-          Skip to content
-        </a>
       
     </div>
     <div data-md-component="announce">
@@ -128,7 +123,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="amber" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -138,7 +133,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="amber" data-md-color-accent="orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
@@ -372,7 +367,9 @@
           
             
               
-              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" hidden>
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
@@ -418,26 +415,6 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Home
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
       
       <a href="." class="md-nav__link md-nav__link--active">
         
@@ -455,153 +432,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#30-second-quickstart" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        30-second quickstart
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key features
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Key features">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#core-shieldcore" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Core (shield.core)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#framework-adapters" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Framework adapters
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Framework adapters">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#fastapi-shieldfastapi-supported" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FastAPI (shield.fastapi) — ✅ supported
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#decorators-at-a-glance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Decorators at a glance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#framework-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Framework support
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Framework support">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#asgi-frameworks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ASGI frameworks
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#wsgi-frameworks-flask-django" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        WSGI frameworks (Flask, Django, …)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next steps
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -1557,7 +1387,9 @@
             
             
               
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" hidden>
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
@@ -1566,144 +1398,6 @@
   
   
   
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#30-second-quickstart" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        30-second quickstart
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key features
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Key features">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#core-shieldcore" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Core (shield.core)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#framework-adapters" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Framework adapters
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Framework adapters">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#fastapi-shieldfastapi-supported" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FastAPI (shield.fastapi) — ✅ supported
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#decorators-at-a-glance" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Decorators at a glance
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#framework-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Framework support
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Framework support">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#asgi-frameworks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ASGI frameworks
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#wsgi-frameworks-flask-django" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        WSGI frameworks (Flask, Django, …)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Next steps
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -1716,6 +1410,8 @@
               
                 
 
+  
+
 
 
   
@@ -1724,286 +1420,328 @@
               
               <article class="md-content__inner md-typeset">
                 
-                  
-
-
   
+    <div class="hp-page">
+
+<!-- ═══════════════════════════════════════════════
+     HERO  — two-column: text left, code window right
+══════════════════════════════════════════════════ -->
+<section class="hp-hero">
+  <div class="hp-hero-inner">
+
+    <div class="hp-hero-text">
+      <a href="changelog/" class="hp-badge">
+        <span class="hp-badge-dot"></span>
+        v0.8.0 &nbsp;·&nbsp; Feature flags &amp; OpenFeature are here
+      </a>
+
+      <h1 class="hp-h1">
+        Runtime control<br>for <span class="hp-accent">Python APIs</span>
+      </h1>
+
+      <p class="hp-hero-desc">
+        Feature flags, rate limiting, and maintenance mode. No redeployment.
+        Self-hosted. OpenFeature compliant. Zero restarts.
+      </p>
+
+      <div class="hp-hero-btns">
+        <a href="tutorial/installation/" class="hp-btn hp-btn-primary">Get Started →</a>
+        <a href="https://github.com/Attakay78/api-shield" class="hp-btn hp-btn-ghost" target="_blank">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+
+      <div class="hp-install">
+        <span class="hp-install-label">$ </span>
+        <code class="hp-install-cmd">uv add "api-shield[all]"</code>
+        <button class="hp-copy-btn" data-copy='uv add "api-shield[all]"' title="Copy to clipboard">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="hp-hero-visual">
+      <div class="hp-code-win">
+        <div class="hp-code-win-bar">
+          <span class="hp-dot hp-dot-r"></span>
+          <span class="hp-dot hp-dot-y"></span>
+          <span class="hp-dot hp-dot-g"></span>
+          <span class="hp-code-win-title">app.py</span>
+        </div>
+        <pre class="hp-code-win-body"><code><span class="t-kw">from</span> <span class="t-mod">fastapi</span> <span class="t-kw">import</span> FastAPI
+<span class="t-kw">from</span> <span class="t-mod">shield.core.config</span> <span class="t-kw">import</span> make_engine
+<span class="t-kw">from</span> <span class="t-mod">shield.fastapi</span> <span class="t-kw">import</span> (
+    ShieldMiddleware, ShieldAdmin,
+    maintenance, env_only, deprecated,
+    force_active, rate_limit,
+)
+
+engine <span class="t-op">=</span> <span class="t-fn">make_engine</span>()
+app    <span class="t-op">=</span> <span class="t-cls">FastAPI</span>()
+app.<span class="t-fn">add_middleware</span>(<span class="t-cls">ShieldMiddleware</span>, engine<span class="t-op">=</span>engine)
+
+<span class="t-cm"># Database migration in progress</span>
+<span class="t-dec">@app.get</span>(<span class="t-str">"/payments"</span>)
+<span class="t-dec">@maintenance</span>(reason<span class="t-op">=</span><span class="t-str">"Back at 04:00 UTC"</span>)
+<span class="t-kw">async def</span> <span class="t-fn">get_payments</span>(): ...
+
+<span class="t-cm"># Hidden in production silently</span>
+<span class="t-dec">@app.get</span>(<span class="t-str">"/debug"</span>)
+<span class="t-dec">@env_only</span>(<span class="t-str">"dev"</span>, <span class="t-str">"staging"</span>)
+<span class="t-kw">async def</span> <span class="t-fn">debug_info</span>(): ...
+
+<span class="t-cm"># 100 req/min per IP, no extra config</span>
+<span class="t-dec">@app.get</span>(<span class="t-str">"/search"</span>)
+<span class="t-dec">@rate_limit</span>(<span class="t-str">"100/minute"</span>, key<span class="t-op">=</span><span class="t-str">"ip"</span>)
+<span class="t-kw">async def</span> <span class="t-fn">search</span>(): ...
+
+<span class="t-cm"># Immune to all checks, always 200</span>
+<span class="t-dec">@app.get</span>(<span class="t-str">"/health"</span>)
+<span class="t-dec">@force_active</span>
+<span class="t-kw">async def</span> <span class="t-fn">health</span>(): ...
+
+<span class="t-cm"># Dashboard + REST API at /shield</span>
+app.<span class="t-fn">mount</span>(<span class="t-str">"/shield"</span>,
+    <span class="t-cls">ShieldAdmin</span>(engine<span class="t-op">=</span>engine, auth<span class="t-op">=</span>(<span class="t-str">"admin"</span>, <span class="t-str">"secret"</span>))
+)</code></pre>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     MARQUEE  — scrolling feature strip
+══════════════════════════════════════════════════ -->
+<div class="hp-marquee-outer">
+  <div class="hp-marquee-track">
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Zero-restart control</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>OpenFeature compliant</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Rate limiting</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Maintenance mode</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Feature flags</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Audit log</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Redis backends</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Webhooks</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>CLI control</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Multi-service fleet</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Scheduled windows</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Canary rollouts</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>A/B testing</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Env gating</span>
+    <!-- duplicate for seamless loop -->
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Zero-restart control</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>OpenFeature compliant</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Rate limiting</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Maintenance mode</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Feature flags</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Audit log</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Redis backends</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Webhooks</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>CLI control</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Multi-service fleet</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Scheduled windows</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Canary rollouts</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>A/B testing</span>
+    <span class="hp-mq-item"><span class="hp-mq-dot"></span>Env gating</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     STATS
+══════════════════════════════════════════════════ -->
+<section class="hp-stats">
+  <div class="hp-stats-inner">
+    <div class="hp-stat">
+      <span class="hp-stat-num">467</span>
+      <span class="hp-stat-label">Tests Passing</span>
+    </div>
+    <div class="hp-stat">
+      <span class="hp-stat-num">3</span>
+      <span class="hp-stat-label">Storage Backends</span>
+    </div>
+    <div class="hp-stat">
+      <span class="hp-stat-num">0</span>
+      <span class="hp-stat-label">Restarts Needed</span>
+    </div>
+    <div class="hp-stat">
+      <span class="hp-stat-num">MIT</span>
+      <span class="hp-stat-label">Open Source</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     ECOSYSTEM  — problem / solution split
+══════════════════════════════════════════════════ -->
+<section class="hp-ecosystem hp-reveal">
+  <div class="hp-ecosystem-inner">
+
+    <div class="hp-ecosystem-col">
+      <span class="hp-label">The problem</span>
+      <h2 class="hp-h2">Most runtime tools are blunt instruments</h2>
+      <p class="hp-body">Shut everything down or nothing at all. Redeployment just to flip a flag. No audit trail. No per-route control. No way to gradually roll out a change to 5% of users.</p>
+    </div>
+
+    <div class="hp-ecosystem-col">
+      <span class="hp-label">The solution</span>
+      <h2 class="hp-h2">One ecosystem. Every Python API.</h2>
+      <p class="hp-body"><code class="hp-inline-code">api-shield</code> treats every route as a first-class entity with its own lifecycle. State changes are immediate. No restart. No redeploy. Full control from a dashboard, CLI, or REST API.</p>
+    </div>
+
+  </div>
+
+  <div class="hp-pillars">
+    <div class="hp-pillar">
+      <div class="hp-pillar-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+      </div>
+      <h4 class="hp-pillar-title">Feature Flags</h4>
+      <p class="hp-pillar-body">OpenFeature compliant. Boolean, string, float, JSON. Targeting rules, segments, percentage rollouts, prerequisites.</p>
+    </div>
+    <div class="hp-pillar">
+      <div class="hp-pillar-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <h4 class="hp-pillar-title">Rate Limiting</h4>
+      <p class="hp-pillar-body">Per-IP, per-user, per-key, or global. Tiered limits, burst allowance, real-time policy mutation. Memory, file, or Redis.</p>
+    </div>
+    <div class="hp-pillar">
+      <div class="hp-pillar-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h4 class="hp-pillar-title">Route Lifecycle</h4>
+      <p class="hp-pillar-body">Maintenance, env gating, deprecation, instant disable. Per route. Managed from dashboard, CLI, or REST API with no code changes.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     DIFFERENTIATION
+══════════════════════════════════════════════════ -->
+<section class="hp-diff hp-reveal">
+  <div class="hp-diff-inner">
+    <div class="hp-diff-header">
+      <span class="hp-label">What makes it different</span>
+      <h2 class="hp-h2">Other tools flag features.<br>api-shield controls routes.</h2>
+      <p class="hp-body">LaunchDarkly, Flagsmith, Unleash — they operate at the application layer and have no concept of what a route is. You can't ask them to put <code class="hp-inline-code">/api/payments</code> into maintenance mode, schedule the window, reset its rate limit counters when it comes back, or show you a live dashboard of route states across your fleet. That is a different problem, and that is what api-shield solves.</p>
+    </div>
+
+    <div class="hp-diff-grid">
+      <div class="hp-diff-card">
+        <div class="hp-diff-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
+        <h4 class="hp-diff-title">Route-aware request context</h4>
+        <p class="hp-diff-body">api-shield reads <code>request.state.user_id</code>, FastAPI dependencies, and ASGI request context directly. The route is the unit of control, not a string key passed to an SDK.</p>
+      </div>
+
+      <div class="hp-diff-card">
+        <div class="hp-diff-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h4 class="hp-diff-title">Maintenance windows, not just toggles</h4>
+        <p class="hp-diff-body">Schedule <code>/api/payments</code> out for 2 hours. When the window closes, the route comes back automatically, rate limit counters reset, and a webhook fires to Slack. No code change needed.</p>
+      </div>
+
+      <div class="hp-diff-card">
+        <div class="hp-diff-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        </div>
+        <h4 class="hp-diff-title">No SaaS, no API keys</h4>
+        <p class="hp-diff-body">Back your state with Redis you already run, or a plain JSON file for local dev. No data leaves your infra. No third-party uptime dependency sitting in your request path.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     FEATURES  — 3-column numbered grid
+══════════════════════════════════════════════════ -->
+<section class="hp-features hp-reveal">
+  <div class="hp-features-inner">
+
+    <div class="hp-section-header">
+      <span class="hp-label">Why api-shield</span>
+      <h2 class="hp-h2">Built for production from day one</h2>
+    </div>
+
+    <div class="hp-feat-grid">
+
+      <div class="hp-feat-item">
+        <span class="hp-feat-num">01</span>
+        <h4 class="hp-feat-title">Decorator-first DX</h4>
+        <p class="hp-feat-body">State lives next to the route. <code>@maintenance</code>, <code>@disabled</code>, <code>@env_only</code>, <code>@rate_limit</code>. One line, zero boilerplate.</p>
+      </div>
+
+      <div class="hp-feat-item">
+        <span class="hp-feat-num">02</span>
+        <h4 class="hp-feat-title">Fail-open by default</h4>
+        <p class="hp-feat-body">If the backend is unreachable, requests pass through. Shield never takes down your API due to its own failures.</p>
+      </div>
+
+      <div class="hp-feat-item">
+        <span class="hp-feat-num">03</span>
+        <h4 class="hp-feat-title">OpenFeature compliant</h4>
+        <p class="hp-feat-body">Use any OpenFeature-compatible SDK. Switch providers without rewriting flag evaluation logic. Vendor-portable from day one.</p>
+      </div>
+
+      <div class="hp-feat-item">
+        <span class="hp-feat-num">04</span>
+        <h4 class="hp-feat-title">HTMX admin dashboard</h4>
+        <p class="hp-feat-body">Live SSE updates. Audit log. Flag evaluation stream. No JavaScript framework. Mount at any path in two lines.</p>
+      </div>
+
+      <div class="hp-feat-item">
+        <span class="hp-feat-num">05</span>
+        <h4 class="hp-feat-title">Multi-service fleet</h4>
+        <p class="hp-feat-body">ShieldServer + ShieldSDK for centralized control across multiple services. State synced via SSE with zero per-request latency.</p>
+      </div>
+
+      <div class="hp-feat-item">
+        <span class="hp-feat-num">06</span>
+        <h4 class="hp-feat-title">Full CLI + REST API</h4>
+        <p class="hp-feat-body">Every dashboard action is available from the terminal or CI pipeline. Token auth. Cross-platform config at <code>~/.shield/config.json</code>.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     CTA
+══════════════════════════════════════════════════ -->
+<section class="hp-cta hp-reveal">
+  <div class="hp-cta-inner">
+    <span class="hp-label">Get started</span>
+    <h2 class="hp-h2">Add runtime control to your API today</h2>
+    <p class="hp-body">Install in seconds. No external services. Works with any ASGI framework.</p>
+
+    <div class="hp-cta-install">
+      <span class="hp-install-label">$ </span>
+      <code class="hp-install-cmd">uv add "api-shield[all]"</code>
+      <button class="hp-copy-btn" data-copy='uv add "api-shield[all]"' title="Copy">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2 2v1"/></svg>
+      </button>
+    </div>
+
+    <div class="hp-cta-btns">
+      <a href="tutorial/installation/" class="hp-btn hp-btn-primary">Read the Docs</a>
+      <a href="https://github.com/Attakay78/api-shield" class="hp-btn hp-btn-ghost" target="_blank">Star on GitHub</a>
+    </div>
+
+    <div class="hp-cta-badges">
+      <img src="https://img.shields.io/pypi/v/api-shield?color=F59E0B&label=pypi" alt="PyPI">
+      <img src="https://img.shields.io/pypi/pyversions/api-shield?color=F59E0B" alt="Python">
+      <img src="https://img.shields.io/github/license/Attakay78/api-shield?color=F59E0B" alt="License">
+    </div>
+  </div>
+</section>
+
+</div>
   
 
-
-<div class="hero">
-<p><img alt="api-shield" src="assets/logo-full.svg" /></p>
-<p><a class="md-button" href="https://github.com/Attakay78/api-shield"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg></span> View on GitHub</a></p>
-<p><a href="https://pypi.org/project/api-shield"><img alt="PyPI" src="https://img.shields.io/pypi/v/api-shield?color=F59E0B&amp;label=pypi&amp;cacheSeconds=300" /></a>
-<a href="https://pypi.org/project/api-shield"><img alt="Python versions" src="https://img.shields.io/pypi/pyversions/api-shield?color=F59E0B" /></a>
-<a href="https://github.com/Attakay78/api-shield/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/Attakay78/api-shield?color=F59E0B" /></a></p>
-</div>
-<h1 id="api-shield">api-shield<a class="headerlink" href="#api-shield" title="Permanent link">&para;</a></h1>
-<div class="admonition warning">
-<p class="admonition-title">Early Access: your feedback shapes the roadmap</p>
-<p><code>api-shield</code> is fully functional and ready to use. We are actively building on a solid foundation and would love to hear from you. If you have feedback, feature ideas, or suggestions, <strong><a href="https://github.com/Attakay78/api-shield/issues">open an issue on GitHub</a></strong>. Every voice helps make the library better for everyone.</p>
-</div>
-<p><strong>Feature flags and runtime control for Python APIs — rollouts, rate limits, manage maintenance windows across single ASGI services or a multi-service fleet without redeploying.</strong></p>
-<p>Most "runtime control management" tools are blunt instruments: shut everything down or nothing at all. <code>api-shield</code> treats each route as a first-class entity with its own lifecycle. State changes take effect immediately, with no redeployment and no server restart.</p>
-<hr />
-<h2 id="30-second-quickstart">30-second quickstart<a class="headerlink" href="#30-second-quickstart" title="Permanent link">&para;</a></h2>
-<blockquote>
-<p><strong>FastAPI</strong> is the currently supported adapter. Litestar, Starlette, Quart, and Django (ASGI) are on the roadmap. See <a href="adapters/">Adapters</a> for details.</p>
-</blockquote>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">&quot;api-shield[all]&quot;</span>
-</span></code></pre></div>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_engine</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">shield.fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">ShieldMiddleware</span><span class="p">,</span> <span class="n">ShieldAdmin</span><span class="p">,</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">apply_shield_to_openapi</span><span class="p">,</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">maintenance</span><span class="p">,</span> <span class="n">env_only</span><span class="p">,</span> <span class="n">disabled</span><span class="p">,</span> <span class="n">force_active</span><span class="p">,</span> <span class="n">deprecated</span><span class="p">,</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">)</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">engine</span> <span class="o">=</span> <span class="n">make_engine</span><span class="p">()</span>  <span class="c1"># reads SHIELD_BACKEND, SHIELD_ENV from env</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">app</span><span class="o">.</span><span class="n">add_middleware</span><span class="p">(</span><span class="n">ShieldMiddleware</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/payments&quot;</span><span class="p">)</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="nd">@maintenance</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">&quot;Database migration — back at 04:00 UTC&quot;</span><span class="p">)</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_payments</span><span class="p">():</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;payments&quot;</span><span class="p">:</span> <span class="p">[]}</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/health&quot;</span><span class="p">)</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="nd">@force_active</span>          <span class="c1"># always 200, immune to all shield checks</span>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">health</span><span class="p">():</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">}</span>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/debug&quot;</span><span class="p">)</span>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="nd">@env_only</span><span class="p">(</span><span class="s2">&quot;dev&quot;</span><span class="p">,</span> <span class="s2">&quot;staging&quot;</span><span class="p">)</span>   <span class="c1"># silent 404 in production</span>
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">debug</span><span class="p">():</span>
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;debug&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>
-</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/v1/users&quot;</span><span class="p">)</span>
-</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="nd">@deprecated</span><span class="p">(</span><span class="n">sunset</span><span class="o">=</span><span class="s2">&quot;Sat, 01 Jan 2027 00:00:00 GMT&quot;</span><span class="p">,</span> <span class="n">use_instead</span><span class="o">=</span><span class="s2">&quot;/v2/users&quot;</span><span class="p">)</span>
-</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">v1_users</span><span class="p">():</span>
-</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;users&quot;</span><span class="p">:</span> <span class="p">[]}</span>
-</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>
-</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="n">apply_shield_to_openapi</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">engine</span><span class="p">)</span>
-</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>
-</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="c1"># Mount the admin dashboard + REST API (for the CLI) at /shield</span>
-</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="n">app</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s2">&quot;/shield&quot;</span><span class="p">,</span> <span class="n">ShieldAdmin</span><span class="p">(</span><span class="n">engine</span><span class="o">=</span><span class="n">engine</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;secret&quot;</span><span class="p">)))</span>
-</span></code></pre></div>
-<p>That's it. Routes respond immediately:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>GET /payments  → 503  {&quot;error&quot;: {&quot;code&quot;: &quot;MAINTENANCE_MODE&quot;, ...}}
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>GET /health    → 200  always
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>GET /debug     → 200  in dev (default), 404 in production/staging
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>GET /v1/users  → 200  + Deprecation / Sunset / Link headers
-</span></code></pre></div>
-<p>And you can manage them from the CLI without touching code:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>shield<span class="w"> </span>config<span class="w"> </span>set-url<span class="w"> </span>http://localhost:8000/shield
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>shield<span class="w"> </span>login<span class="w"> </span>admin
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>shield<span class="w"> </span>status
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>shield<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>GET:/payments
-</span></code></pre></div>
-<hr />
-<h2 id="key-features">Key features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h2>
-<h3 id="core-shieldcore">Core (<code>shield.core</code>)<a class="headerlink" href="#core-shieldcore" title="Permanent link">&para;</a></h3>
-<p>These features are framework-agnostic and available to every adapter.</p>
-<table>
-<thead>
-<tr>
-<th>Feature</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>⚡ <strong>Zero-restart control</strong></td>
-<td>State changes are immediate, with no redeployment needed</td>
-</tr>
-<tr>
-<td>🛡️ <strong>Fail-open by default</strong></td>
-<td>If the backend is unreachable, requests pass through. Shield never takes down your API</td>
-</tr>
-<tr>
-<td>🔌 <strong>Pluggable backends</strong></td>
-<td>In-memory (default), file-based JSON, or Redis for multi-instance deployments</td>
-</tr>
-<tr>
-<td>🖥️ <strong>Admin dashboard</strong></td>
-<td>HTMX-powered UI with live SSE updates, no JS framework required</td>
-</tr>
-<tr>
-<td>🖱️ <strong>REST API + CLI</strong></td>
-<td>Full programmatic control from the terminal or CI pipelines</td>
-</tr>
-<tr>
-<td>📋 <strong>Audit log</strong></td>
-<td>Every state change is recorded: who, when, what route, old status, new status</td>
-</tr>
-<tr>
-<td>⏰ <strong>Scheduled windows</strong></td>
-<td><code>asyncio</code>-native scheduler that activates and deactivates maintenance windows automatically</td>
-</tr>
-<tr>
-<td>🔔 <strong>Webhooks</strong></td>
-<td>Fire HTTP POST on every state change, with a built-in Slack formatter and support for custom formatters</td>
-</tr>
-<tr>
-<td>🚦 <strong>Rate limiting</strong></td>
-<td>Per-IP, per-user, per-API-key, or global counters with tiered limits, burst allowance, and runtime policy mutation</td>
-</tr>
-<tr>
-<td>🚩 <strong>Feature flags</strong></td>
-<td>Boolean, string, integer, float, and JSON flags with targeting rules, user segments, percentage rollouts, prerequisites, and a live evaluation stream — built on the OpenFeature standard</td>
-</tr>
-</tbody>
-</table>
-<h3 id="framework-adapters">Framework adapters<a class="headerlink" href="#framework-adapters" title="Permanent link">&para;</a></h3>
-<h4 id="fastapi-shieldfastapi-supported">FastAPI (<code>shield.fastapi</code>) — ✅ supported<a class="headerlink" href="#fastapi-shieldfastapi-supported" title="Permanent link">&para;</a></h4>
-<table>
-<thead>
-<tr>
-<th>Feature</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>🎨 <strong>Decorator-first DX</strong></td>
-<td><code>@maintenance</code>, <code>@disabled</code>, <code>@env_only</code>, <code>@force_active</code>, <code>@deprecated</code>, <code>@rate_limit</code> — state lives next to the route</td>
-</tr>
-<tr>
-<td>📄 <strong>OpenAPI integration</strong></td>
-<td>Disabled and env-gated routes hidden from <code>/docs</code>; deprecated routes flagged; live maintenance banners in the Swagger UI</td>
-</tr>
-<tr>
-<td>🧩 <strong>Dependency injection</strong></td>
-<td>All decorators work as <code>Depends()</code> — enforce shield state per-handler without middleware</td>
-</tr>
-<tr>
-<td>🎨 <strong>Custom responses</strong></td>
-<td>Return HTML, redirects, or any response shape for blocked routes, per-route or as an app-wide default on the middleware</td>
-</tr>
-<tr>
-<td>🔀 <strong>ShieldRouter</strong></td>
-<td>Drop-in <code>APIRouter</code> replacement that auto-registers route metadata with the engine at startup</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="decorators-at-a-glance">Decorators at a glance<a class="headerlink" href="#decorators-at-a-glance" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Decorator</th>
-<th>Effect</th>
-<th>HTTP response</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>@maintenance(reason, start, end)</code></td>
-<td>Route temporarily unavailable</td>
-<td>503 + <code>Retry-After</code></td>
-</tr>
-<tr>
-<td><code>@disabled(reason)</code></td>
-<td>Route permanently off</td>
-<td>503</td>
-</tr>
-<tr>
-<td><code>@env_only("dev", "staging")</code></td>
-<td>Route restricted to named envs</td>
-<td>404 in other envs</td>
-</tr>
-<tr>
-<td><code>@deprecated(sunset, use_instead)</code></td>
-<td>Route still works, but headers warn clients</td>
-<td>200 + deprecation headers</td>
-</tr>
-<tr>
-<td><code>@force_active</code></td>
-<td>Route bypasses all shield checks</td>
-<td>Always 200</td>
-</tr>
-<tr>
-<td><code>@rate_limit("100/minute")</code></td>
-<td>Cap requests per IP, user, API key, or globally</td>
-<td>429 when exceeded</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="framework-support">Framework support<a class="headerlink" href="#framework-support" title="Permanent link">&para;</a></h2>
-<h3 id="asgi-frameworks">ASGI frameworks<a class="headerlink" href="#asgi-frameworks" title="Permanent link">&para;</a></h3>
-<p>api-shield is an <strong>ASGI-native</strong> library. The core (<code>shield.core</code>) is framework-agnostic with zero framework imports. Any ASGI framework can be supported — Starlette-based frameworks use <code>BaseHTTPMiddleware</code> directly; frameworks like Quart and Django that implement the ASGI spec independently use a raw ASGI callable adapter instead.</p>
-<table>
-<thead>
-<tr>
-<th>Framework</th>
-<th>Status</th>
-<th>Adapter</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>FastAPI</strong></td>
-<td>✅ Supported</td>
-<td><code>shield.fastapi</code></td>
-</tr>
-<tr>
-<td><strong>Litestar</strong></td>
-<td>🔜 Planned</td>
-<td>—</td>
-</tr>
-<tr>
-<td><strong>Starlette</strong></td>
-<td>🔜 Planned</td>
-<td>—</td>
-</tr>
-<tr>
-<td><strong>Quart</strong></td>
-<td>🔜 Planned</td>
-<td>—</td>
-</tr>
-<tr>
-<td><strong>Django (ASGI)</strong></td>
-<td>🔜 Planned</td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
-<h3 id="wsgi-frameworks-flask-django">WSGI frameworks (Flask, Django, …)<a class="headerlink" href="#wsgi-frameworks-flask-django" title="Permanent link">&para;</a></h3>
-<div class="admonition warning">
-<p class="admonition-title">WSGI support is out of scope for this project</p>
-<p><code>api-shield</code> is built on the ASGI standard. Adding WSGI support through shims or thread-bridging patches would require a persistent background event loop, a fundamentally different middleware model, and trade-offs that would compromise reliability for both ASGI and WSGI users.</p>
-<p>WSGI framework support (Flask, Django, Bottle, and others) will be delivered as a <strong>separate, dedicated project</strong> designed from the ground up for the synchronous request model. This keeps both projects clean, well-tested, and free of architectural compromises.</p>
-<p><a href="https://github.com/Attakay78/api-shield/issues">Open an issue</a> or watch this repo to be notified when the WSGI companion project launches.</p>
-</div>
-<hr />
-<h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="tutorial/installation/"><strong>Tutorial: Installation</strong></a>: get up and running in seconds</li>
-<li><a href="tutorial/first-decorator/"><strong>Tutorial: First Decorator</strong></a>: put your first route in maintenance mode</li>
-<li><a href="tutorial/rate-limiting/"><strong>Tutorial: Rate Limiting</strong></a>: per-IP, per-user, tiered limits, and more</li>
-<li><a href="tutorial/feature-flags/"><strong>Tutorial: Feature Flags</strong></a>: targeting rules, segments, rollouts, and live events</li>
-<li><a href="reference/decorators/"><strong>Reference: Decorators</strong></a>: full decorator API</li>
-<li><a href="reference/rate-limiting/"><strong>Reference: Rate Limiting</strong></a>: <code>@rate_limit</code> parameters, models, and CLI commands</li>
-<li><a href="reference/engine/"><strong>Reference: ShieldEngine</strong></a>: programmatic control</li>
-<li><a href="reference/feature-flags/"><strong>Reference: Feature Flags</strong></a>: full flag/segment API, models, and CLI commands</li>
-<li><a href="reference/cli/"><strong>Reference: CLI</strong></a>: all CLI commands</li>
-</ul>
-
-
-
-
-
-
-
-
-
-
-
-
-                
               </article>
             </div>
           
@@ -2021,75 +1759,10 @@
         
       </main>
       
-        <footer class="md-footer">
   
     
-      
-      <nav class="md-footer__inner md-grid" aria-label="Footer" >
-        
-        
-          
-          <a href="tutorial/installation/" class="md-footer__link md-footer__link--next" aria-label="Next: Installation">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Installation
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
-    
   
-  <div class="md-footer-meta md-typeset">
-    <div class="md-footer-meta__inner md-grid">
-      <div class="md-copyright">
-  
-  
-    Made with
-    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-      Material for MkDocs
-    </a>
-  
-</div>
-      
-        
-<div class="md-social">
-  
-    
-    
-    
-    
-      
-      
-    
-    <a href="https://github.com/Attakay78/api-shield" target="_blank" rel="noopener" title="github.com" class="md-social__link">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
-    </a>
-  
-    
-    
-    
-    
-      
-      
-    
-    <a href="https://pypi.org/project/api-shield" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
-    </a>
-  
-</div>
-      
-    </div>
-  </div>
-</footer>
-      
+
     </div>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
@@ -2102,8 +1775,59 @@
       <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "navigation.footer", "search.suggest", "search.highlight", "content.tabs.link", "content.code.annotate", "content.code.copy", "toc.follow"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
+  
       <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
       
+        <script src="javascripts/mermaid-init.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@11/dist/mermaid.min.js"></script>
+      
     
+  
+  <script>
+    (function () {
+      document.querySelectorAll('.mermaid').forEach(function (el) {
+        if (!el.dataset.mermaidSrc) {
+          el.dataset.mermaidSrc = el.textContent.trim();
+        }
+      });
+    })();
+  </script>
+  
+  <script>
+    /* ── Scroll reveal ─────────────────────────────────── */
+    (function () {
+      var els = document.querySelectorAll('.hp-reveal');
+      if (!els.length) return;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            e.target.classList.add('hp-visible');
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+
+    /* ── Copy buttons ──────────────────────────────────── */
+    document.querySelectorAll('.hp-copy-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var text = btn.getAttribute('data-copy');
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(function () {
+          btn.classList.add('copied');
+          var orig = btn.innerHTML;
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+          setTimeout(function () {
+            btn.classList.remove('copied');
+            btn.innerHTML = orig;
+          }, 2000);
+        });
+      });
+    });
+  </script>
+  
+
   </body>
 </html>
