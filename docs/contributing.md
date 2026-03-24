@@ -164,7 +164,7 @@ These constraints are enforced at review time. PRs that violate them will be ask
    Every request path must flow through `engine.check()`. Never duplicate the check logic in middleware, a dependency, or a decorator.
 
 5. **Backends implement the full `ShieldBackend` ABC.**
-   No partial implementations. If a method is not supported (e.g. `subscribe()` on `FileBackend`), it raises `NotImplementedError` and callers handle the fallback.
+   No partial implementations. If a method is not supported (e.g. `subscribe()` on `FileBackend`), it raises `NotImplementedError`. `ShieldEngine.start()` catches this internally and skips the listener — the engine handles the fallback, not the caller.
 
 6. **Fail-open on backend errors.**
    If `backend.get_state()` raises, `engine.check()` logs the error and lets the request through. Shield must never take down an API because its own storage is temporarily unavailable.
@@ -191,11 +191,14 @@ shield/
 ├── core/               # Zero framework dependencies — engine, models, backends
 │   ├── engine.py       # ShieldEngine — all business logic lives here
 │   ├── models.py       # RouteState, AuditEntry, RateLimitPolicy, …
-│   ├── backends/       # MemoryBackend, FileBackend, RedisBackend
+│   ├── backends/       # MemoryBackend, FileBackend, RedisBackend, ShieldServerBackend
 │   ├── rate_limit/     # Rate limiting subsystem
 │   └── scheduler.py    # asyncio-based maintenance window scheduler
 ├── fastapi/            # FastAPI adapter — middleware, decorators, router, OpenAPI
 ├── admin/              # Unified admin ASGI app (dashboard UI + REST API + auth)
+├── server/             # ShieldServer — standalone control plane for multi-service deployments
+├── sdk/                # ShieldSDK — service-side client that connects to a Shield Server via SSE
+├── adapters/           # Framework adapter helpers (ASGI base, future adapter scaffolding)
 ├── dashboard/          # HTMX/Jinja2 templates and static assets
 │   ├── templates/      # Edit these, then run `npm run build:css`
 │   └── static/         # shield.min.css lives here — commit after rebuilding

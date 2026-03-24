@@ -13,9 +13,9 @@
 !!! warning "Early Access: your feedback shapes the roadmap"
     `api-shield` is fully functional and ready to use. We are actively building on a solid foundation and would love to hear from you. If you have feedback, feature ideas, or suggestions, **[open an issue on GitHub](https://github.com/Attakay78/api-shield/issues)**. Every voice helps make the library better for everyone.
 
-**Route(API) lifecycle management for ASGI Python web frameworks: maintenance mode, environment gating, deprecation, rate limiting, admin panels, and more. No restarts required.**
+**Feature flags and runtime control for Python APIs — rollouts, rate limits, manage maintenance windows across single ASGI services or a multi-service fleet without redeploying.**
 
-Most "route lifecycle management" tools are blunt instruments: shut everything down or nothing at all. `api-shield` treats each route as a first-class entity with its own lifecycle. State changes take effect immediately through middleware, with no redeployment and no server restart.
+Most "runtime control management" tools are blunt instruments: shut everything down or nothing at all. `api-shield` treats each route as a first-class entity with its own lifecycle. State changes take effect immediately, with no redeployment and no server restart.
 
 ---
 

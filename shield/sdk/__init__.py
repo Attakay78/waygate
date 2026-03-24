@@ -212,19 +212,34 @@ class ShieldSDK:
 
             # Discover routes decorated with @maintenance, @disabled, etc.
             # and register any that are new to the Shield Server.
-            shield_routes: list[tuple[str, dict[str, Any]]] = [
-                (route.path, route.endpoint.__shield_meta__)
-                for route in app.routes
-                if isinstance(route, APIRoute) and hasattr(route.endpoint, "__shield_meta__")
-            ]
+            # Use the same method-prefixed key format as ShieldRouter
+            # (e.g. "GET:/api/payments") so that routes registered by
+            # ShieldRouter before the SDK startup don't create duplicates
+            # with missing-method variants.
+            shield_routes: list[tuple[str, dict[str, Any]]] = []
+            for route in app.routes:
+                if not isinstance(route, APIRoute):
+                    continue
+                if not hasattr(route.endpoint, "__shield_meta__"):
+                    continue
+                meta: dict[str, Any] = route.endpoint.__shield_meta__
+                methods: set[str] = route.methods or set()
+                if methods:
+                    for method in sorted(methods):
+                        shield_routes.append((f"{method}:{route.path}", meta))
+                else:
+                    shield_routes.append((route.path, meta))
 
             if shield_routes:
-                # register_batch() is persistence-first: routes already
-                # present in the cache (synced from server) are skipped.
+                # register_batch() is persistence-first: routes already present
+                # in the cache (synced from server) are skipped.  All set_state()
+                # calls queue to _pending while _startup_done is False; they are
+                # flushed in a single HTTP round-trip by _flush_pending() below.
                 await self._engine.register_batch(shield_routes)
 
-            # Push any truly new routes (not already on the server) in
-            # one HTTP round-trip.
+            # Push any truly new routes (not already on the server) in one HTTP
+            # round-trip, then mark startup complete so that subsequent
+            # set_state() calls (runtime mutations) push immediately.
             await self._backend._flush_pending()
 
             logger.info(

@@ -356,6 +356,17 @@ def ShieldAdmin(
         """Same as _clean_path but works on AuditEntry objects."""
         svc = getattr(entry, "service", None)
         raw = getattr(entry, "path", "")
+        # Translate internal sentinel keys to human-friendly labels
+        if raw == "__global__":
+            return "[Global Maintenance]"
+        if raw == "__global_rl__":
+            return "[Global Rate Limit]"
+        if raw.startswith("__shield:svc_global:") and raw.endswith("__"):
+            name = raw[len("__shield:svc_global:") : -2]
+            return f"[{name} Maintenance]"
+        if raw.startswith("__shield:svc_rl:") and raw.endswith("__"):
+            name = raw[len("__shield:svc_rl:") : -2]
+            return f"[{name} Rate Limit]"
         if svc and raw.startswith(f"{svc}:"):
             return raw[len(svc) + 1 :]
         return raw
@@ -389,9 +400,14 @@ def ShieldAdmin(
             Route("/routes", _dash.routes_partial),
             Route("/modal/global/enable", _dash.modal_global_enable),
             Route("/modal/global/disable", _dash.modal_global_disable),
+            Route("/modal/service/enable", _dash.modal_service_enable),
+            Route("/modal/service/disable", _dash.modal_service_disable),
             Route("/modal/global-rl", _dash.modal_global_rl),
             Route("/modal/global-rl/delete", _dash.modal_global_rl_delete),
             Route("/modal/global-rl/reset", _dash.modal_global_rl_reset),
+            Route("/modal/service-rl", _dash.modal_service_rl),
+            Route("/modal/service-rl/delete", _dash.modal_service_rl_delete),
+            Route("/modal/service-rl/reset", _dash.modal_service_rl_reset),
             Route("/modal/env/{path_key}", _dash.modal_env_gate),
             # Flag/segment modals must come before the generic wildcard below.
             *(_flag_dashboard_modal_routes() if enable_flags else []),
@@ -404,6 +420,16 @@ def ShieldAdmin(
             Route(
                 "/global-maintenance/disable",
                 _dash.global_maintenance_disable,
+                methods=["POST"],
+            ),
+            Route(
+                "/service-maintenance/enable",
+                _dash.service_maintenance_enable,
+                methods=["POST"],
+            ),
+            Route(
+                "/service-maintenance/disable",
+                _dash.service_maintenance_disable,
                 methods=["POST"],
             ),
             Route("/toggle/{path_key}", _dash.toggle, methods=["POST"]),
@@ -431,6 +457,11 @@ def ShieldAdmin(
             Route("/global-rl/reset", _dash.global_rl_reset, methods=["POST"]),
             Route("/global-rl/enable", _dash.global_rl_enable, methods=["POST"]),
             Route("/global-rl/disable", _dash.global_rl_disable, methods=["POST"]),
+            Route("/service-rl/set", _dash.service_rl_set, methods=["POST"]),
+            Route("/service-rl/delete", _dash.service_rl_delete, methods=["POST"]),
+            Route("/service-rl/reset", _dash.service_rl_reset, methods=["POST"]),
+            Route("/service-rl/enable", _dash.service_rl_enable, methods=["POST"]),
+            Route("/service-rl/disable", _dash.service_rl_disable, methods=["POST"]),
             Route("/events", _dash.events),
             # ── REST API (CLI) ────────────────────────────────────────────
             Route("/api/auth/login", _api.auth_login, methods=["POST"]),
@@ -456,6 +487,21 @@ def ShieldAdmin(
             Route("/api/global", _api.get_global, methods=["GET"]),
             Route("/api/global/enable", _api.global_enable_api, methods=["POST"]),
             Route("/api/global/disable", _api.global_disable_api, methods=["POST"]),
+            Route(
+                "/api/services/{service}/maintenance",
+                _api.service_maintenance_get,
+                methods=["GET"],
+            ),
+            Route(
+                "/api/services/{service}/maintenance/enable",
+                _api.service_maintenance_enable,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/services/{service}/maintenance/disable",
+                _api.service_maintenance_disable,
+                methods=["POST"],
+            ),
             Route("/api/rate-limits", _api.list_rate_limits, methods=["GET"]),
             Route("/api/rate-limits", _api.set_rate_limit_policy_api, methods=["POST"]),
             Route("/api/rate-limits/hits", _api.get_rate_limit_hits, methods=["GET"]),
@@ -493,6 +539,36 @@ def ShieldAdmin(
             Route(
                 "/api/global-rate-limit/disable",
                 _api.disable_global_rate_limit_api,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/services/{service}/rate-limit",
+                _api.get_service_rate_limit,
+                methods=["GET"],
+            ),
+            Route(
+                "/api/services/{service}/rate-limit",
+                _api.set_service_rate_limit_api,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/services/{service}/rate-limit",
+                _api.delete_service_rate_limit_api,
+                methods=["DELETE"],
+            ),
+            Route(
+                "/api/services/{service}/rate-limit/reset",
+                _api.reset_service_rate_limit_api,
+                methods=["DELETE"],
+            ),
+            Route(
+                "/api/services/{service}/rate-limit/enable",
+                _api.enable_service_rate_limit_api,
+                methods=["POST"],
+            ),
+            Route(
+                "/api/services/{service}/rate-limit/disable",
+                _api.disable_service_rate_limit_api,
                 methods=["POST"],
             ),
             # ── SDK endpoints (ShieldServerBackend / ShieldSDK) ──────────

@@ -167,6 +167,17 @@ class ShieldBackend(ABC):
         # Unreachable — makes this a valid async generator return type.
         yield
 
+    async def get_registered_paths(self) -> set[str]:
+        """Return the set of all registered path keys for deduplication.
+
+        Used by ``ShieldEngine.register_batch()`` to detect already-registered
+        routes without re-querying the full state list.  The default
+        implementation derives the set from ``list_states()``; backends that
+        store routes under transformed keys (e.g. ``ShieldServerBackend`` which
+        adds a service prefix) should override this to return local/plain keys.
+        """
+        return {s.path for s in await self.list_states()}
+
     # ------------------------------------------------------------------
     # Rate limit hit log — concrete default implementations
     # ------------------------------------------------------------------
@@ -262,6 +273,58 @@ class ShieldBackend(ABC):
         """Remove the persisted global rate limit policy."""
         _GLOBAL_RL_KEY = "__shield:global_rl__"
         await self.delete_state(_GLOBAL_RL_KEY)
+
+    # ------------------------------------------------------------------
+    # Per-service rate limit policy persistence — concrete default
+    # implementations using the sentinel RouteState pattern.
+    # Stored as a sentinel with path ``__shield:svc_rl:{service}__``.
+    # No subclass changes required for existing backends.
+    # ------------------------------------------------------------------
+
+    async def get_service_rate_limit_policy(self, service: str) -> dict[str, Any] | None:
+        """Return the persisted per-service rate limit policy dict, or ``None``."""
+        import json
+
+        key = f"__shield:svc_rl:{service}__"
+        try:
+            state = await self.get_state(key)
+            return dict(json.loads(state.reason))
+        except (KeyError, Exception):
+            return None
+
+    async def set_service_rate_limit_policy(
+        self, service: str, policy_data: dict[str, Any]
+    ) -> None:
+        """Persist *policy_data* as the rate limit policy for *service*."""
+        import json
+
+        key = f"__shield:svc_rl:{service}__"
+        sentinel = RouteState(
+            path=key,
+            status=RouteStatus.ACTIVE,
+            reason=json.dumps(policy_data),
+            service=service,
+        )
+        await self.set_state(key, sentinel)
+
+    async def delete_service_rate_limit_policy(self, service: str) -> None:
+        """Remove the persisted rate limit policy for *service*."""
+        key = f"__shield:svc_rl:{service}__"
+        await self.delete_state(key)
+
+    async def get_all_service_rate_limit_policies(self) -> dict[str, dict[str, Any]]:
+        """Return all persisted per-service rate limit policies as ``{service: policy_data}``."""
+        import json
+
+        result: dict[str, dict[str, Any]] = {}
+        for state in await self.list_states():
+            if state.path.startswith("__shield:svc_rl:") and state.path.endswith("__"):
+                svc = state.path[len("__shield:svc_rl:") : -2]
+                try:
+                    result[svc] = dict(json.loads(state.reason))
+                except Exception:
+                    pass
+        return result
 
     async def subscribe_rate_limit_policy(self) -> AsyncIterator[dict[str, Any]]:
         """Stream rate limit policy changes as they occur.

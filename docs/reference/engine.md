@@ -440,6 +440,82 @@ Update the exempt path list while global maintenance is active, without toggling
 
 ---
 
+## Per-service maintenance
+
+Per-service maintenance puts **all routes of one service** into maintenance mode at once, without touching other services or requiring individual route changes. It uses the same `GlobalMaintenanceConfig` model and exempt-paths mechanism as all-services global maintenance, but is scoped to a single `app_id`.
+
+Available via the engine, the `shield sm` CLI command group, the REST API (`POST /api/services/{service}/maintenance/enable|disable`), and the dashboard Routes page when a service filter is active.
+
+Audit log actions: `service_maintenance_on` (enabled), `service_maintenance_off` (disabled). The `Path` column displays as `[{service} Maintenance]`.
+
+### `enable_service_maintenance`
+
+```python
+async def enable_service_maintenance(
+    service: str,
+    reason: str = "",
+    exempt_paths: list[str] | None = None,
+    include_force_active: bool = False,
+    actor: str = "system",
+    platform: str = "system",
+) -> GlobalMaintenanceConfig
+```
+
+Block all routes for *service* immediately. SDK clients with a matching `app_id` receive the sentinel via SSE and treat every request as if their own global maintenance were enabled. Exempt paths respond normally.
+
+```python title="example"
+await engine.enable_service_maintenance(
+    "payments-service",
+    reason="DB migration",
+    exempt_paths=["/health"],
+    actor="alice",
+)
+```
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `service` | `str` | required | The service `app_id` to put into maintenance |
+| `reason` | `str` | `""` | Shown in every 503 response while maintenance is active |
+| `exempt_paths` | `list[str] \| None` | `None` | Paths that bypass the service maintenance check. Bare path or `METHOD:/path`. |
+| `include_force_active` | `bool` | `False` | When `True`, even `@force_active` routes on this service are blocked |
+| `actor` | `str` | `"system"` | Identity recorded in the audit log |
+
+---
+
+### `disable_service_maintenance`
+
+```python
+async def disable_service_maintenance(
+    service: str,
+    actor: str = "system",
+    platform: str = "system",
+) -> GlobalMaintenanceConfig
+```
+
+Restore all routes of *service* to their individual states.
+
+```python title="example"
+await engine.disable_service_maintenance("payments-service", actor="alice")
+```
+
+---
+
+### `get_service_maintenance`
+
+```python
+async def get_service_maintenance(service: str) -> GlobalMaintenanceConfig
+```
+
+Return the current per-service maintenance configuration. Returns a `GlobalMaintenanceConfig` with `enabled=False` when no sentinel is stored for this service.
+
+```python title="example"
+cfg = await engine.get_service_maintenance("payments-service")
+if cfg.enabled:
+    print(f"payments-service in maintenance: {cfg.reason}")
+```
+
+---
+
 ## Audit log
 
 ### `get_audit_log`

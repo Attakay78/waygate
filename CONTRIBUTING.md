@@ -135,5 +135,5 @@ These are hard constraints enforced by the project design. PRs that violate them
 2. **All business logic lives in `ShieldEngine`.** Middleware and decorators are transport layers only.
 3. **Decorators stamp `__shield_meta__` and do nothing else** — no logic at request time.
 4. **`engine.check()` is the single chokepoint** — never duplicate the check logic elsewhere.
-5. **Backends must implement the full `ShieldBackend` ABC** — no partial implementations.
+5. **Backends must implement the full `ShieldBackend` ABC** — no partial implementations. If a method is not supported (e.g. `subscribe()` on `FileBackend`), it raises `NotImplementedError`. `ShieldEngine.start()` catches this internally and skips the listener — the engine handles the fallback, not the caller.
 6. **Fail-open** — if the backend is unreachable, the request passes through. Shield never takes down an API.

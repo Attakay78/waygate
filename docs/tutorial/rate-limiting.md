@@ -405,6 +405,33 @@ Submitting the form calls `POST /api/rate-limits` under the hood and redirects b
 
 ---
 
+## Per-service rate limit (multi-service)
+
+When running multiple services with Shield Server and `ShieldSDK`, you can set a rate limit that applies to **every route of one service** without decorating individual handlers.
+
+```bash
+# Cap all payments-service routes at 1000 per minute per IP
+shield srl set payments-service 1000/minute
+
+# Shared counter across all callers
+shield srl set payments-service 5000/hour --key global
+
+# Pause and resume enforcement
+shield srl disable payments-service
+shield srl enable  payments-service
+
+# Clear counters (policy stays in place)
+shield srl reset payments-service
+```
+
+The service rate limit sits between the all-services global rate limit (`shield grl`) and individual per-route limits. A request passes through all three layers in order before reaching the handler. You can configure any combination of the three independently.
+
+From the dashboard: open the **Rate Limits** tab and filter to a service. A **Service Rate Limit** card appears above the policies table with controls to configure, pause, reset, and remove the policy.
+
+See [Per-service rate limit reference](../reference/rate-limiting.md#per-service-rate-limit) and the [`shield srl` CLI reference](../reference/cli.md#shield-srl--shield-service-rate-limit) for the full API.
+
+---
+
 ## Blocked requests log
 
 Every blocked request is recorded. View from the dashboard at `/shield/blocked` or via the CLI:

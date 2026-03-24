@@ -2,9 +2,39 @@
 
 {% block content %}
 
-{# ── Global maintenance control ───────────────────────────────────── #}
-{% set config = global_config %}
-{% include "partials/global_maintenance.html" with context %}
+{# ── Maintenance controls ──────────────────────────────────────────── #}
+{#
+   Multi-service (service selected):
+     Global (left) + Service (right) in one responsive row.
+     Stacks to a single column on mobile.
+
+   Embedded / All services:
+     Global maintenance takes the full width as before.
+#}
+{% if selected_service and service_config is not none %}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 items-stretch">
+    <div class="flex flex-col">
+        {# Left — all-services global maintenance #}
+        {% set config = global_config %}
+        {% include "partials/global_maintenance.html" with context %}
+    </div>
+    <div class="flex flex-col">
+        {# Right — per-service maintenance #}
+        {% set config = service_config %}
+        {% set service = selected_service %}
+        {% include "partials/service_maintenance.html" with context %}
+    </div>
+</div>
+
+{% else %}
+
+<div class="mb-5">
+    {% set config = global_config %}
+    {% include "partials/global_maintenance.html" with context %}
+</div>
+
+{% endif %}
 
 {# ── Compute per-status counts for the summary bar ────────────────── #}
 {% set n_active      = states | selectattr("status", "equalto", "active")      | list | length %}

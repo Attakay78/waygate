@@ -30,8 +30,8 @@ from typing import Any
 
 import httpx
 
-from shield.core.backends.base import ShieldBackend
-from shield.core.models import AuditEntry, RouteState
+from shield.core.backends.base import _GLOBAL_KEY, ShieldBackend
+from shield.core.models import AuditEntry, GlobalMaintenanceConfig, RouteState
 
 logger = logging.getLogger(__name__)
 
@@ -89,12 +89,33 @@ class ShieldServerBackend(ShieldBackend):
         self._cache: dict[str, RouteState] = {}
 
         # Routes registered locally during startup before the HTTP client
-        # exists.  Flushed to the server once startup() completes.
-        self._pending: list[RouteState] = []
+        # exists, or before _startup_done is True.  Keyed by server-side
+        # path so duplicates (e.g. from ShieldRouter + SDK scan) are collapsed.
+        # Flushed to the server as one batch once _flush_pending() completes.
+        self._pending: dict[str, RouteState] = {}
+
+        # False until _flush_pending() completes for the first time.  While
+        # False, set_state() always queues to _pending instead of firing
+        # individual _push_state() tasks so that ALL startup registrations —
+        # from ShieldRouter, from SDK route scan, from any ordering of startup
+        # hooks — travel in exactly ONE HTTP round-trip at the end.  Once True,
+        # real-time pushes are enabled for runtime state mutations (enable,
+        # disable, maintenance, etc.).
+        self._startup_done: bool = False
+
+        # Queues signalled whenever the global-maintenance config changes
+        # (all-services global key OR the service-specific key).  Used by
+        # subscribe_global_config() so the engine can invalidate its cache.
+        self._global_config_changed: list[asyncio.Queue[None]] = []
 
         # Local rate limit policy cache — keyed "METHOD:local_path" → policy dict.
         self._rl_policy_cache: dict[str, dict[str, Any]] = {}
         self._rl_policy_subscribers: list[asyncio.Queue[dict[str, Any]]] = []
+
+        # Queues for state-change subscribers (fed by _listen_sse on "state" events).
+        # Consumed by subscribe() so _run_route_state_listener bumps _schema_version,
+        # which invalidates the apply_shield_to_openapi cache on every SSE update.
+        self._state_subscribers: list[asyncio.Queue[RouteState]] = []
 
         # Local feature flag / segment cache (populated by SSE flag events).
         self._flag_cache: dict[str, Any] = {}  # key → FeatureFlag raw dict
@@ -246,31 +267,40 @@ class ShieldServerBackend(ShieldBackend):
         Called by :class:`~shield.sdk.ShieldSDK` after route discovery at
         startup so the dashboard reflects the service's routes.  Routes
         already present on the server are left untouched (server-wins).
+
+        Sets :attr:`_startup_done` to ``True`` after the flush (whether or not
+        the HTTP request succeeded) so that subsequent :meth:`set_state` calls
+        — from runtime mutations like ``engine.disable()`` — are pushed
+        immediately instead of being queued.
         """
-        if not self._pending or self._client is None:
-            return
-        batch = self._pending[:]
-        self._pending.clear()
         try:
-            await self._client.post(
-                "/api/sdk/register",
-                json={
-                    "app_id": self._app_id,
-                    "states": [s.model_dump(mode="json") for s in batch],
-                },
-            )
-            logger.debug(
-                "ShieldServerBackend[%s]: registered %d new route(s) with server",
-                self._app_id,
-                len(batch),
-            )
-        except Exception as exc:  # noqa: BLE001
-            logger.warning(
-                "ShieldServerBackend[%s]: failed to register %d route(s) with server: %s",
-                self._app_id,
-                len(batch),
-                exc,
-            )
+            if not self._pending or self._client is None:
+                return
+            batch = list(self._pending.values())
+            self._pending.clear()
+            try:
+                await self._client.post(
+                    "/api/sdk/register",
+                    json={
+                        "app_id": self._app_id,
+                        "states": [s.model_dump(mode="json") for s in batch],
+                    },
+                )
+                logger.debug(
+                    "ShieldServerBackend[%s]: registered %d new route(s) with server",
+                    self._app_id,
+                    len(batch),
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "ShieldServerBackend[%s]: failed to register %d route(s) with server: %s",
+                    self._app_id,
+                    len(batch),
+                    exc,
+                )
+        finally:
+            # Mark startup complete so runtime set_state() calls push immediately.
+            self._startup_done = True
 
     # ------------------------------------------------------------------
     # SSE listener
@@ -350,6 +380,18 @@ class ShieldServerBackend(ShieldBackend):
                         local_key,
                         state.status,
                     )
+                    # Notify state subscribers so _run_route_state_listener
+                    # bumps _schema_version, which invalidates the OpenAPI cache.
+                    _svc_global_key = f"__shield:svc_global:{self._app_id}__"
+                    if local_key not in (_GLOBAL_KEY, _svc_global_key):
+                        for q in self._state_subscribers:
+                            q.put_nowait(state)
+                    # Notify engine to invalidate global-maintenance cache when
+                    # the all-services global config OR this service's own
+                    # maintenance config arrives via SSE.
+                    else:
+                        for gc_q in self._global_config_changed:
+                            gc_q.put_nowait(None)
 
                 elif event_type == "rl_policy":
                     # Rate limit policy change.
@@ -359,16 +401,16 @@ class ShieldServerBackend(ShieldBackend):
                         policy = envelope.get("policy", {})
                         self._rl_policy_cache[key] = policy
                         event: dict[str, Any] = {"action": "set", "key": key, "policy": policy}
-                        for q in self._rl_policy_subscribers:
-                            q.put_nowait(event)
+                        for rl_q in self._rl_policy_subscribers:
+                            rl_q.put_nowait(event)
                         logger.debug(
                             "ShieldServerBackend[%s]: RL policy set — %s", self._app_id, key
                         )
                     elif action == "delete":
                         self._rl_policy_cache.pop(key, None)
                         del_event: dict[str, Any] = {"action": "delete", "key": key}
-                        for q in self._rl_policy_subscribers:
-                            q.put_nowait(del_event)
+                        for rl_q in self._rl_policy_subscribers:
+                            rl_q.put_nowait(del_event)
                         logger.debug(
                             "ShieldServerBackend[%s]: RL policy deleted — %s", self._app_id, key
                         )
@@ -383,8 +425,8 @@ class ShieldServerBackend(ShieldBackend):
                             "key": key,
                             "flag": flag_data,
                         }
-                        for q in self._flag_subscribers:
-                            q.put_nowait(flag_event)
+                        for flag_q in self._flag_subscribers:
+                            flag_q.put_nowait(flag_event)
                         logger.debug(
                             "ShieldServerBackend[%s]: flag cache updated — %s",
                             self._app_id,
@@ -396,8 +438,8 @@ class ShieldServerBackend(ShieldBackend):
                     if key:
                         self._flag_cache.pop(key, None)
                         flag_del_event: dict[str, Any] = {"type": "flag_deleted", "key": key}
-                        for q in self._flag_subscribers:
-                            q.put_nowait(flag_del_event)
+                        for flag_q in self._flag_subscribers:
+                            flag_q.put_nowait(flag_del_event)
                         logger.debug(
                             "ShieldServerBackend[%s]: flag deleted — %s", self._app_id, key
                         )
@@ -412,8 +454,8 @@ class ShieldServerBackend(ShieldBackend):
                             "key": key,
                             "segment": seg_data,
                         }
-                        for q in self._flag_subscribers:
-                            q.put_nowait(seg_event)
+                        for flag_q in self._flag_subscribers:
+                            flag_q.put_nowait(seg_event)
                         logger.debug(
                             "ShieldServerBackend[%s]: segment cache updated — %s",
                             self._app_id,
@@ -425,8 +467,8 @@ class ShieldServerBackend(ShieldBackend):
                     if key:
                         self._segment_cache.pop(key, None)
                         seg_del_event: dict[str, Any] = {"type": "segment_deleted", "key": key}
-                        for q in self._flag_subscribers:
-                            q.put_nowait(seg_del_event)
+                        for flag_q in self._flag_subscribers:
+                            flag_q.put_nowait(seg_del_event)
                         logger.debug(
                             "ShieldServerBackend[%s]: segment deleted — %s", self._app_id, key
                         )
@@ -439,6 +481,8 @@ class ShieldServerBackend(ShieldBackend):
                             continue
                         local_key = self._local_path(state)
                         self._cache[local_key] = state
+                        for q in self._state_subscribers:
+                            q.put_nowait(state)
                     except Exception:
                         pass
 
@@ -475,8 +519,11 @@ class ShieldServerBackend(ShieldBackend):
         )
         # Local cache always uses the plain path for zero-overhead enforcement.
         self._cache[path] = state
-        if self._client is None:
-            self._pending.append(state)
+        if self._client is None or not self._startup_done:
+            # Queue for batch flush: use server-side path as key so duplicate
+            # registrations (e.g. from both ShieldRouter and SDK scan) collapse
+            # into one entry — latest state wins.
+            self._pending[state.path] = state
         else:
             asyncio.create_task(self._push_state(state))
 
@@ -503,7 +550,22 @@ class ShieldServerBackend(ShieldBackend):
         self._cache.pop(path, None)
 
     async def list_states(self) -> list[RouteState]:
-        return list(self._cache.values())
+        # Exclude sentinel keys used for global/service maintenance configs
+        # so they don't appear as regular routes in the dashboard or CLI.
+        #
+        # Normalize state.path to the local (app-side) cache key — e.g.
+        # "GET:/api/payments" — rather than the server-side namespaced path
+        # "payments-service:GET:/api/payments".  Callers such as
+        # apply_shield_to_openapi look up states by the local path that
+        # matches FastAPI's route paths, so the paths must align.
+        result: list[RouteState] = []
+        for local_key, state in self._cache.items():
+            if local_key.startswith("__shield:"):
+                continue
+            if state.path != local_key:
+                state = state.model_copy(update={"path": local_key})
+            result.append(state)
+        return result
 
     # ------------------------------------------------------------------
     # Audit log
@@ -553,21 +615,118 @@ class ShieldServerBackend(ShieldBackend):
             return []
 
     # ------------------------------------------------------------------
-    # subscribe() — not needed; SDK uses an internal SSE connection
+    # subscribe() — yields state changes received via the SSE connection
     # ------------------------------------------------------------------
 
     async def subscribe(self) -> AsyncIterator[RouteState]:
-        """Not supported — ``ShieldServerBackend`` manages its own SSE stream.
+        """Yield every route-state change pushed by the Shield Server via SSE.
 
-        The Shield Server's ``/api/sdk/events`` endpoint is consumed
-        internally by :meth:`_listen_sse`.  Callers (e.g. the dashboard)
-        should use the server's own ``/events`` endpoint instead.
+        State changes arrive through the existing ``/api/sdk/events`` SSE
+        connection managed by :meth:`_listen_sse`.  Each yielded
+        ``RouteState`` is a normal (non-sentinel) route update for this
+        service.
+
+        The engine's ``_run_route_state_listener`` consumes this generator
+        and calls ``_bump_schema_version()`` on every yield so that
+        ``apply_shield_to_openapi``'s cache is invalidated and ``/docs``
+        reflects live state changes made via the dashboard or CLI.
         """
-        raise NotImplementedError(
-            "ShieldServerBackend manages its own SSE connection internally. "
-            "Connect directly to the Shield Server's /events endpoint for live updates."
-        )
-        yield  # pragma: no cover — makes this a valid async generator
+        q: asyncio.Queue[RouteState] = asyncio.Queue()
+        self._state_subscribers.append(q)
+        try:
+            while True:
+                yield await q.get()
+        finally:
+            with contextlib.suppress(ValueError):
+                self._state_subscribers.remove(q)
+
+    # ------------------------------------------------------------------
+    # Global maintenance — SSE-driven cache invalidation
+    # ------------------------------------------------------------------
+
+    async def subscribe_global_config(self) -> AsyncIterator[None]:
+        """Yield whenever the global or service-specific maintenance config changes.
+
+        The signal arrives via the SDK's existing SSE connection: when
+        :meth:`_listen_sse` receives a state update for the global-config
+        sentinel key (``_GLOBAL_KEY``) or this service's own maintenance key,
+        it puts ``None`` into every queue registered here.  The engine
+        consumes these signals to invalidate its in-process config cache.
+        """
+        q: asyncio.Queue[None] = asyncio.Queue()
+        self._global_config_changed.append(q)
+        try:
+            while True:
+                await q.get()
+                yield None
+        finally:
+            try:
+                self._global_config_changed.remove(q)
+            except ValueError:
+                pass
+
+    async def get_global_config(self) -> GlobalMaintenanceConfig:
+        """Return the effective global-maintenance config for this service.
+
+        Checks (in order):
+        1. All-services global maintenance (``_GLOBAL_KEY``) — if enabled,
+           return immediately (highest priority).
+        2. Service-specific maintenance (``__shield:svc_global:<app_id>__``)
+           — allows per-service emergency maintenance without touching all
+           other services.
+
+        Both configs are read from the local SSE-driven cache so there is
+        no network hop per request.
+        """
+        # 1. All-services global config
+        try:
+            state = self._cache.get(_GLOBAL_KEY)
+            if state is not None:
+                cfg = GlobalMaintenanceConfig.model_validate_json(state.reason)
+                if cfg.enabled:
+                    return cfg
+        except Exception:  # noqa: BLE001
+            pass
+        # 2. Service-specific maintenance config
+        svc_key = f"__shield:svc_global:{self._app_id}__"
+        try:
+            state = self._cache.get(svc_key)
+            if state is not None:
+                return GlobalMaintenanceConfig.model_validate_json(state.reason)
+        except Exception:  # noqa: BLE001
+            pass
+        return GlobalMaintenanceConfig()
+
+    # ------------------------------------------------------------------
+    # Route deduplication helper
+    # ------------------------------------------------------------------
+
+    async def get_registered_paths(self) -> set[str]:
+        """Return local cache keys for route-deduplication in register_batch.
+
+        Unlike the default implementation (which uses state ``.path`` fields
+        that include the service prefix), this returns the local cache keys —
+        i.e. plain paths like ``"GET:/api/payments"`` or ``"/api/payments"``.
+        This lets ``engine.register_batch()`` correctly detect routes that
+        are already known to this SDK instance, regardless of whether they
+        were synced from the server with or without a method prefix.
+
+        The returned set also includes bare-path variants (method prefix
+        stripped) so that routes registered by ``ShieldRouter`` as
+        ``"GET:/api/payments"`` are matched against SDK-discovered paths of
+        ``"/api/payments"``.
+        """
+        # Exclude sentinel keys (global config, service maintenance) so they
+        # are never treated as real routes in register_batch dedup checks.
+        keys = {k for k in self._cache.keys() if not k.startswith("__shield:")}
+        bare: set[str] = set()
+        _methods = ("GET:", "POST:", "PUT:", "PATCH:", "DELETE:", "HEAD:", "OPTIONS:")
+        for key in keys:
+            for m in _methods:
+                if key.startswith(m):
+                    bare.add(key[len(m) :])
+                    break
+        return keys | bare
 
     # ------------------------------------------------------------------
     # Rate limit policy — local cache, updated via SSE

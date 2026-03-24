@@ -282,6 +282,75 @@ shield global exempt-remove /monitoring/ping
 
 ---
 
+## `shield sm` / `shield service-maintenance`
+
+`shield sm` and `shield service-maintenance` are aliases for the same command group. Puts all routes of one service into maintenance mode without affecting other services. The affected SDK client's `app_id` must match the service name.
+
+```bash
+shield sm enable payments-service --reason "DB migration"
+shield service-maintenance enable payments-service   # identical
+```
+
+### `shield sm status`
+
+Show the current maintenance configuration for a service.
+
+```bash
+shield sm status <service>
+```
+
+```bash
+shield sm status payments-service
+```
+
+**Example output:**
+
+```
+  Service maintenance (payments-service): ON
+  Reason               : DB migration
+  Include @force_active: no
+  Exempt paths         :
+    • /health
+```
+
+---
+
+### `shield sm enable`
+
+Block all routes of a service immediately. Routes return `503` until `shield sm disable` is called.
+
+```bash
+shield sm enable <service>
+```
+
+```bash
+shield sm enable payments-service --reason "DB migration"
+shield sm enable payments-service --reason "Upgrade" --exempt /health --exempt GET:/ready
+shield sm enable orders-service --include-force-active
+```
+
+| Option | Description |
+|---|---|
+| `--reason TEXT` | Shown in every 503 response while maintenance is active |
+| `--exempt PATH` | Exempt a path from the block (repeatable). Use bare `/health` or `GET:/health`. |
+| `--include-force-active` | Also block `@force_active` routes. Use with care. |
+
+---
+
+### `shield sm disable`
+
+Restore all routes of a service to their individual states.
+
+```bash
+shield sm disable <service>
+```
+
+```bash
+shield sm disable payments-service
+```
+
+---
+
 ## Rate limit commands
 
 `shield rl` and `shield rate-limits` are aliases for the same command group — use whichever you prefer. Requires `api-shield[rate-limit]` on the server.
@@ -450,11 +519,105 @@ shield grl disable
 
 ---
 
+## `shield srl` / `shield service-rate-limit`
+
+`shield srl` and `shield service-rate-limit` are aliases for the same command group. Manages the rate limit policy for a single service — applies to all routes of that service. Requires `api-shield[rate-limit]` on the server.
+
+```bash
+shield srl get payments-service
+shield service-rate-limit get payments-service   # identical
+```
+
+### `shield srl get`
+
+Show the current rate limit policy for a service, including limit, algorithm, key strategy, burst, exempt routes, and enabled state.
+
+```bash
+shield srl get <service>
+```
+
+```bash
+shield srl get payments-service
+```
+
+---
+
+### `shield srl set`
+
+Configure the rate limit for a service. Creates a new policy or replaces the existing one.
+
+```bash
+shield srl set <service> <limit>
+```
+
+```bash
+shield srl set payments-service 1000/minute
+shield srl set payments-service 500/minute --algorithm sliding_window --key ip
+shield srl set payments-service 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
+```
+
+| Option | Description |
+|---|---|
+| `--algorithm TEXT` | Counting algorithm: `fixed_window`, `sliding_window`, `moving_window`, `token_bucket` |
+| `--key TEXT` | Key strategy: `ip`, `user`, `api_key`, `global` |
+| `--burst INT` | Extra requests above the base limit |
+| `--exempt TEXT` | Exempt route (repeatable). Bare path (`/health`) or method-prefixed (`GET:/metrics`) |
+
+---
+
+### `shield srl delete`
+
+Remove the service rate limit policy entirely.
+
+```bash
+shield srl delete <service>
+```
+
+```bash
+shield srl delete payments-service
+```
+
+---
+
+### `shield srl reset`
+
+Clear all counters for the service. The policy is kept; clients get their full quota back on the next request.
+
+```bash
+shield srl reset <service>
+```
+
+```bash
+shield srl reset payments-service
+```
+
+---
+
+### `shield srl enable`
+
+Resume a paused service rate limit policy.
+
+```bash
+shield srl enable <service>
+```
+
+---
+
+### `shield srl disable`
+
+Pause the service rate limit without removing it. Per-route policies continue to enforce normally.
+
+```bash
+shield srl disable <service>
+```
+
+---
+
 ## Audit log
 
 ### `shield log`
 
-Display the audit log, newest entries first. The `Status` column shows `old > new` for route state changes and a coloured action label for rate limit policy changes (including global RL actions such as `global set`, `global reset`, `global enabled`, `global disabled`).
+Display the audit log, newest entries first. The `Status` column shows `old > new` for route state changes and a coloured action label for rate limit policy changes (including global RL actions such as `global set`, `global reset`, `global enabled`, `global disabled`, and service RL actions such as `svc set`, `svc reset`, `svc enabled`, `svc disabled`). The `Path` column shows human-readable labels for sentinel-keyed entries: `[Global Maintenance]`, `[Global Rate Limit]`, `[{service} Maintenance]`, and `[{service} Rate Limit]`.
 
 ```bash
 shield log                          # page 1, 20 rows

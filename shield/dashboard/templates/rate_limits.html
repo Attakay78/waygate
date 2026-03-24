@@ -15,10 +15,41 @@
     </a>
 </div>
 
-{# ── Global rate limit card ──────────────────────────────────────── #}
-{% with grl=global_rl %}
-{% include "partials/global_rl_card.html" %}
-{% endwith %}
+{# ── Rate limit cards ─────────────────────────────────────────────── #}
+{#
+   Multi-service (service selected):
+     Global (left) + Service (right) in one responsive row.
+     Stacks to a single column on mobile.
+
+   No service selected:
+     Global rate limit takes the full width.
+#}
+{% if selected_service %}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 items-stretch">
+    <div class="flex flex-col">
+        {# Left — all-services global rate limit #}
+        {% with grl=global_rl %}
+        {% include "partials/global_rl_card.html" %}
+        {% endwith %}
+    </div>
+    <div class="flex flex-col">
+        {# Right — per-service rate limit #}
+        {% with srl=service_rl, service=selected_service %}
+        {% include "partials/service_rl_card.html" %}
+        {% endwith %}
+    </div>
+</div>
+
+{% else %}
+
+<div class="mb-5">
+    {% with grl=global_rl %}
+    {% include "partials/global_rl_card.html" %}
+    {% endwith %}
+</div>
+
+{% endif %}
 
 {# ── Policies table ─────────────────────────────────────────────── #}
 <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">

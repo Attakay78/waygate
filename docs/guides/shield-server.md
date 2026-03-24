@@ -164,6 +164,81 @@ shield global disable --reason "emergency maintenance"
 shield global enable
 ```
 
+---
+
+## Global maintenance in multi-service environments
+
+`shield global enable` and `shield global disable` operate on the Shield Server and affect **every route across every connected service** simultaneously. Use this for fleet-wide outages or deployments where all services must be taken offline at once.
+
+```bash
+# Block all routes on all services
+shield global enable --reason "Deploying v3" --exempt /health --exempt /ready
+
+# Restore all routes
+shield global disable
+```
+
+---
+
+## Per-service maintenance
+
+Per-service maintenance puts **all routes of one service** into maintenance mode without affecting other services. SDK clients with a matching `app_id` receive the sentinel over SSE and treat all their routes as in maintenance — no individual route changes needed.
+
+### From the engine (programmatic)
+
+```python
+# Put payments-service into maintenance
+await engine.enable_service_maintenance(
+    "payments-service",
+    reason="DB migration",
+    exempt_paths=["/health"],
+)
+
+# Restore
+await engine.disable_service_maintenance("payments-service")
+
+# Inspect
+cfg = await engine.get_service_maintenance("payments-service")
+print(cfg.enabled, cfg.reason)
+```
+
+### From the REST API
+
+```http
+POST /api/services/payments-service/maintenance/enable
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{"reason": "DB migration", "exempt_paths": ["/health"]}
+```
+
+```http
+POST /api/services/payments-service/maintenance/disable
+```
+
+### From the CLI
+
+`shield sm` and `shield service-maintenance` are aliases for the same command group:
+
+```bash
+# Enable — all routes of payments-service return 503
+shield sm enable payments-service --reason "DB migration"
+shield sm enable payments-service --reason "Upgrade" --exempt /health
+
+# Check current state
+shield sm status payments-service
+
+# Restore
+shield sm disable payments-service
+```
+
+### From the dashboard
+
+Open the Routes page and select the service using the service filter. A **Service Maintenance** card appears with Enable and Disable controls.
+
+!!! tip "Use `@force_active` on health checks"
+    Health and readiness endpoints should always be decorated with `@force_active` so they are never affected by global or per-service maintenance mode.
+
 ### Useful discovery commands
 
 ```bash
@@ -224,6 +299,41 @@ Use a **different Redis database** (or a different Redis instance) from the one 
 | 2+ | 1 each | `MemoryBackend` or `FileBackend` | not needed |
 | 2+ | 2+ each (shared counters) | `RedisBackend` | `RedisBackend` (different DB) |
 | 2+ | 2+ each (independent counters per replica) | `RedisBackend` | not needed |
+
+---
+
+## Per-service rate limits
+
+A per-service rate limit applies a single policy to **all routes of one service** without configuring each route individually. It is checked after the all-services global rate limit and before any per-route limit:
+
+```
+global maintenance -> service maintenance -> global rate limit -> service rate limit -> per-route rate limit
+```
+
+Configure it with the `shield srl` CLI (also available as `shield service-rate-limit`):
+
+```bash
+# Cap all payments-service routes at 1000 per minute per IP
+shield srl set payments-service 1000/minute
+
+# With options
+shield srl set payments-service 500/minute --algorithm sliding_window --key ip
+shield srl set payments-service 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
+
+# Inspect, pause, reset counters, remove
+shield srl get     payments-service
+shield srl disable payments-service
+shield srl enable  payments-service
+shield srl reset   payments-service
+shield srl delete  payments-service
+```
+
+From the dashboard: open the **Rate Limits** tab and select a service using the service filter. A **Service Rate Limit** card appears above the policies table with controls to configure, pause, reset, and remove the policy.
+
+The service rate limit uses the same `GlobalRateLimitPolicy` model as the all-services global rate limit. It is stored in the backend under a sentinel key and survives Shield Server restarts on `FileBackend` or `RedisBackend`.
+
+!!! note "Independent layers"
+    The all-services global rate limit (`shield grl`) and the per-service rate limit (`shield srl`) are independent. A request must pass both before reaching per-route checking. You can configure one, both, or neither.
 
 ---
 

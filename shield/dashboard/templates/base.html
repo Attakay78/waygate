@@ -256,7 +256,7 @@
             <nav class="flex flex-col gap-0.5 px-0">
 
                 <!-- Routes -->
-                <a href="{{ prefix }}/"
+                <a href="{{ prefix }}/{% if selected_service %}?service={{ selected_service }}{% endif %}"
                    class="group flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors duration-150
                           {% if active_tab == 'routes' %}bg-violet-50 text-violet-700{% else %}text-slate-500 hover:text-slate-700 hover:bg-slate-50{% endif %}">
                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -266,7 +266,7 @@
                 </a>
 
                 <!-- Audit Log -->
-                <a href="{{ prefix }}/audit"
+                <a href="{{ prefix }}/audit{% if selected_service %}?service={{ selected_service }}{% endif %}"
                    class="group flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors duration-150
                           {% if active_tab == 'audit' %}bg-violet-50 text-violet-700{% else %}text-slate-500 hover:text-slate-700 hover:bg-slate-50{% endif %}">
                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -276,7 +276,7 @@
                 </a>
 
                 <!-- Rate Limits -->
-                <a href="{{ prefix }}/rate-limits"
+                <a href="{{ prefix }}/rate-limits{% if selected_service %}?service={{ selected_service }}{% endif %}"
                    class="group flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors duration-150
                           {% if active_tab == 'rate_limits' %}bg-violet-50 text-violet-700{% else %}text-slate-500 hover:text-slate-700 hover:bg-slate-50{% endif %}">
                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -286,7 +286,7 @@
                 </a>
 
                 <!-- Blocked -->
-                <a href="{{ prefix }}/blocked"
+                <a href="{{ prefix }}/blocked{% if selected_service %}?service={{ selected_service }}{% endif %}"
                    class="group flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors duration-150
                           {% if active_tab == 'rl_hits' %}bg-violet-50 text-violet-700{% else %}text-slate-500 hover:text-slate-700 hover:bg-slate-50{% endif %}">
                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -297,7 +297,7 @@
 
                 {% if flags_enabled %}
                 <!-- Feature Flags -->
-                <a href="{{ prefix }}/flags"
+                <a href="{{ prefix }}/flags{% if selected_service %}?service={{ selected_service }}{% endif %}"
                    class="group flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors duration-150
                           {% if active_tab == 'flags' %}bg-violet-50 text-violet-700{% else %}text-slate-500 hover:text-slate-700 hover:bg-slate-50{% endif %}">
                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -307,7 +307,7 @@
                 </a>
 
                 <!-- Segments -->
-                <a href="{{ prefix }}/segments"
+                <a href="{{ prefix }}/segments{% if selected_service %}?service={{ selected_service }}{% endif %}"
                    class="group flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors duration-150
                           {% if active_tab == 'segments' %}bg-violet-50 text-violet-700{% else %}text-slate-500 hover:text-slate-700 hover:bg-slate-50{% endif %}">
                     <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -499,14 +499,16 @@
 
         // Map URL path fragments → human-readable success message.
         const MESSAGES = [
-            ['/enable/',                    'Route enabled'],
-            ['/disable/',                   'Route disabled'],
-            ['/global-maintenance/enable',  'Global maintenance enabled'],
-            ['/global-maintenance/disable', 'Service restored'],
-            ['/rl/reset/',                  'Counters reset'],
-            ['/rl/edit/',                   'Rate limit updated'],
-            ['/rl/delete/',                 'Rate limit removed'],
-            ['/toggle/',                    'Route updated'],
+            ['/enable/',                     'Route enabled'],
+            ['/disable/',                    'Route disabled'],
+            ['/global-maintenance/enable',   'Global maintenance enabled'],
+            ['/global-maintenance/disable',  'All services restored'],
+            ['/service-maintenance/enable',  'Service maintenance enabled'],
+            ['/service-maintenance/disable', 'Service restored'],
+            ['/rl/reset/',                   'Counters reset'],
+            ['/rl/edit/',                    'Rate limit updated'],
+            ['/rl/delete/',                  'Rate limit removed'],
+            ['/toggle/',                     'Route updated'],
         ];
 
         function getMessage(path, verb) {

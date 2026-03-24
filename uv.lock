@@ -48,7 +48,7 @@ trio = [
 
 [[package]]
 name = "api-shield"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -146,9 +146,9 @@ requires-dist = [
     { name = "aiofiles", marker = "extra == 'dev'", specifier = ">=23.0" },
     { name = "anyio", specifier = ">=4.0" },
     { name = "anyio", extras = ["trio"], marker = "extra == 'dev'" },
-    { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.100" },
-    { name = "fastapi", marker = "extra == 'dev'", specifier = ">=0.100" },
-    { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.100" },
+    { name = "fastapi", marker = "extra == 'all'", specifier = ">=0.115" },
+    { name = "fastapi", marker = "extra == 'dev'", specifier = ">=0.115" },
+    { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.115" },
     { name = "httpx", marker = "extra == 'all'", specifier = ">=0.27" },
     { name = "httpx", marker = "extra == 'cli'", specifier = ">=0.27" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
@@ -186,7 +186,7 @@ requires-dist = [
     { name = "rich", marker = "extra == 'all'", specifier = ">=13.0" },
     { name = "rich", marker = "extra == 'cli'", specifier = ">=13.0" },
     { name = "ruff", marker = "extra == 'dev'" },
-    { name = "starlette", specifier = ">=0.27" },
+    { name = "starlette", specifier = ">=0.40" },
     { name = "tomli-w", marker = "extra == 'all'", specifier = ">=1.0" },
     { name = "tomli-w", marker = "extra == 'dev'", specifier = ">=1.0" },
     { name = "tomli-w", marker = "extra == 'toml'", specifier = ">=1.0" },
@@ -1303,14 +1303,14 @@ wheels = [
 
 [[package]]
 name = "redis"
-version = "7.3.0"
+version = "7.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "async-timeout", marker = "python_full_version < '3.11.3'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/da/82/4d1a5279f6c1251d3d2a603a798a1137c657de9b12cfc1fba4858232c4d2/redis-7.3.0.tar.gz", hash = "sha256:4d1b768aafcf41b01022410b3cc4f15a07d9b3d6fe0c66fc967da2c88e551034", size = 4928081 }
+sdist = { url = "https://files.pythonhosted.org/packages/7b/7f/3759b1d0d72b7c92f0d70ffd9dc962b7b7b5ee74e135f9d7d8ab06b8a318/redis-7.4.0.tar.gz", hash = "sha256:64a6ea7bf567ad43c964d2c30d82853f8df927c5c9017766c55a1d1ed95d18ad", size = 4943913 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f0/28/84e57fce7819e81ec5aa1bd31c42b89607241f4fb1a3ea5b0d2dbeaea26c/redis-7.3.0-py3-none-any.whl", hash = "sha256:9d4fcb002a12a5e3c3fbe005d59c48a2cc231f87fbb2f6b70c2d89bb64fec364", size = 404379 },
+    { url = "https://files.pythonhosted.org/packages/74/3a/95deec7db1eb53979973ebd156f3369a72732208d1391cd2e5d127062a32/redis-7.4.0-py3-none-any.whl", hash = "sha256:a9c74a5c893a5ef8455a5adb793a31bb70feb821c86eccb62eebef5a19c429ec", size = 409772 },
 ]
 
 [[package]]

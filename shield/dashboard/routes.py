@@ -184,6 +184,7 @@ async def index(request: Request) -> Response:
     if service:
         states = [s for s in states if s.service == service]
     global_config = await engine.get_global_maintenance()
+    service_config = await engine.get_service_maintenance(service) if service else None
     # Build a path → policy dict for the rate limit badge column.
     # Policies are keyed "METHOD:/path" so we index by path only (first match wins).
     rl_by_path: dict[str, object] = {}
@@ -199,6 +200,7 @@ async def index(request: Request) -> Response:
             "states": paged["items"],
             "pagination": paged,
             "global_config": global_config,
+            "service_config": service_config,
             "rate_limit_policies": rl_by_path,
             "prefix": prefix,
             "active_tab": "routes",
@@ -455,6 +457,85 @@ async def global_maintenance_disable(request: Request) -> HTMLResponse:
     return HTMLResponse(_render_global_widget(tpl, config, prefix))
 
 
+def _render_service_widget(tpl: Jinja2Templates, config: object, service: str, prefix: str) -> str:
+    """Render the per-service maintenance status widget partial."""
+    return tpl.env.get_template("partials/service_maintenance.html").render(
+        config=config,
+        service=service,
+        prefix=prefix,
+    )
+
+
+async def modal_service_enable(request: Request) -> HTMLResponse:
+    """Return the per-service maintenance enable modal form."""
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    service = request.query_params.get("service", "")
+    html = tpl.env.get_template("partials/modal_service_enable.html").render(
+        prefix=prefix, service=service
+    )
+    return HTMLResponse(html)
+
+
+async def modal_service_disable(request: Request) -> HTMLResponse:
+    """Return the per-service maintenance disable confirmation modal."""
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    service = request.query_params.get("service", "")
+    html = tpl.env.get_template("partials/modal_service_disable.html").render(
+        prefix=prefix, service=service
+    )
+    return HTMLResponse(html)
+
+
+async def service_maintenance_enable(request: Request) -> HTMLResponse:
+    """Enable per-service maintenance from form data."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+
+    form = await request.form()
+    service = str(form.get("service", ""))
+    reason = str(form.get("reason", ""))
+    exempt_raw = str(form.get("exempt_paths", ""))
+    exempt_paths = [p.strip() for p in exempt_raw.splitlines() if p.strip()]
+    include_force_active = form.get("include_force_active") == "1"
+
+    if not service:
+        return HTMLResponse("Missing service", status_code=400)
+
+    await engine.enable_service_maintenance(
+        service=service,
+        reason=reason,
+        exempt_paths=exempt_paths,
+        include_force_active=include_force_active,
+        actor=_actor(request),
+        platform=_platform(request),
+    )
+    config = await engine.get_service_maintenance(service)
+    return HTMLResponse(_render_service_widget(tpl, config, service, prefix))
+
+
+async def service_maintenance_disable(request: Request) -> HTMLResponse:
+    """Disable per-service maintenance from form data."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+
+    form = await request.form()
+    service = str(form.get("service", ""))
+    if not service:
+        return HTMLResponse("Missing service", status_code=400)
+
+    await engine.disable_service_maintenance(
+        service=service,
+        actor=_actor(request),
+        platform=_platform(request),
+    )
+    config = await engine.get_service_maintenance(service)
+    return HTMLResponse(_render_service_widget(tpl, config, service, prefix))
+
+
 async def modal_env_gate(request: Request) -> HTMLResponse:
     """Return the env-gate modal form pre-filled with the current allowed envs."""
     engine = _engine(request)
@@ -561,6 +642,7 @@ async def rate_limits_page(request: Request) -> Response:
         policies = [p for p in policies if p.path in svc_paths]
     paged = _paginate(policies, page)
     global_rl = await engine.get_global_rate_limit()
+    service_rl = await engine.get_service_rate_limit(service) if service else None
     unrated_routes = _get_unrated_routes(states, engine._rate_limit_policies, service)
     return tpl.TemplateResponse(
         request,
@@ -569,6 +651,7 @@ async def rate_limits_page(request: Request) -> Response:
             "policies": paged["items"],
             "pagination": paged,
             "global_rl": global_rl,
+            "service_rl": service_rl,
             "prefix": prefix,
             "active_tab": "rate_limits",
             "version": request.app.state.version,
@@ -972,6 +1055,152 @@ async def global_rl_disable(request: Request) -> HTMLResponse:
     await engine.disable_global_rate_limit(actor=_actor(request), platform=_platform(request))
     grl = await engine.get_global_rate_limit()
     html = tpl.env.get_template("partials/global_rl_card.html").render(grl=grl, prefix=prefix)
+    return HTMLResponse(html)
+
+
+# ---------------------------------------------------------------------------
+# Per-service rate limit dashboard handlers
+# ---------------------------------------------------------------------------
+
+
+async def modal_service_rl(request: Request) -> HTMLResponse:
+    """Return the per-service rate limit set/edit modal form."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    service = request.query_params.get("service", "")
+    srl = await engine.get_service_rate_limit(service)
+    html = tpl.env.get_template("partials/modal_service_rl.html").render(
+        srl=srl, service=service, prefix=prefix
+    )
+    return HTMLResponse(html)
+
+
+async def modal_service_rl_delete(request: Request) -> HTMLResponse:
+    """Return the per-service rate limit delete confirmation modal."""
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    service = request.query_params.get("service", "")
+    html = tpl.env.get_template("partials/modal_service_rl_delete.html").render(
+        service=service, prefix=prefix
+    )
+    return HTMLResponse(html)
+
+
+async def modal_service_rl_reset(request: Request) -> HTMLResponse:
+    """Return the per-service rate limit reset confirmation modal."""
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    service = request.query_params.get("service", "")
+    html = tpl.env.get_template("partials/modal_service_rl_reset.html").render(
+        service=service, prefix=prefix
+    )
+    return HTMLResponse(html)
+
+
+async def service_rl_set(request: Request) -> HTMLResponse:
+    """Save per-service rate limit policy from form data and refresh the card."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    form = await request.form()
+    service = str(form.get("service", "")).strip()
+    limit = str(form.get("limit", "")).strip()
+    algorithm = str(form.get("algorithm", "fixed_window")).strip() or None
+    key_strategy = str(form.get("key_strategy", "ip")).strip() or None
+    burst = int(str(form.get("burst", 0) or 0))
+    exempt_raw = str(form.get("exempt_routes", "")).strip()
+    exempt_routes = [r.strip() for r in exempt_raw.splitlines() if r.strip()]
+    if limit and service:
+        try:
+            await engine.set_service_rate_limit(
+                service,
+                limit=limit,
+                algorithm=algorithm,
+                key_strategy=key_strategy,
+                burst=burst,
+                exempt_routes=exempt_routes,
+                actor=_actor(request),
+                platform=_platform(request),
+            )
+        except Exception:
+            pass
+    srl = await engine.get_service_rate_limit(service)
+    html = tpl.env.get_template("partials/service_rl_card.html").render(
+        srl=srl, service=service, prefix=prefix
+    )
+    return HTMLResponse(html)
+
+
+async def service_rl_delete(request: Request) -> HTMLResponse:
+    """Delete per-service rate limit policy and refresh the card."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    form = await request.form()
+    service = str(form.get("service", "")).strip()
+    if service:
+        await engine.delete_service_rate_limit(
+            service, actor=_actor(request), platform=_platform(request)
+        )
+    srl = await engine.get_service_rate_limit(service)
+    html = tpl.env.get_template("partials/service_rl_card.html").render(
+        srl=srl, service=service, prefix=prefix
+    )
+    return HTMLResponse(html)
+
+
+async def service_rl_reset(request: Request) -> HTMLResponse:
+    """Reset per-service rate limit counters and refresh the card."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    form = await request.form()
+    service = str(form.get("service", "")).strip()
+    if service:
+        await engine.reset_service_rate_limit(
+            service, actor=_actor(request), platform=_platform(request)
+        )
+    srl = await engine.get_service_rate_limit(service)
+    html = tpl.env.get_template("partials/service_rl_card.html").render(
+        srl=srl, service=service, prefix=prefix
+    )
+    return HTMLResponse(html)
+
+
+async def service_rl_enable(request: Request) -> HTMLResponse:
+    """Enable (resume) per-service rate limit policy and refresh the card."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    form = await request.form()
+    service = str(form.get("service", "")).strip()
+    if service:
+        await engine.enable_service_rate_limit(
+            service, actor=_actor(request), platform=_platform(request)
+        )
+    srl = await engine.get_service_rate_limit(service)
+    html = tpl.env.get_template("partials/service_rl_card.html").render(
+        srl=srl, service=service, prefix=prefix
+    )
+    return HTMLResponse(html)
+
+
+async def service_rl_disable(request: Request) -> HTMLResponse:
+    """Disable (pause) per-service rate limit policy and refresh the card."""
+    engine = _engine(request)
+    tpl = _templates(request)
+    prefix = _prefix(request)
+    form = await request.form()
+    service = str(form.get("service", "")).strip()
+    if service:
+        await engine.disable_service_rate_limit(
+            service, actor=_actor(request), platform=_platform(request)
+        )
+    srl = await engine.get_service_rate_limit(service)
+    html = tpl.env.get_template("partials/service_rl_card.html").render(
+        srl=srl, service=service, prefix=prefix
+    )
     return HTMLResponse(html)
 
 

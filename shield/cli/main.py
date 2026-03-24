@@ -1341,6 +1341,292 @@ def grl_disable() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Per-service rate limit command group  (shield service-rate-limit ...)
+# ---------------------------------------------------------------------------
+
+srl_app = typer.Typer(
+    name="service-rate-limit",
+    help="Manage per-service rate limit policies applied to all routes of a service.",
+    no_args_is_help=True,
+)
+cli.add_typer(srl_app, name="service-rate-limit")
+cli.add_typer(srl_app, name="srl")
+
+
+@srl_app.command("get")
+def srl_get(
+    service: str = typer.Argument(..., help="Service name, e.g. payments-service"),
+) -> None:
+    """Show the current per-service rate limit policy."""
+
+    async def _run_srl_get() -> None:
+        result = await make_client().get_service_rate_limit(service)
+        policy = result.get("policy")
+        if not policy:
+            console.print(f"[dim]No rate limit policy configured for {service!r}.[/dim]")
+            return
+
+        table = Table(box=box.ROUNDED, show_header=True, header_style="bold")
+        table.add_column("Field", style="dim")
+        table.add_column("Value")
+
+        table.add_row("Service", f"[cyan]{service}[/cyan]")
+        table.add_row("Limit", f"[magenta]{policy.get('limit', '—')}[/magenta]")
+        table.add_row("Algorithm", policy.get("algorithm", "—"))
+        table.add_row("Key Strategy", policy.get("key_strategy", "—"))
+        table.add_row("Burst", str(policy.get("burst", 0)))
+        table.add_row("Enabled", "[green]yes[/green]" if policy.get("enabled") else "[red]no[/red]")
+        exempt = policy.get("exempt_routes") or []
+        table.add_row("Exempt Routes", "\n".join(exempt) if exempt else "[dim](none)[/dim]")
+        console.print(table)
+
+    _run(_run_srl_get)
+
+
+@srl_app.command("set")
+def srl_set(
+    service: str = typer.Argument(..., help="Service name, e.g. payments-service"),
+    limit: str = typer.Argument(..., help="Rate limit string, e.g. 1000/minute"),
+    algorithm: str | None = typer.Option(
+        None,
+        "--algorithm",
+        "-a",
+        help="Algorithm: fixed_window, sliding_window, moving_window, token_bucket.",
+    ),
+    key_strategy: str | None = typer.Option(
+        None,
+        "--key",
+        "-k",
+        help="Key strategy: ip, user, api_key, global, custom.",
+    ),
+    burst: int = typer.Option(0, "--burst", "-b", help="Burst allowance (extra requests)."),
+    exempt: list[str] | None = typer.Option(
+        None,
+        "--exempt",
+        "-e",
+        help=(
+            "Route to exempt from the service limit.  Repeat for multiple routes.  "
+            "Use /path to exempt all methods, or METHOD:/path for a specific method."
+        ),
+    ),
+) -> None:
+    """Set or update the per-service rate limit policy.
+
+    The policy applies to every route of SERVICE that is not explicitly exempted.
+    Persisted to the backend so it survives restarts.  Examples:
+
+    \b
+      shield srl set payments-service 1000/minute
+      shield srl set orders-service 500/minute --key ip --exempt /health
+      shield srl set auth-service 200/hour --algorithm sliding_window --burst 20
+    """
+
+    async def _run_srl_set() -> None:
+        result = await make_client().set_service_rate_limit(
+            service,
+            limit=limit,
+            algorithm=algorithm,
+            key_strategy=key_strategy,
+            burst=burst,
+            exempt_routes=list(exempt) if exempt else [],
+        )
+        key_strat = result.get("key_strategy", "ip")
+        algo = result.get("algorithm", "")
+        console.print(
+            f"[green]✓[/green] Service rate limit set for [cyan]{service}[/cyan]: "
+            f"[bold]{result.get('limit')}[/bold] ({algo}, key={key_strat})"
+        )
+        exempt_list = result.get("exempt_routes") or []
+        if exempt_list:
+            console.print(f"  Exempt routes: [dim]{', '.join(exempt_list)}[/dim]")
+
+    _run(_run_srl_set)
+
+
+@srl_app.command("delete")
+def srl_delete(
+    service: str = typer.Argument(..., help="Service name, e.g. payments-service"),
+) -> None:
+    """Remove the per-service rate limit policy.
+
+    Clears the policy from the backend.  In-process counters are not
+    affected — use ``srl reset`` to clear them too.
+    """
+
+    async def _run_srl_delete() -> None:
+        result = await make_client().delete_service_rate_limit(service)
+        if result.get("ok"):
+            console.print(
+                f"[green]✓[/green] Service rate limit policy removed for [cyan]{service}[/cyan]."
+            )
+        else:
+            console.print(f"[yellow]?[/yellow] {result}")
+
+    _run(_run_srl_delete)
+
+
+@srl_app.command("reset")
+def srl_reset(
+    service: str = typer.Argument(..., help="Service name, e.g. payments-service"),
+) -> None:
+    """Reset per-service rate limit counters.
+
+    Clears all counters so the limit starts fresh.  The policy itself
+    is not removed — use ``srl delete`` for that.
+    """
+
+    async def _run_srl_reset() -> None:
+        result = await make_client().reset_service_rate_limit(service)
+        if result.get("ok"):
+            console.print(f"[green]✓[/green] Rate limit counters reset for [cyan]{service}[/cyan].")
+        else:
+            console.print(f"[yellow]?[/yellow] {result}")
+
+    _run(_run_srl_reset)
+
+
+@srl_app.command("enable")
+def srl_enable(
+    service: str = typer.Argument(..., help="Service name, e.g. payments-service"),
+) -> None:
+    """Resume a paused per-service rate limit policy."""
+
+    async def _run_srl_enable() -> None:
+        result = await make_client().enable_service_rate_limit(service)
+        if result.get("ok"):
+            console.print(
+                f"[green]✓[/green] Service rate limit resumed for [cyan]{service}[/cyan]."
+            )
+        else:
+            console.print(f"[yellow]?[/yellow] {result}")
+
+    _run(_run_srl_enable)
+
+
+@srl_app.command("disable")
+def srl_disable(
+    service: str = typer.Argument(..., help="Service name, e.g. payments-service"),
+) -> None:
+    """Pause the per-service rate limit policy without removing it."""
+
+    async def _run_srl_disable() -> None:
+        result = await make_client().disable_service_rate_limit(service)
+        if result.get("ok"):
+            console.print(f"[green]✓[/green] Service rate limit paused for [cyan]{service}[/cyan].")
+        else:
+            console.print(f"[yellow]?[/yellow] {result}")
+
+    _run(_run_srl_disable)
+
+
+# ---------------------------------------------------------------------------
+# Per-service maintenance command group  (shield sm ...)
+# ---------------------------------------------------------------------------
+
+sm_app = typer.Typer(
+    name="service-maintenance",
+    help="Manage per-service maintenance mode (blocks all routes of one service).",
+    no_args_is_help=True,
+)
+cli.add_typer(sm_app, name="service-maintenance")
+cli.add_typer(sm_app, name="sm")
+
+
+@sm_app.command("status")
+def sm_status(
+    service: str = typer.Argument(..., help="Service name, e.g. payments-service"),
+) -> None:
+    """Show the current maintenance configuration for a service."""
+
+    async def _run_sm_status() -> None:
+        cfg = await make_client().service_maintenance_status(service)
+        state_str = "[green]OFF[/green]"
+        if cfg.get("enabled"):
+            state_str = "[yellow]ON[/yellow]"
+        console.print(f"\n  Service maintenance ({service}): {state_str}")
+        if cfg.get("enabled"):
+            console.print(f"  Reason               : {cfg.get('reason') or '—'}")
+            fa = cfg.get("include_force_active", False)
+            fa_colour = "red" if fa else "green"
+            fa_text = "yes" if fa else "no"
+            console.print(f"  Include @force_active: [{fa_colour}]{fa_text}[/{fa_colour}]")
+            exempts = cfg.get("exempt_paths") or []
+            if exempts:
+                console.print("  Exempt paths         :")
+                for p in exempts:
+                    console.print(f"    • {p}")
+            else:
+                console.print("  Exempt paths         : (none)")
+        console.print()
+
+    _run(_run_sm_status)
+
+
+@sm_app.command("enable")
+def sm_enable(
+    service: str = typer.Argument(..., help="Service name, e.g. payments-service"),
+    reason: str = typer.Option("", "--reason", "-r", help="Reason shown in 503 responses."),
+    exempt: list[str] | None = typer.Option(
+        None,
+        "--exempt",
+        "-e",
+        help="Route to exempt (repeat for multiple). Use /path or METHOD:/path.",
+    ),
+    include_force_active: bool = typer.Option(
+        False,
+        "--include-force-active/--no-include-force-active",
+        help="Also block @force_active routes.",
+    ),
+) -> None:
+    """Enable maintenance mode for all routes of a service.
+
+    All routes belonging to SERVICE return 503 until maintenance is disabled.
+    Exempt paths bypass the block and respond normally.
+
+    \b
+      shield sm enable payments-service --reason "DB migration"
+      shield sm enable payments-service --reason "Upgrade" --exempt /health
+      shield sm enable orders-service --include-force-active
+    """
+
+    async def _run_sm_enable() -> None:
+        cfg = await make_client().service_maintenance_enable(
+            service,
+            reason=reason,
+            exempt_paths=list(exempt) if exempt else [],
+            include_force_active=include_force_active,
+        )
+        console.print(
+            f"[yellow]⚠[/yellow]  Service maintenance [yellow]ENABLED[/yellow]"
+            f" for [cyan]{service}[/cyan]"
+        )
+        if cfg.get("reason"):
+            console.print(f"   Reason: {cfg['reason']}")
+        if cfg.get("exempt_paths"):
+            console.print(f"   Exempt: {', '.join(cfg['exempt_paths'])}")
+        if cfg.get("include_force_active"):
+            console.print("   [red]@force_active routes are also blocked.[/red]")
+
+    _run(_run_sm_enable)
+
+
+@sm_app.command("disable")
+def sm_disable(
+    service: str = typer.Argument(..., help="Service name, e.g. payments-service"),
+) -> None:
+    """Disable service maintenance mode, restoring normal per-route state."""
+
+    async def _run_sm_disable() -> None:
+        await make_client().service_maintenance_disable(service)
+        console.print(
+            f"[green]✓[/green]  Service maintenance [green]DISABLED[/green]"
+            f" for [cyan]{service}[/cyan]"
+        )
+
+    _run(_run_sm_disable)
+
+
+# ---------------------------------------------------------------------------
 # Feature flags command group  (shield flags ...)
 # ---------------------------------------------------------------------------
 

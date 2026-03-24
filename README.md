@@ -1,7 +1,7 @@
 <div align="center">
   <img src="api-shield-logo.svg" alt="API Shield" width="600"/>
 
-  <p><strong>Route(API) lifecycle management for ASGI Python web frameworks — maintenance mode, environment gating, deprecation, rate limiting, feature flags, admin panels, and more. No restarts required.</strong></p>
+  <p><strong>Feature flags and runtime control for Python APIs — rollouts, rate limits, manage maintenance windows across single ASGI services or a multi-service fleet without redeploying.</strong></p>
 
   <a href="https://pypi.org/project/api-shield"><img src="https://img.shields.io/pypi/v/api-shield?color=F59E0B&label=pypi&cacheSeconds=300" alt="PyPI"></a>
   <a href="https://pypi.org/project/api-shield"><img src="https://img.shields.io/pypi/pyversions/api-shield?color=F59E0B" alt="Python versions"></a>

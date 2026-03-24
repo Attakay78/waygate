@@ -369,6 +369,45 @@ async def global_disable_api(request: Request) -> JSONResponse:
     return JSONResponse(cfg.model_dump(mode="json"))
 
 
+async def service_maintenance_get(request: Request) -> JSONResponse:
+    """GET /api/services/{service}/maintenance — current per-service maintenance config."""
+    service = request.path_params["service"]
+    cfg = await _engine(request).get_service_maintenance(service)
+    return JSONResponse(cfg.model_dump(mode="json"))
+
+
+async def service_maintenance_enable(request: Request) -> JSONResponse:
+    """POST /api/services/{service}/maintenance/enable — enable per-service maintenance."""
+    service = request.path_params["service"]
+    actor = _actor(request)
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    reason = body.get("reason", "") if isinstance(body, dict) else ""
+    exempt = body.get("exempt_paths", []) if isinstance(body, dict) else []
+    include_fa = body.get("include_force_active", False) if isinstance(body, dict) else False
+    cfg = await _engine(request).enable_service_maintenance(
+        service=service,
+        reason=reason,
+        exempt_paths=exempt,
+        include_force_active=include_fa,
+        actor=actor,
+        platform=_platform(request),
+    )
+    return JSONResponse(cfg.model_dump(mode="json"))
+
+
+async def service_maintenance_disable(request: Request) -> JSONResponse:
+    """POST /api/services/{service}/maintenance/disable — disable per-service maintenance."""
+    service = request.path_params["service"]
+    actor = _actor(request)
+    cfg = await _engine(request).disable_service_maintenance(
+        service=service, actor=actor, platform=_platform(request)
+    )
+    return JSONResponse(cfg.model_dump(mode="json"))
+
+
 # ---------------------------------------------------------------------------
 # Rate limits
 # ---------------------------------------------------------------------------
@@ -533,6 +572,90 @@ async def disable_global_rate_limit_api(request: Request) -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
+# Per-service rate limit endpoints
+# ---------------------------------------------------------------------------
+
+
+async def get_service_rate_limit(request: Request) -> JSONResponse:
+    """GET /api/services/{service}/rate-limit — current per-service rate limit policy."""
+    service = request.path_params["service"]
+    policy = await _engine(request).get_service_rate_limit(service)
+    if policy is None:
+        return JSONResponse({"enabled": False, "policy": None})
+    return JSONResponse({"enabled": policy.enabled, "policy": policy.model_dump(mode="json")})
+
+
+async def set_service_rate_limit_api(request: Request) -> JSONResponse:
+    """POST /api/services/{service}/rate-limit — set or update per-service rate limit."""
+    service = request.path_params["service"]
+    engine = _engine(request)
+    actor = _actor(request)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON body"}, status_code=400)
+
+    limit = body.get("limit", "")
+    if not limit:
+        return JSONResponse({"error": "limit is required"}, status_code=400)
+    exempt_routes = body.get("exempt_routes", [])
+    if not isinstance(exempt_routes, list):
+        return JSONResponse({"error": "exempt_routes must be a list"}, status_code=400)
+
+    try:
+        policy = await engine.set_service_rate_limit(
+            service,
+            limit=limit,
+            algorithm=body.get("algorithm"),
+            key_strategy=body.get("key_strategy"),
+            on_missing_key=body.get("on_missing_key"),
+            burst=int(body.get("burst", 0)),
+            exempt_routes=exempt_routes,
+            actor=actor,
+            platform=_platform(request),
+        )
+    except Exception as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    return JSONResponse(policy.model_dump(mode="json"), status_code=201)
+
+
+async def delete_service_rate_limit_api(request: Request) -> JSONResponse:
+    """DELETE /api/services/{service}/rate-limit — remove per-service rate limit policy."""
+    service = request.path_params["service"]
+    await _engine(request).delete_service_rate_limit(
+        service, actor=_actor(request), platform=_platform(request)
+    )
+    return JSONResponse({"ok": True})
+
+
+async def reset_service_rate_limit_api(request: Request) -> JSONResponse:
+    """DELETE /api/services/{service}/rate-limit/reset — reset per-service counters."""
+    service = request.path_params["service"]
+    await _engine(request).reset_service_rate_limit(
+        service, actor=_actor(request), platform=_platform(request)
+    )
+    return JSONResponse({"ok": True})
+
+
+async def enable_service_rate_limit_api(request: Request) -> JSONResponse:
+    """POST /api/services/{service}/rate-limit/enable — resume paused service rate limit."""
+    service = request.path_params["service"]
+    await _engine(request).enable_service_rate_limit(
+        service, actor=_actor(request), platform=_platform(request)
+    )
+    return JSONResponse({"ok": True})
+
+
+async def disable_service_rate_limit_api(request: Request) -> JSONResponse:
+    """POST /api/services/{service}/rate-limit/disable — pause service rate limit."""
+    service = request.path_params["service"]
+    await _engine(request).disable_service_rate_limit(
+        service, actor=_actor(request), platform=_platform(request)
+    )
+    return JSONResponse({"ok": True})
+
+
+# ---------------------------------------------------------------------------
 # SDK endpoints — used by ShieldServerBackend / ShieldSDK clients
 # ---------------------------------------------------------------------------
 
@@ -593,7 +716,8 @@ async def sdk_events(request: Request) -> StreamingResponse:
             async for event in engine.backend.subscribe_flag_changes():  # type: ignore[attr-defined]
                 envelope = _json.dumps(event)
                 await queue.put(f"data: {envelope}\n\n")
-        except NotImplementedError:
+        except (NotImplementedError, AttributeError):
+            # Backend doesn't support flag pub/sub — silently skip.
             pass
         except asyncio.CancelledError:
             raise

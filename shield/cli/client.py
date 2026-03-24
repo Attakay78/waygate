@@ -249,6 +249,39 @@ class ShieldClient:
             resp = await c.post("/api/global/disable")
             return cast(dict[str, Any], self._check(resp))
 
+    # ── Per-service maintenance ───────────────────────────────────────
+
+    async def service_maintenance_status(self, service: str) -> dict[str, Any]:
+        """GET /api/services/{service}/maintenance — current per-service maintenance config."""
+        async with self._make_client() as c:
+            resp = await c.get(f"/api/services/{service}/maintenance")
+            return cast(dict[str, Any], self._check(resp))
+
+    async def service_maintenance_enable(
+        self,
+        service: str,
+        reason: str = "",
+        exempt_paths: list[str] | None = None,
+        include_force_active: bool = False,
+    ) -> dict[str, Any]:
+        """POST /api/services/{service}/maintenance/enable — enable per-service maintenance."""
+        async with self._make_client() as c:
+            resp = await c.post(
+                f"/api/services/{service}/maintenance/enable",
+                json={
+                    "reason": reason,
+                    "exempt_paths": exempt_paths or [],
+                    "include_force_active": include_force_active,
+                },
+            )
+            return cast(dict[str, Any], self._check(resp))
+
+    async def service_maintenance_disable(self, service: str) -> dict[str, Any]:
+        """POST /api/services/{service}/maintenance/disable — disable per-service maintenance."""
+        async with self._make_client() as c:
+            resp = await c.post(f"/api/services/{service}/maintenance/disable")
+            return cast(dict[str, Any], self._check(resp))
+
     async def list_rate_limits(self) -> list[dict[str, Any]]:
         """GET /api/rate-limits — list all rate limit policies."""
         async with self._make_client() as c:
@@ -363,6 +396,60 @@ class ShieldClient:
         """POST /api/global-rate-limit/disable — pause the global rate limit."""
         async with self._make_client() as c:
             resp = await c.post("/api/global-rate-limit/disable")
+            return cast(dict[str, Any], self._check(resp))
+
+    # ── Per-service rate limit ─────────────────────────────────────────
+
+    async def get_service_rate_limit(self, service: str) -> dict[str, Any]:
+        """GET /api/services/{service}/rate-limit — current per-service rate limit policy."""
+        async with self._make_client() as c:
+            resp = await c.get(f"/api/services/{service}/rate-limit")
+            return cast(dict[str, Any], self._check(resp))
+
+    async def set_service_rate_limit(
+        self,
+        service: str,
+        limit: str,
+        *,
+        algorithm: str | None = None,
+        key_strategy: str | None = None,
+        burst: int = 0,
+        exempt_routes: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """POST /api/services/{service}/rate-limit — set or update per-service rate limit."""
+        payload: dict[str, Any] = {"limit": limit, "burst": burst}
+        if algorithm:
+            payload["algorithm"] = algorithm
+        if key_strategy:
+            payload["key_strategy"] = key_strategy
+        if exempt_routes:
+            payload["exempt_routes"] = exempt_routes
+        async with self._make_client() as c:
+            resp = await c.post(f"/api/services/{service}/rate-limit", json=payload)
+            return cast(dict[str, Any], self._check(resp))
+
+    async def delete_service_rate_limit(self, service: str) -> dict[str, Any]:
+        """DELETE /api/services/{service}/rate-limit — remove per-service rate limit policy."""
+        async with self._make_client() as c:
+            resp = await c.delete(f"/api/services/{service}/rate-limit")
+            return cast(dict[str, Any], self._check(resp))
+
+    async def reset_service_rate_limit(self, service: str) -> dict[str, Any]:
+        """DELETE /api/services/{service}/rate-limit/reset — reset per-service counters."""
+        async with self._make_client() as c:
+            resp = await c.delete(f"/api/services/{service}/rate-limit/reset")
+            return cast(dict[str, Any], self._check(resp))
+
+    async def enable_service_rate_limit(self, service: str) -> dict[str, Any]:
+        """POST /api/services/{service}/rate-limit/enable — resume paused service rate limit."""
+        async with self._make_client() as c:
+            resp = await c.post(f"/api/services/{service}/rate-limit/enable")
+            return cast(dict[str, Any], self._check(resp))
+
+    async def disable_service_rate_limit(self, service: str) -> dict[str, Any]:
+        """POST /api/services/{service}/rate-limit/disable — pause service rate limit."""
+        async with self._make_client() as c:
+            resp = await c.post(f"/api/services/{service}/rate-limit/disable")
             return cast(dict[str, Any], self._check(resp))
 
     # ── Feature flags ─────────────────────────────────────────────────
