@@ -464,8 +464,9 @@ The **Rate Limits** page includes a Global Rate Limit card above the policies ta
 
 A per-service rate limit applies a `GlobalRateLimitPolicy` to **all routes of one service**. It sits between the all-services global rate limit and per-route limits in the enforcement chain:
 
-```
-global maintenance -> service maintenance -> global rate limit -> service rate limit -> per-route rate limit
+```mermaid
+flowchart LR
+    GM["global\nmaintenance"] --> SM["service\nmaintenance"] --> GL["global\nrate limit"] --> SL["service\nrate limit"] --> RL["per-route\nrate limit"]
 ```
 
 Uses the same `GlobalRateLimitPolicy` model as the all-services global rate limit. The policy is persisted in the backend via a sentinel key so it survives restarts.

@@ -16,30 +16,37 @@ Use the embedded `ShieldAdmin` (single-mount) pattern when you have **one servic
 
 ## Architecture
 
-```
-                    ┌─────────────────────────────────┐
-   CLI / Browser    │  Shield Server (port 9000)      │
-   ─────────────→   │  ShieldServer(backend=...)       │
-                    │                                 │
-                    │  /          dashboard UI         │
-                    │  /api/...   REST API (CLI)       │
-                    │  /api/sdk/events  SSE stream     │
-                    └────────────┬────────────────────┘
-                                 │  HTTP + SSE
-              ┌──────────────────┼──────────────────┐
-              ▼                  ▼                  ▼
-   ┌──────────────────┐ ┌──────────────────┐  ┌──────────────────┐
-   │ payments-app     │ │ orders-app       │  │ any-other-app    │
-   │ port 8000        │ │ port 8002        │  │ ...              │
-   │                  │ │                  │  │                  │
-   │ ShieldSDK        │ │ ShieldSDK        │  │ ShieldSDK        │
-   │ app_id=          │ │ app_id=          │  │ app_id=          │
-   │ "payments-svc"   │ │ "orders-svc"     │  │ ...              │
-   │                  │ │                  │  │                  │
-   │ local cache      │ │ local cache      │  │ local cache      │
-   │ (zero-latency    │ │ (zero-latency    │  │ (zero-latency    │
-   │  enforcement)    │ │  enforcement)    │  │  enforcement)    │
-   └──────────────────┘ └──────────────────┘  └──────────────────┘
+```mermaid
+graph TD
+    CB["CLI / Browser"]
+
+    subgraph server["Shield Server  •  port 9000"]
+        SS["ShieldServer(backend=...)"]
+        UI["/  &nbsp; Dashboard UI"]
+        API["/api/...  &nbsp; REST API"]
+        SSE["/api/sdk/events  &nbsp; SSE stream"]
+    end
+
+    CB --> SS
+    SS --- UI
+    SS --- API
+    SS --- SSE
+
+    SSE -->|HTTP + SSE| P
+    SSE -->|HTTP + SSE| O
+    SSE -->|HTTP + SSE| X
+
+    subgraph P["payments-app  •  port 8000"]
+        PS["ShieldSDK\napp_id='payments-svc'\nlocal cache"]
+    end
+
+    subgraph O["orders-app  •  port 8002"]
+        OS["ShieldSDK\napp_id='orders-svc'\nlocal cache"]
+    end
+
+    subgraph X["any-other-app"]
+        XS["ShieldSDK\napp_id='...'\nlocal cache"]
+    end
 ```
 
 **Key properties:**
@@ -306,8 +313,9 @@ Use a **different Redis database** (or a different Redis instance) from the one 
 
 A per-service rate limit applies a single policy to **all routes of one service** without configuring each route individually. It is checked after the all-services global rate limit and before any per-route limit:
 
-```
-global maintenance -> service maintenance -> global rate limit -> service rate limit -> per-route rate limit
+```mermaid
+flowchart LR
+    GM["global\nmaintenance"] --> SM["service\nmaintenance"] --> GL["global\nrate limit"] --> SL["service\nrate limit"] --> RL["per-route\nrate limit"]
 ```
 
 Configure it with the `shield srl` CLI (also available as `shield service-rate-limit`):

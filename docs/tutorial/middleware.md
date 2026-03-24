@@ -26,33 +26,49 @@ app.add_middleware(ShieldMiddleware, engine=engine)
 
 ## What the middleware does
 
-```
-Incoming HTTP request
-        │
-        ▼
-ShieldMiddleware.dispatch()
-        │
-        ├─ /docs, /redoc, /openapi.json  ──────────────────────→ pass through
-        │
-        ├─ Lazy-scan app routes for __shield_meta__ (once only)
-        │
-        ├─ @force_active route? ──────────────────────────────→ pass through
-        │
-        ├─ engine.check(path, method)
-        │       │
-        │       ├─ Global maintenance ON? → 503
-        │       ├─ MAINTENANCE  → 503 + Retry-After header
-        │       ├─ DISABLED     → 503
-        │       ├─ ENV_GATED    → 403 JSON
-        │       ├─ DEPRECATED   → pass through + inject response headers
-        │       ├─ ACTIVE       → pass through ✓
-        │       │
-        │       └─ Rate limit check (if policy registered for route)
-        │               ├─ Exempt IP or role? → pass through ✓
-        │               ├─ Under limit?       → pass through + X-RateLimit-* headers ✓
-        │               └─ Limit exceeded?    → 429 + Retry-After header
-        │
-        └─ call_next(request)
+```mermaid
+flowchart TD
+    REQ["Incoming HTTP request"]
+    DISPATCH["ShieldMiddleware.dispatch()"]
+    DOCS{"OpenAPI / docs\npath?"}
+    SCAN["Lazy-scan routes for\n__shield_meta__ (once only)"]
+    FORCE{"@force_active\nroute?"}
+    CHECK["engine.check(path, method)"]
+
+    GMAINT{"Global\nmaintenance ON?"}
+    STATUS{"Route status?"}
+    RL{"Rate limit policy\nregistered?"}
+    EXEMPT{"Exempt IP\nor role?"}
+    LIMIT{"Under\nlimit?"}
+
+    PT["pass through ✓"]
+    R503G["503"]
+    R503["503 + Retry-After"]
+    R503D["503"]
+    R403["404 JSON"]
+    DEPR["pass through\n+ Deprecation headers"]
+    RLHDR["pass through\n+ X-RateLimit-* headers ✓"]
+    R429["429 + Retry-After"]
+    NEXT["call_next(request)"]
+
+    REQ --> DISPATCH --> DOCS
+    DOCS -->|yes| PT
+    DOCS -->|no| SCAN --> FORCE
+    FORCE -->|yes| PT
+    FORCE -->|no| CHECK --> GMAINT
+    GMAINT -->|yes| R503G
+    GMAINT -->|no| STATUS
+    STATUS -->|MAINTENANCE| R503
+    STATUS -->|DISABLED| R503D
+    STATUS -->|ENV_GATED| R403
+    STATUS -->|DEPRECATED| DEPR --> RL
+    STATUS -->|ACTIVE| RL
+    RL -->|no| NEXT
+    RL -->|yes| EXEMPT
+    EXEMPT -->|yes| NEXT
+    EXEMPT -->|no| LIMIT
+    LIMIT -->|yes| RLHDR --> NEXT
+    LIMIT -->|no| R429
 ```
 
 ---

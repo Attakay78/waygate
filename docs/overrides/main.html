@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+  {% if page and page.meta and page.meta.hide
+        and "toc" in page.meta.hide
+        and "navigation" in page.meta.hide %}
+    {{ page.content }}
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+
+{% block footer %}
+  {% if page and page.meta and page.meta.hide
+        and "navigation" in page.meta.hide %}
+    {# no footer on the landing page #}
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {# Cache mermaid source text before external CDN script renders it #}
+  <script>
+    (function () {
+      document.querySelectorAll('.mermaid').forEach(function (el) {
+        if (!el.dataset.mermaidSrc) {
+          el.dataset.mermaidSrc = el.textContent.trim();
+        }
+      });
+    })();
+  </script>
+  {% if page and page.meta and page.meta.hide
+        and "navigation" in page.meta.hide %}
+  <script>
+    /* ── Scroll reveal ─────────────────────────────────── */
+    (function () {
+      var els = document.querySelectorAll('.hp-reveal');
+      if (!els.length) return;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            e.target.classList.add('hp-visible');
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+
+    /* ── Copy buttons ──────────────────────────────────── */
+    document.querySelectorAll('.hp-copy-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var text = btn.getAttribute('data-copy');
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(function () {
+          btn.classList.add('copied');
+          var orig = btn.innerHTML;
+          btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+          setTimeout(function () {
+            btn.classList.remove('copied');
+            btn.innerHTML = orig;
+          }, 2000);
+        });
+      });
+    });
+  </script>
+  {% endif %}
+{% endblock %}
