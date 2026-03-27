@@ -102,6 +102,25 @@ def test_get_unrated_routes_excludes_rated() -> None:
     assert "/api/orders" in paths
 
 
+def test_get_unrated_routes_excludes_method_prefixed_rated() -> None:
+    """Routes stored as 'METHOD:/path' are excluded when a policy exists for that path."""
+    # scan_routes registers routes with method prefix: "GET:/api/items"
+    states = [
+        _make_state("GET:/api/items"),
+        _make_state("POST:/api/items"),
+        _make_state("GET:/api/orders"),
+    ]
+    policies = {"GET:/api/items": object()}
+    result = _get_unrated_routes(states, policies, "")
+    paths = {s.path for s in result}
+    # GET:/api/items is rated — excluded
+    assert "GET:/api/items" not in paths
+    # POST:/api/items shares the same path — also excluded (same bare path "/api/items")
+    assert "POST:/api/items" not in paths
+    # GET:/api/orders has no policy — included
+    assert "GET:/api/orders" in paths
+
+
 def test_get_unrated_routes_service_filter() -> None:
     """With service filter, only routes matching that service are included."""
     states = [

@@ -147,6 +147,22 @@ def _get_services(states: list[RouteState]) -> list[str]:
     return sorted({s.service for s in states if s.service})
 
 
+_HTTP_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "ALL"}
+
+
+def _strip_method_prefix(path: str) -> str:
+    """Strip a leading HTTP method prefix from a path key.
+
+    ``"GET:/api/items"`` → ``"/api/items"``.
+    Paths without a known method prefix are returned unchanged.
+    """
+    if ":" in path:
+        candidate, _, rest = path.partition(":")
+        if candidate.upper() in _HTTP_METHODS:
+            return rest
+    return path
+
+
 def _get_unrated_routes(
     states: list[RouteState],
     policies_dict: dict[str, Any],
@@ -154,8 +170,9 @@ def _get_unrated_routes(
 ) -> list[RouteState]:
     """Return route states that have no rate limit policy set.
 
-    Strips service prefix when comparing against policy paths so that SDK
-    routes (stored as ``service:/path``) are matched correctly.
+    Strips service prefix and HTTP method prefix when comparing against policy
+    paths so that routes stored as ``"METHOD:/path"`` or ``"service:/path"``
+    are matched correctly.
     """
     # Policy keys are "METHOD:/path"; extract just the path portion.
     rated_paths = {k.split(":", 1)[1] for k in policies_dict.keys()}
@@ -165,8 +182,11 @@ def _get_unrated_routes(
             continue
         svc = state.service or ""
         raw = state.path
-        display_path = raw[len(svc) + 1 :] if svc and raw.startswith(f"{svc}:") else raw
-        if display_path not in rated_paths:
+        # Strip service prefix (e.g. "myservice:/api/items" → "/api/items")
+        path = raw[len(svc) + 1 :] if svc and raw.startswith(f"{svc}:") else raw
+        # Strip method prefix (e.g. "GET:/api/items" → "/api/items")
+        bare_path = _strip_method_prefix(path)
+        if bare_path not in rated_paths:
             result.append(state)
     return sorted(result, key=lambda s: s.path)
 

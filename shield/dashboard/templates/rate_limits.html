@@ -111,12 +111,21 @@
                 {% for state in unrated_routes %}
                 {% set svc = state.service or "" %}
                 {% set raw_path = state.path %}
-                {% set display_path = raw_path[svc | length + 1:] if svc and raw_path.startswith(svc + ":") else raw_path %}
-                {% set encoded = display_path | encode_path %}
+                {% set svc_stripped = raw_path[svc | length + 1:] if svc and raw_path.startswith(svc + ":") else raw_path %}
+                {% set encoded = svc_stripped | encode_path %}
+                {# Parse out the HTTP method prefix (e.g. "GET:/api/items") for display #}
+                {% set _parts = svc_stripped.split(":", 1) %}
+                {% set route_method = _parts[0] if _parts | length == 2 and _parts[0] in ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"] else "" %}
+                {% set display_path = _parts[1] if route_method else svc_stripped %}
                 <tr class="group hover:bg-slate-50/70 transition-colors border-t border-slate-100 first:border-0">
                     <td class="px-5 py-3">
                         <div class="flex flex-col min-w-0">
-                            <code class="text-sm font-mono text-slate-800 truncate max-w-[22rem]">{{ display_path }}</code>
+                            <div class="flex items-center gap-1.5">
+                                {% if route_method %}
+                                <span class="px-1.5 py-0.5 text-[10px] font-mono font-semibold bg-slate-100 text-slate-600 rounded shrink-0">{{ route_method }}</span>
+                                {% endif %}
+                                <code class="text-sm font-mono text-slate-800 truncate max-w-[22rem]">{{ display_path }}</code>
+                            </div>
                             {% if svc %}
                             <span class="mt-0.5 inline-block text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md w-fit">{{ svc }}</span>
                             {% endif %}
