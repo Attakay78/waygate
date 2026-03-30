@@ -49,6 +49,12 @@ These features are framework-agnostic and available to any adapter.
 | 🎨 **Custom responses** | Return HTML, redirects, or any response shape for blocked routes. Set per-route or as an app-wide default on the middleware |
 | 🔀 **SwitchlyRouter** | Drop-in `APIRouter` replacement that auto-registers route metadata with the engine at startup |
 
+<div align="center">
+  <img src="docs/assets/openapi.png" alt="Switchly OpenAPI integration" width="48%"/>
+  <img src="docs/assets/openapi-maintenance.png" alt="Switchly maintenance banner in Swagger UI" width="48%"/>
+  <p><em>Disabled and env-gated routes hidden from /docs. Maintenance banners injected live.</em></p>
+</div>
+
 ---
 
 ## Install
@@ -103,6 +109,11 @@ switchly status
 switchly enable GET:/payments
 switchly global enable --reason "Deploying v2" --exempt /health
 ```
+
+<div align="center">
+  <img src="docs/assets/dashboard.png" alt="Switchly admin dashboard" width="90%"/>
+  <p><em>Admin dashboard — route states, audit log, rate limits, and feature flags. No JS framework required.</em></p>
+</div>
 
 ## Decorators
 

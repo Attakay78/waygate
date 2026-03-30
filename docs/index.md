@@ -15,7 +15,7 @@ hide:
     <div class="hp-hero-text">
       <a href="changelog/" class="hp-badge">
         <span class="hp-badge-dot"></span>
-        v0.8.0 &nbsp;·&nbsp; Feature flags &amp; OpenFeature are here
+        Feature flags &amp; OpenFeature are here
       </a>
 
       <h1 class="hp-h1">
