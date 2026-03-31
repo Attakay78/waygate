@@ -1414,6 +1414,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#011" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.1.1]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.1.1]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#010" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1454,7 +1482,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1532,7 +1560,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fixed_1" class="md-nav__link">
+  <a href="#fixed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1560,7 +1588,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fixed_2" class="md-nav__link">
+  <a href="#fixed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1844,6 +1872,34 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#011" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [0.1.1]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[0.1.1]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#010" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1884,7 +1940,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1962,7 +2018,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fixed_1" class="md-nav__link">
+  <a href="#fixed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1990,7 +2046,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fixed_2" class="md-nav__link">
+  <a href="#fixed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2273,6 +2329,12 @@
 <p>All notable changes to this project will be documented here.</p>
 <p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>, and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <hr />
+<h2 id="011">[0.1.1]<a class="headerlink" href="#011" title="Permanent link">&para;</a></h2>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed README badge and image URLs (no code changes).</li>
+</ul>
+<hr />
 <h2 id="010"><a href="https://github.com/Attakay78/switchly/releases/tag/v0.1.0">0.1.0</a><a class="headerlink" href="#010" title="Permanent link">&para;</a></h2>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
@@ -2280,7 +2342,7 @@
 </ul>
 <hr />
 <h2 id="080">[0.8.0]<a class="headerlink" href="#080" title="Permanent link">&para;</a></h2>
-<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Unprotected routes table not updating after adding a policy</strong>: routes stayed visible in the "Unprotected Routes" section after a rate limit was set because the filter compared <code>METHOD:/path</code> display values against path-only strings stripped of the method prefix; comparison now uses the full composite key correctly.</li>
 <li><strong>Invalid rate limit strings accepted silently</strong>: submitting a malformed limit (e.g. <code>2/minutesedrr</code>) was stored and caused a 500 on every request; the engine now validates the limit string before persisting and the dashboard modal surfaces an inline error with the correct format hint.</li>
@@ -2318,14 +2380,14 @@
 </ul>
 <hr />
 <h2 id="060"><a href="https://github.com/Attakay78/switchly/compare/v0.5.0...v0.6.0">0.6.0</a><a class="headerlink" href="#060" title="Permanent link">&para;</a></h2>
-<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>OpenAPI schema stale across Gunicorn workers</strong> (<code>RedisBackend</code>): route filtering in <code>/docs</code>/<code>/redoc</code> was inconsistent and the global maintenance banner never appeared after changes made by another worker. The <code>_run_global_config_listener</code> task was invalidating the in-process config cache but not bumping <code>_schema_version</code>, so the OpenAPI schema cache on receiving workers never expired. A new <code>switchly-route-state-listener</code> background task now bumps <code>_schema_version</code> on every remote route state change too, ensuring all workers rebuild their schema on the next <code>/openapi.json</code> request.</li>
 <li><strong><code>RedisBackend</code> crashes with "attached to a different loop" / "Event loop is closed" after worker restart</strong>: <code>ConnectionPool</code> was created once at <code>__init__</code> time and shared for the process lifetime; after a gunicorn worker recycle or <code>uvicorn --reload</code>, all Redis calls failed because the pool's internal futures were bound to the replaced event loop. Fixed by replacing the single shared pool with a per-event-loop pool dict (<code>dict[id(loop), (weakref.ref(loop), pool)]</code>): pools are now created lazily on first use within each event loop and dead entries are pruned automatically when the loop is GC'd.</li>
 </ul>
 <hr />
 <h2 id="050"><a href="https://github.com/Attakay78/switchly/compare/v0.4.0...v0.5.0">0.5.0</a><a class="headerlink" href="#050" title="Permanent link">&para;</a></h2>
-<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Rate limit policies not synced across workers</strong> (<code>RedisBackend</code>): updating a policy via the admin API or CLI only updated the in-process dict of the worker that handled the request. Other workers continued enforcing the old (decorator-declared) limit until restart. Fixed by adding a <code>switchly:rl-policy-change</code> Redis pub/sub channel, every <code>set</code> and <code>delete</code> now broadcasts the change to all instances, which apply it to their local <code>_rate_limit_policies</code> dict immediately via a new background listener task (<code>switchly-rl-policy-listener</code>), mirroring the existing <code>switchly:global_invalidate</code> pattern.</li>
 <li><strong>Rate limit policies reverted to decorator defaults on restart</strong> (<code>SwitchlyRouter</code>): <code>register_switchly_routes()</code> called <code>restore_rate_limit_policies()</code> (via <code>register_batch</code>) before re-registering decorator-declared policies, so persisted admin/CLI updates were immediately overwritten on every app startup. Fixed by registering decorator policies first and running <code>restore_rate_limit_policies()</code> last, consistent with the order already used by <code>scan_routes()</code>.</li>

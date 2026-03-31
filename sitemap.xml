@@ -2,106 +2,106 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://attakay78.github.io/switchly/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/changelog/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/contributing/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/adapters/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/adapters/custom/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/adapters/fastapi/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/guides/distributed/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/guides/production/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/guides/switchly-server/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/reference/backends/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/reference/cli/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/reference/decorators/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/reference/engine/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/reference/exceptions/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/reference/feature-flags/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/reference/middleware/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/reference/models/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/reference/rate-limiting/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/tutorial/admin-dashboard/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/tutorial/backends/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/tutorial/cli/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/tutorial/feature-flags/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/tutorial/first-decorator/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/tutorial/installation/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/tutorial/middleware/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/switchly/tutorial/rate-limiting/</loc>
-         <lastmod>2026-03-30</lastmod>
+         <lastmod>2026-03-31</lastmod>
     </url>
 </urlset>
