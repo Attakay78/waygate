@@ -5,19 +5,19 @@ from __future__ import annotations
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import RouteStatus
-from switchly.fastapi.decorators import deprecated
-from switchly.fastapi.middleware import SwitchlyMiddleware
-from switchly.fastapi.router import SwitchlyRouter
 from tests.fastapi._helpers import _trigger_startup
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import RouteStatus
+from waygate.fastapi.decorators import deprecated
+from waygate.fastapi.middleware import WaygateMiddleware
+from waygate.fastapi.router import WaygateRouter
 
 
-def _build_app(env: str = "dev") -> tuple[FastAPI, SwitchlyEngine]:
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env=env)
+def _build_app(env: str = "dev") -> tuple[FastAPI, WaygateEngine]:
+    engine = WaygateEngine(backend=MemoryBackend(), current_env=env)
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
     return app, engine
 
 
@@ -31,7 +31,7 @@ def test_deprecated_stamps_status():
     async def endpoint():
         return {}
 
-    assert endpoint.__switchly_meta__["status"] == "deprecated"
+    assert endpoint.__waygate_meta__["status"] == "deprecated"
 
 
 def test_deprecated_stamps_sunset():
@@ -39,7 +39,7 @@ def test_deprecated_stamps_sunset():
     async def endpoint():
         return {}
 
-    assert endpoint.__switchly_meta__["sunset_date"] == "Sat, 01 Jan 2026 00:00:00 GMT"
+    assert endpoint.__waygate_meta__["sunset_date"] == "Sat, 01 Jan 2026 00:00:00 GMT"
 
 
 def test_deprecated_stamps_successor_path():
@@ -47,7 +47,7 @@ def test_deprecated_stamps_successor_path():
     async def endpoint():
         return {}
 
-    assert endpoint.__switchly_meta__["successor_path"] == "/v2/users"
+    assert endpoint.__waygate_meta__["successor_path"] == "/v2/users"
 
 
 def test_deprecated_no_successor_when_omitted():
@@ -55,7 +55,7 @@ def test_deprecated_no_successor_when_omitted():
     async def endpoint():
         return {}
 
-    assert endpoint.__switchly_meta__["successor_path"] is None
+    assert endpoint.__waygate_meta__["successor_path"] is None
 
 
 async def test_deprecated_preserves_function():
@@ -69,13 +69,13 @@ async def test_deprecated_preserves_function():
 
 
 # ---------------------------------------------------------------------------
-# @deprecated + SwitchlyRouter → state registered at startup
+# @deprecated + WaygateRouter → state registered at startup
 # ---------------------------------------------------------------------------
 
 
 async def test_deprecated_registers_with_router():
     app, engine = _build_app()
-    router = SwitchlyRouter(engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/v1/users")
     @deprecated(sunset="Sat, 01 Jan 2026 00:00:00 GMT", use_instead="/v2/users")
@@ -99,7 +99,7 @@ async def test_deprecated_registers_with_router():
 
 async def test_deprecated_route_still_returns_200():
     app, engine = _build_app()
-    router = SwitchlyRouter(engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/v1/users")
     @deprecated(sunset="Sat, 01 Jan 2026 00:00:00 GMT")
@@ -117,7 +117,7 @@ async def test_deprecated_route_still_returns_200():
 
 async def test_deprecated_injects_deprecation_header():
     app, engine = _build_app()
-    router = SwitchlyRouter(engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/v1/users")
     @deprecated(sunset="Sat, 01 Jan 2026 00:00:00 GMT")
@@ -135,7 +135,7 @@ async def test_deprecated_injects_deprecation_header():
 
 async def test_deprecated_injects_sunset_header():
     app, engine = _build_app()
-    router = SwitchlyRouter(engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/v1/users")
     @deprecated(sunset="Sat, 01 Jan 2026 00:00:00 GMT")
@@ -153,7 +153,7 @@ async def test_deprecated_injects_sunset_header():
 
 async def test_deprecated_injects_link_header_when_successor_set():
     app, engine = _build_app()
-    router = SwitchlyRouter(engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/v1/users")
     @deprecated(sunset="Sat, 01 Jan 2026 00:00:00 GMT", use_instead="/v2/users")
@@ -173,7 +173,7 @@ async def test_deprecated_injects_link_header_when_successor_set():
 
 async def test_deprecated_no_link_header_without_successor():
     app, engine = _build_app()
-    router = SwitchlyRouter(engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/v1/items")
     @deprecated(sunset="Sat, 01 Jan 2026 00:00:00 GMT")
@@ -192,7 +192,7 @@ async def test_deprecated_no_link_header_without_successor():
 async def test_active_route_has_no_deprecation_headers():
     """Non-deprecated routes must not get deprecation headers."""
     app, engine = _build_app()
-    router = SwitchlyRouter(engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/v2/users")
     async def v2_users():
@@ -210,10 +210,10 @@ async def test_active_route_has_no_deprecation_headers():
 
 async def test_deprecated_marked_in_openapi():
     """@deprecated route appears as deprecated:true in the OpenAPI schema."""
-    from switchly.fastapi.openapi import apply_switchly_to_openapi
+    from waygate.fastapi.openapi import apply_waygate_to_openapi
 
     app, engine = _build_app()
-    router = SwitchlyRouter(engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/v1/orders")
     @deprecated(sunset="Sat, 01 Jan 2026 00:00:00 GMT")
@@ -222,7 +222,7 @@ async def test_deprecated_marked_in_openapi():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     get_op = schema["paths"].get("/v1/orders", {}).get("get", {})

@@ -1,23 +1,23 @@
-"""Tests for switchly.fastapi.openapi — OpenAPI schema filtering."""
+"""Tests for waygate.fastapi.openapi — OpenAPI schema filtering."""
 
 from __future__ import annotations
 
 from fastapi import FastAPI
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.fastapi.decorators import disabled, env_only, maintenance
-from switchly.fastapi.middleware import SwitchlyMiddleware
-from switchly.fastapi.openapi import apply_switchly_to_openapi
-from switchly.fastapi.router import SwitchlyRouter
 from tests.fastapi._helpers import _trigger_startup
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.fastapi.decorators import disabled, env_only, maintenance
+from waygate.fastapi.middleware import WaygateMiddleware
+from waygate.fastapi.openapi import apply_waygate_to_openapi
+from waygate.fastapi.router import WaygateRouter
 
 
 def _make_full_app(env: str = "dev"):
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env=env)
-    router = SwitchlyRouter(engine=engine)
+    engine = WaygateEngine(backend=MemoryBackend(), current_env=env)
+    router = WaygateRouter(engine=engine)
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
     return app, engine, router
 
 
@@ -40,7 +40,7 @@ async def test_disabled_route_hidden_from_openapi():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     assert "/old" not in schema["paths"]
@@ -66,7 +66,7 @@ async def test_env_gated_route_hidden_in_wrong_env():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     assert "/debug" not in schema["paths"]
@@ -83,7 +83,7 @@ async def test_env_gated_route_visible_in_correct_env():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     assert "/debug" in schema["paths"]
@@ -109,7 +109,7 @@ async def test_deprecated_route_marked_in_schema():
             update={"status": "deprecated", "path": "GET:/v1/users"}
         ),
     )
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     assert "/v1/users" in schema["paths"]
@@ -132,7 +132,7 @@ async def test_maintenance_route_still_in_schema():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     # Maintenance routes are blocked at request time but still visible in docs.
@@ -152,7 +152,7 @@ async def test_unregistered_route_passes_through():
         return {}
 
     app.include_router(router)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     assert "/api/products" in schema["paths"]
@@ -183,7 +183,7 @@ async def test_openapi_reflects_state_change_without_restart():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     # First call — /old is disabled and should be hidden.
     schema1 = app.openapi()

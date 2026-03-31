@@ -1,9 +1,9 @@
-# SwitchlyEngine
+# WaygateEngine
 
-`SwitchlyEngine` is the central orchestrator of switchly. All state management logic lives here — middleware, decorators, the CLI, and the dashboard are transport layers that delegate to the engine. If you are building a custom adapter or automating route management, this is the class you interact with directly.
+`WaygateEngine` is the central orchestrator of waygate. All state management logic lives here — middleware, decorators, the CLI, and the dashboard are transport layers that delegate to the engine. If you are building a custom adapter or automating route management, this is the class you interact with directly.
 
 ```python
-from switchly import SwitchlyEngine
+from waygate import WaygateEngine
 ```
 
 ---
@@ -13,38 +13,38 @@ from switchly import SwitchlyEngine
 === "Default (in-memory)"
 
     ```python title="main.py"
-    from switchly import SwitchlyEngine
+    from waygate import WaygateEngine
 
-    engine = SwitchlyEngine()
+    engine = WaygateEngine()
     ```
 
 === "With a backend"
 
     ```python title="main.py"
-    from switchly import SwitchlyEngine
-    from switchly import MemoryBackend
+    from waygate import WaygateEngine
+    from waygate import MemoryBackend
 
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env="production")
+    engine = WaygateEngine(backend=MemoryBackend(), current_env="production")
     ```
 
 === "From config / env vars"
 
     ```python title="main.py"
-    from switchly import make_engine
+    from waygate import make_engine
 
-    engine = make_engine()  # reads SWITCHLY_BACKEND, SWITCHLY_ENV, etc.
+    engine = make_engine()  # reads WAYGATE_BACKEND, WAYGATE_ENV, etc.
     ```
 
 !!! tip "Use `make_engine()` in production"
-    `make_engine()` reads configuration from environment variables and your `.switchly` file, so you can swap backends without changing application code. See [Configuration](../guides/production.md) for details.
+    `make_engine()` reads configuration from environment variables and your `.waygate` file, so you can swap backends without changing application code. See [Configuration](../guides/production.md) for details.
 
 ---
 
 ## Constructor
 
 ```python
-SwitchlyEngine(
-    backend: SwitchlyBackend | None = None,
+WaygateEngine(
+    backend: WaygateBackend | None = None,
     current_env: str = "dev",
     webhooks: list[str] | None = None,
 )
@@ -52,7 +52,7 @@ SwitchlyEngine(
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `backend` | `SwitchlyBackend \| None` | `MemoryBackend()` | Storage backend for route state and the audit log. Read more in [Backends](backends.md). |
+| `backend` | `WaygateBackend \| None` | `MemoryBackend()` | Storage backend for route state and the audit log. Read more in [Backends](backends.md). |
 | `current_env` | `str` | `"dev"` | The current environment name. Used by `@env_only` to decide whether to allow or block a request. |
 | `webhooks` | `list[str] \| None` | `[]` | Webhook URLs notified on every state change. Read more in [add_webhook](#add_webhook). |
 
@@ -89,7 +89,7 @@ app = FastAPI(lifespan=lifespan)
 async def check(path: str, method: str = "") -> None
 ```
 
-The single enforcement chokepoint. Called by `SwitchlyMiddleware` on every request. Raises a `SwitchlyException` subclass if the route is blocked; returns `None` if it may proceed.
+The single enforcement chokepoint. Called by `WaygateMiddleware` on every request. Raises a `WaygateException` subclass if the route is blocked; returns `None` if it may proceed.
 
 ??? info "Resolution order"
 
@@ -101,7 +101,7 @@ The single enforcement chokepoint. Called by `SwitchlyMiddleware` on every reque
     6. Route status is `ACTIVE` or `DEPRECATED` → return `None`
 
 !!! note "Fail-open on backend errors"
-    If the backend raises any exception, `check()` logs the error and returns `None`, allowing the request through. switchly never takes down your API because its own backend is unreachable.
+    If the backend raises any exception, `check()` logs the error and returns `None`, allowing the request through. waygate never takes down your API because its own backend is unreachable.
 
 **Raises:**
 
@@ -121,7 +121,7 @@ Read more in [Exceptions](exceptions.md).
 async def register(path: str, meta: dict) -> None
 ```
 
-Register a route's initial state from its `__switchly_meta__` dictionary. Called by `SwitchlyRouter` at startup — you rarely need to call this directly.
+Register a route's initial state from its `__waygate_meta__` dictionary. Called by `WaygateRouter` at startup — you rarely need to call this directly.
 
 **Persistence-first semantics:** if the backend already has a saved state for this path (from a previous run), the persisted state wins over the decorator metadata. This means a route you manually disabled via the CLI stays disabled after a restart.
 
@@ -182,7 +182,7 @@ Set a route to `MAINTENANCE`. If `window` is provided, the scheduler auto-activa
 ??? example "Example: scheduled maintenance window"
 
     ```python
-    from switchly import MaintenanceWindow
+    from waygate import MaintenanceWindow
     from datetime import datetime, UTC
 
     await engine.set_maintenance(
@@ -250,7 +250,7 @@ Raises `KeyError` if the path has not been registered. Read more in [RouteState]
 async def list_states() -> list[RouteState]
 ```
 
-Return all registered route states. Used by the CLI's `switchly status` command and the admin dashboard.
+Return all registered route states. Used by the CLI's `waygate status` command and the admin dashboard.
 
 ```python title="example"
 states = await engine.list_states()
@@ -444,7 +444,7 @@ Update the exempt path list while global maintenance is active, without toggling
 
 Per-service maintenance puts **all routes of one service** into maintenance mode at once, without touching other services or requiring individual route changes. It uses the same `GlobalMaintenanceConfig` model and exempt-paths mechanism as all-services global maintenance, but is scoped to a single `app_id`.
 
-Available via the engine, the `switchly sm` CLI command group, the REST API (`POST /api/services/{service}/maintenance/enable|disable`), and the dashboard Routes page when a service filter is active.
+Available via the engine, the `waygate sm` CLI command group, the REST API (`POST /api/services/{service}/maintenance/enable|disable`), and the dashboard Routes page when a service filter is active.
 
 Audit log actions: `service_maintenance_on` (enabled), `service_maintenance_off` (disabled). The `Path` column displays as `[{service} Maintenance]`.
 
@@ -711,11 +711,11 @@ def add_webhook(url: str, formatter=None) -> None
 Register a URL to receive HTTP POST notifications on every state change.
 
 ```python title="generic JSON webhook"
-engine.add_webhook("https://my-service.example.com/switchly-events")
+engine.add_webhook("https://my-service.example.com/waygate-events")
 ```
 
 ```python title="Slack webhook"
-from switchly import SlackWebhookFormatter
+from waygate import SlackWebhookFormatter
 
 engine.add_webhook(
     "https://hooks.slack.com/services/...",

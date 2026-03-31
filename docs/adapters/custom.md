@@ -1,17 +1,17 @@
 # Building Your Own Backend
 
-Any storage layer can be used as a backend by subclassing `SwitchlyBackend`. switchly handles everything else: the engine, middleware, decorators, CLI, and audit log all work unchanged.
+Any storage layer can be used as a backend by subclassing `WaygateBackend`. waygate handles everything else: the engine, middleware, decorators, CLI, and audit log all work unchanged.
 
 ---
 
 ## The contract
 
 ```python
-from switchly import SwitchlyBackend
-from switchly import AuditEntry, RouteState
+from waygate import WaygateBackend
+from waygate import AuditEntry, RouteState
 
 
-class MyBackend(SwitchlyBackend):
+class MyBackend(WaygateBackend):
 
     async def get_state(self, path: str) -> RouteState:
         """Return stored state. MUST raise KeyError if path not found."""
@@ -45,10 +45,10 @@ class MyBackend(SwitchlyBackend):
 | Rule | Detail |
 |---|---|
 | `get_state()` must raise `KeyError` | Engine uses `KeyError` to distinguish "not registered" from "registered but active" |
-| Fail-open on errors | Let exceptions bubble up; `SwitchlyEngine` wraps every backend call and allows requests through on failure |
+| Fail-open on errors | Let exceptions bubble up; `WaygateEngine` wraps every backend call and allows requests through on failure |
 | Thread safety | All methods are async; use your storage library's async client where available |
 | `subscribe()` is optional | Default raises `NotImplementedError`; dashboard SSE falls back to polling |
-| Global maintenance | Inherited from `SwitchlyBackend` base; no extra work unless you want a dedicated storage path |
+| Global maintenance | Inherited from `WaygateBackend` base; no extra work unless you want a dedicated storage path |
 
 ---
 
@@ -77,7 +77,7 @@ entry = AuditEntry.model_validate(entry_dict)
 Override `startup()` and `shutdown()` for connection setup/teardown:
 
 ```python
-class MyBackend(SwitchlyBackend):
+class MyBackend(WaygateBackend):
     async def startup(self) -> None:
         self._conn = await connect_to_db()
 
@@ -94,7 +94,7 @@ These are called automatically when you use `async with engine:` in your FastAPI
 A complete working implementation backed by SQLite (requires `pip install aiosqlite`):
 
 ```python
-"""SQLite backend for switchly.
+"""SQLite backend for waygate.
 
 Usage:
     pip install aiosqlite
@@ -103,25 +103,25 @@ Usage:
 
 import aiosqlite
 
-from switchly import SwitchlyBackend
-from switchly import AuditEntry, RouteState
+from waygate import WaygateBackend
+from waygate import AuditEntry, RouteState
 
 
-class SQLiteBackend(SwitchlyBackend):
-    def __init__(self, db_path: str = "switchly-state.db") -> None:
+class SQLiteBackend(WaygateBackend):
+    def __init__(self, db_path: str = "waygate-state.db") -> None:
         self._db_path = db_path
         self._db: aiosqlite.Connection | None = None
 
     async def startup(self) -> None:
         self._db = await aiosqlite.connect(self._db_path)
         await self._db.execute("""
-            CREATE TABLE IF NOT EXISTS switchly_states (
+            CREATE TABLE IF NOT EXISTS waygate_states (
                 path TEXT PRIMARY KEY,
                 state_json TEXT NOT NULL
             )
         """)
         await self._db.execute("""
-            CREATE TABLE IF NOT EXISTS switchly_audit (
+            CREATE TABLE IF NOT EXISTS waygate_audit (
                 id TEXT PRIMARY KEY,
                 timestamp TEXT NOT NULL,
                 path TEXT NOT NULL,
@@ -137,7 +137,7 @@ class SQLiteBackend(SwitchlyBackend):
     async def get_state(self, path: str) -> RouteState:
         assert self._db is not None
         async with self._db.execute(
-            "SELECT state_json FROM switchly_states WHERE path = ?", (path,)
+            "SELECT state_json FROM waygate_states WHERE path = ?", (path,)
         ) as cur:
             row = await cur.fetchone()
         if row is None:
@@ -147,7 +147,7 @@ class SQLiteBackend(SwitchlyBackend):
     async def set_state(self, path: str, state: RouteState) -> None:
         assert self._db is not None
         await self._db.execute(
-            "INSERT INTO switchly_states VALUES (?, ?)"
+            "INSERT INTO waygate_states VALUES (?, ?)"
             " ON CONFLICT(path) DO UPDATE SET state_json = excluded.state_json",
             (path, state.model_dump_json()),
         )
@@ -156,14 +156,14 @@ class SQLiteBackend(SwitchlyBackend):
     async def delete_state(self, path: str) -> None:
         assert self._db is not None
         await self._db.execute(
-            "DELETE FROM switchly_states WHERE path = ?", (path,)
+            "DELETE FROM waygate_states WHERE path = ?", (path,)
         )
         await self._db.commit()
 
     async def list_states(self) -> list[RouteState]:
         assert self._db is not None
         async with self._db.execute(
-            "SELECT state_json FROM switchly_states"
+            "SELECT state_json FROM waygate_states"
         ) as cur:
             rows = await cur.fetchall()
         return [RouteState.model_validate_json(row[0]) for row in rows]
@@ -171,7 +171,7 @@ class SQLiteBackend(SwitchlyBackend):
     async def write_audit(self, entry: AuditEntry) -> None:
         assert self._db is not None
         await self._db.execute(
-            "INSERT OR IGNORE INTO switchly_audit VALUES (?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO waygate_audit VALUES (?, ?, ?, ?)",
             (entry.id, entry.timestamp.isoformat(), entry.path, entry.model_dump_json()),
         )
         await self._db.commit()
@@ -181,10 +181,10 @@ class SQLiteBackend(SwitchlyBackend):
     ) -> list[AuditEntry]:
         assert self._db is not None
         if path:
-            query = "SELECT entry_json FROM switchly_audit WHERE path = ? ORDER BY timestamp DESC LIMIT ?"
+            query = "SELECT entry_json FROM waygate_audit WHERE path = ? ORDER BY timestamp DESC LIMIT ?"
             params: tuple = (path, limit)
         else:
-            query = "SELECT entry_json FROM switchly_audit ORDER BY timestamp DESC LIMIT ?"
+            query = "SELECT entry_json FROM waygate_audit ORDER BY timestamp DESC LIMIT ?"
             params = (limit,)
         async with self._db.execute(query, params) as cur:
             rows = await cur.fetchall()
@@ -196,12 +196,12 @@ class SQLiteBackend(SwitchlyBackend):
 ```python
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from switchly import SwitchlyEngine
-from switchly.fastapi import SwitchlyMiddleware
-from switchly.fastapi import SwitchlyAdmin
+from waygate import WaygateEngine
+from waygate.fastapi import WaygateMiddleware
+from waygate.fastapi import WaygateAdmin
 
-backend = SQLiteBackend(db_path="switchly-state.db")
-engine = SwitchlyEngine(backend=backend)
+backend = SQLiteBackend(db_path="waygate-state.db")
+engine = WaygateEngine(backend=backend)
 
 
 @asynccontextmanager
@@ -211,8 +211,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-app.add_middleware(SwitchlyMiddleware, engine=engine)
-app.mount("/switchly", SwitchlyAdmin(engine=engine, auth=("admin", "secret")))
+app.add_middleware(WaygateMiddleware, engine=engine)
+app.mount("/waygate", WaygateAdmin(engine=engine, auth=("admin", "secret")))
 ```
 
 Everything works from here (decorators, CLI, dashboard, audit log) with SQLite as the storage layer.
@@ -229,9 +229,9 @@ The six abstract methods give you persistence. To unlock full distributed behavi
 
 ```python
 from collections.abc import AsyncIterator
-from switchly import SwitchlyBackend
+from waygate import WaygateBackend
 
-class MyDistributedBackend(SwitchlyBackend):
+class MyDistributedBackend(WaygateBackend):
 
     async def subscribe(self) -> AsyncIterator[RouteState]:
         """Stream every per-route state change as it happens.
@@ -247,7 +247,7 @@ class MyDistributedBackend(SwitchlyBackend):
     async def subscribe_global_config(self) -> AsyncIterator[None]:
         """Yield None whenever any instance writes a new global maintenance config.
 
-        SwitchlyEngine keeps GlobalMaintenanceConfig in an in-process cache to
+        WaygateEngine keeps GlobalMaintenanceConfig in an in-process cache to
         avoid a storage round-trip on every request.  When another instance
         enables or disables global maintenance, it writes to the shared store
         and your implementation of this method should yield a signal so the
@@ -267,7 +267,7 @@ class MyDistributedBackend(SwitchlyBackend):
         independently calls set_maintenance() and would each fire all
         registered webhooks — producing N deliveries for one event.
 
-        Before firing, SwitchlyEngine calls this method with a deterministic
+        Before firing, WaygateEngine calls this method with a deterministic
         key derived from event + path + serialised RouteState (identical
         across all instances for the same event).  The first instance to
         win the claim fires; all others return False and skip.
@@ -313,11 +313,11 @@ from datetime import UTC, datetime
 
 import asyncpg
 
-from switchly import SwitchlyBackend
-from switchly import AuditEntry, GlobalMaintenanceConfig, RouteState, RouteStatus
+from waygate import WaygateBackend
+from waygate import AuditEntry, GlobalMaintenanceConfig, RouteState, RouteStatus
 
 
-class PostgresBackend(SwitchlyBackend):
+class PostgresBackend(WaygateBackend):
 
     def __init__(self, dsn: str) -> None:
         self._dsn = dsn
@@ -331,17 +331,17 @@ class PostgresBackend(SwitchlyBackend):
         self._pool = await asyncpg.create_pool(self._dsn)
         async with self._pool.acquire() as conn:
             await conn.execute("""
-                CREATE TABLE IF NOT EXISTS switchly_states (
+                CREATE TABLE IF NOT EXISTS waygate_states (
                     path TEXT PRIMARY KEY,
                     state_json TEXT NOT NULL
                 );
-                CREATE TABLE IF NOT EXISTS switchly_audit (
+                CREATE TABLE IF NOT EXISTS waygate_audit (
                     id TEXT PRIMARY KEY,
                     ts TIMESTAMPTZ NOT NULL,
                     path TEXT NOT NULL,
                     entry_json TEXT NOT NULL
                 );
-                CREATE TABLE IF NOT EXISTS switchly_webhook_dedup (
+                CREATE TABLE IF NOT EXISTS waygate_webhook_dedup (
                     dedup_key TEXT PRIMARY KEY,
                     claimed_at TIMESTAMPTZ NOT NULL DEFAULT now()
                 );
@@ -358,7 +358,7 @@ class PostgresBackend(SwitchlyBackend):
     async def get_state(self, path: str) -> RouteState:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT state_json FROM switchly_states WHERE path = $1", path
+                "SELECT state_json FROM waygate_states WHERE path = $1", path
             )
         if row is None:
             raise KeyError(path)
@@ -369,30 +369,30 @@ class PostgresBackend(SwitchlyBackend):
         async with self._pool.acquire() as conn:
             await conn.execute(
                 """
-                INSERT INTO switchly_states (path, state_json) VALUES ($1, $2)
+                INSERT INTO waygate_states (path, state_json) VALUES ($1, $2)
                 ON CONFLICT (path) DO UPDATE SET state_json = EXCLUDED.state_json
                 """,
                 path, payload,
             )
             # Notify all listening instances of the per-route state change.
-            await conn.execute("SELECT pg_notify('switchly_changes', $1)", payload)
+            await conn.execute("SELECT pg_notify('waygate_changes', $1)", payload)
 
     async def delete_state(self, path: str) -> None:
         async with self._pool.acquire() as conn:
             await conn.execute(
-                "DELETE FROM switchly_states WHERE path = $1", path
+                "DELETE FROM waygate_states WHERE path = $1", path
             )
 
     async def list_states(self) -> list[RouteState]:
         async with self._pool.acquire() as conn:
-            rows = await conn.fetch("SELECT state_json FROM switchly_states")
+            rows = await conn.fetch("SELECT state_json FROM waygate_states")
         return [RouteState.model_validate_json(r["state_json"]) for r in rows]
 
     async def write_audit(self, entry: AuditEntry) -> None:
         async with self._pool.acquire() as conn:
             await conn.execute(
                 """
-                INSERT INTO switchly_audit (id, ts, path, entry_json)
+                INSERT INTO waygate_audit (id, ts, path, entry_json)
                 VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING
                 """,
                 entry.id, entry.timestamp, entry.path, entry.model_dump_json(),
@@ -404,13 +404,13 @@ class PostgresBackend(SwitchlyBackend):
         async with self._pool.acquire() as conn:
             if path:
                 rows = await conn.fetch(
-                    "SELECT entry_json FROM switchly_audit WHERE path = $1"
+                    "SELECT entry_json FROM waygate_audit WHERE path = $1"
                     " ORDER BY ts DESC LIMIT $2",
                     path, limit,
                 )
             else:
                 rows = await conn.fetch(
-                    "SELECT entry_json FROM switchly_audit ORDER BY ts DESC LIMIT $1",
+                    "SELECT entry_json FROM waygate_audit ORDER BY ts DESC LIMIT $1",
                     limit,
                 )
         return [AuditEntry.model_validate_json(r["entry_json"]) for r in rows]
@@ -431,12 +431,12 @@ class PostgresBackend(SwitchlyBackend):
                 pass
 
         async with self._pool.acquire() as conn:
-            await conn.add_listener("switchly_changes", _on_notify)
+            await conn.add_listener("waygate_changes", _on_notify)
             try:
                 while True:
                     yield await queue.get()
             finally:
-                await conn.remove_listener("switchly_changes", _on_notify)
+                await conn.remove_listener("waygate_changes", _on_notify)
 
     # ------------------------------------------------------------------
     # Distributed: global maintenance cache invalidation
@@ -449,7 +449,7 @@ class PostgresBackend(SwitchlyBackend):
             # Empty string payload — only the arrival of the notification
             # matters, not its content.
             await conn.execute(
-                "SELECT pg_notify('switchly_global_invalidate', '1')"
+                "SELECT pg_notify('waygate_global_invalidate', '1')"
             )
 
     async def subscribe_global_config(self) -> AsyncIterator[None]:
@@ -460,12 +460,12 @@ class PostgresBackend(SwitchlyBackend):
             queue.put_nowait(None)
 
         async with self._pool.acquire() as conn:
-            await conn.add_listener("switchly_global_invalidate", _on_notify)
+            await conn.add_listener("waygate_global_invalidate", _on_notify)
             try:
                 while True:
                     yield await queue.get()
             finally:
-                await conn.remove_listener("switchly_global_invalidate", _on_notify)
+                await conn.remove_listener("waygate_global_invalidate", _on_notify)
 
     # ------------------------------------------------------------------
     # Distributed: webhook deduplication
@@ -483,12 +483,12 @@ class PostgresBackend(SwitchlyBackend):
         async with self._pool.acquire() as conn:
             # Purge rows older than ttl_seconds first (best-effort cleanup).
             await conn.execute(
-                "DELETE FROM switchly_webhook_dedup"
+                "DELETE FROM waygate_webhook_dedup"
                 " WHERE claimed_at < now() - ($1 || ' seconds')::interval",
                 str(ttl_seconds),
             )
             result = await conn.execute(
-                "INSERT INTO switchly_webhook_dedup (dedup_key)"
+                "INSERT INTO waygate_webhook_dedup (dedup_key)"
                 " VALUES ($1) ON CONFLICT DO NOTHING",
                 dedup_key,
             )
@@ -514,7 +514,7 @@ class PostgresBackend(SwitchlyBackend):
 If you want to support a framework other than FastAPI, the pattern is:
 
 1. **Middleware**: catch `MaintenanceException`, `RouteDisabledException`, `EnvGatedException` from `engine.check()` and return appropriate responses.
-2. **Route scanning**: at startup, iterate the framework's route list, detect `__switchly_meta__`, and call `engine.register()`.
-3. **Decorators**: reuse `switchly.fastapi.decorators` as-is (they only stamp metadata; they are framework-agnostic).
+2. **Route scanning**: at startup, iterate the framework's route list, detect `__waygate_meta__`, and call `engine.register()`.
+3. **Decorators**: reuse `waygate.fastapi.decorators` as-is (they only stamp metadata; they are framework-agnostic).
 
-The switchly decorators, engine, and backends have zero framework dependencies and can power any adapter.
+The waygate decorators, engine, and backends have zero framework dependencies and can power any adapter.

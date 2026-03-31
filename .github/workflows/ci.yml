@@ -30,9 +30,9 @@ jobs:
 
       - name: Verify CSS is up-to-date
         run: |
-          if ! git diff --quiet switchly/dashboard/static/switchly.min.css; then
-            echo "::error::switchly.min.css is out of date. Run 'npm run build:css' locally and commit the result."
-            git diff --stat switchly/dashboard/static/switchly.min.css
+          if ! git diff --quiet waygate/dashboard/static/waygate.min.css; then
+            echo "::error::waygate.min.css is out of date. Run 'npm run build:css' locally and commit the result."
+            git diff --stat waygate/dashboard/static/waygate.min.css
             exit 1
           fi
 
@@ -62,7 +62,7 @@ jobs:
         run: ruff format --check .
 
       - name: Run mypy
-        run: uv pip install --system -e ".[all,dev]" && mypy switchly
+        run: uv pip install --system -e ".[all,dev]" && mypy waygate
 
   test:
     name: Tests (Python ${{ matrix.python-version }}, ${{ matrix.os }})
@@ -133,4 +133,4 @@ jobs:
       - name: Run tests with Redis
         run: pytest --tb=short -q
         env:
-          SWITCHLY_REDIS_URL: redis://localhost:6379
+          WAYGATE_REDIS_URL: redis://localhost:6379

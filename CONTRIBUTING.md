@@ -1,4 +1,4 @@
-# Contributing to switchly
+# Contributing to waygate
 
 Thank you for considering a contribution! This document covers how to get set up, the branching strategy, and the standards we hold all code to.
 
@@ -11,8 +11,8 @@ Thank you for considering a contribution! This document covers how to get set up
 **Requirements:** Python 3.11+, [uv](https://docs.astral.sh/uv/)
 
 ```bash
-git clone https://github.com/Attakay78/switchly
-cd switchly
+git clone https://github.com/Attakay78/waygate
+cd waygate
 
 # Create venv and install all dependencies
 uv venv
@@ -26,8 +26,8 @@ pre-commit install
 ### Dashboard CSS (Tailwind)
 
 The dashboard UI uses [Tailwind CSS v4](https://tailwindcss.com/). The pre-built CSS
-(`switchly/dashboard/static/switchly.min.css`) is committed to the repository so that
-`pip install switchly` works without requiring Node.js. **Do not delete it.**
+(`waygate/dashboard/static/waygate.min.css`) is committed to the repository so that
+`pip install waygate` works without requiring Node.js. **Do not delete it.**
 
 Configuration lives in `input.css` (via `@theme` and `@source` directives) — there
 is no separate `tailwind.config.js` in v4.
@@ -47,20 +47,20 @@ npm run watch:css
 
 #### When you must rebuild
 
-Rebuild and commit `switchly.min.css` whenever you:
+Rebuild and commit `waygate.min.css` whenever you:
 
-- Add or change Tailwind utility classes in any `switchly/dashboard/templates/**/*.html` file
+- Add or change Tailwind utility classes in any `waygate/dashboard/templates/**/*.html` file
 - Add a new template file
 - Modify `input.css` (custom breakpoints, colours, or font config)
 
 ```bash
 npm run build:css
-git add switchly/dashboard/static/switchly.min.css
-git commit -m "rebuild: update switchly.min.css"
+git add waygate/dashboard/static/waygate.min.css
+git commit -m "rebuild: update waygate.min.css"
 ```
 
 CI runs a `css` job that rebuilds from scratch and fails the PR if the committed
-`switchly.min.css` does not match the templates. Forgetting to rebuild will block the merge.
+`waygate.min.css` does not match the templates. Forgetting to rebuild will block the merge.
 
 ---
 
@@ -86,11 +86,11 @@ feat/my-feature  →  develop  →  (release PR)  →  main  →  vX.Y.Z tag
 
 2. Make changes, commit using the [Conventional Commits](https://www.conventionalcommits.org/) format:
    ```
-   feat(core): add rollout percentage to SwitchlyEngine
+   feat(core): add rollout percentage to WaygateEngine
    fix(middleware): handle missing path in check()
    docs: add Redis backend guide
    chore(ci): pin ruff to v0.9
-   rebuild: update switchly.min.css
+   rebuild: update waygate.min.css
    ```
 
 3. Push and open a PR against `develop`.
@@ -108,7 +108,7 @@ pytest tests/core/
 pytest tests/fastapi/
 
 # With Redis (start Redis first)
-SWITCHLY_REDIS_URL=redis://localhost:6379 pytest
+WAYGATE_REDIS_URL=redis://localhost:6379 pytest
 ```
 
 ---
@@ -131,9 +131,9 @@ CI will fail on any ruff errors or formatting drift.
 
 These are hard constraints enforced by the project design. PRs that violate them will not be merged:
 
-1. **`switchly.core` must never import from `switchly.fastapi`, `switchly.dashboard`, or `switchly.cli`.**
-2. **All business logic lives in `SwitchlyEngine`.** Middleware and decorators are transport layers only.
-3. **Decorators stamp `__switchly_meta__` and do nothing else** — no logic at request time.
+1. **`waygate.core` must never import from `waygate.fastapi`, `waygate.dashboard`, or `waygate.cli`.**
+2. **All business logic lives in `WaygateEngine`.** Middleware and decorators are transport layers only.
+3. **Decorators stamp `__waygate_meta__` and do nothing else** — no logic at request time.
 4. **`engine.check()` is the single chokepoint** — never duplicate the check logic elsewhere.
-5. **Backends must implement the full `SwitchlyBackend` ABC** — no partial implementations. If a method is not supported (e.g. `subscribe()` on `FileBackend`), it raises `NotImplementedError`. `SwitchlyEngine.start()` catches this internally and skips the listener — the engine handles the fallback, not the caller.
-6. **Fail-open** — if the backend is unreachable, the request passes through. Switchly never takes down an API.
+5. **Backends must implement the full `WaygateBackend` ABC** — no partial implementations. If a method is not supported (e.g. `subscribe()` on `FileBackend`), it raises `NotImplementedError`. `WaygateEngine.start()` catches this internally and skips the listener — the engine handles the fallback, not the caller.
+6. **Fail-open** — if the backend is unreachable, the request passes through. Waygate never takes down an API.

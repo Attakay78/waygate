@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* Tell v4 exactly where to scan for class names */
-@source "./switchly/dashboard/templates/**/*.html";
+@source "./waygate/dashboard/templates/**/*.html";
 
 @theme {
   /* Custom xs breakpoint (keeps default sm/md/lg/xl/2xl) */

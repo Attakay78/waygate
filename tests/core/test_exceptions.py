@@ -1,17 +1,17 @@
-"""Tests for switchly.core.exceptions."""
+"""Tests for waygate.core.exceptions."""
 
 from datetime import UTC, datetime
 
-from switchly.core.exceptions import (
+from waygate.core.exceptions import (
     EnvGatedException,
     MaintenanceException,
     RouteDisabledException,
-    SwitchlyException,
+    WaygateException,
 )
 
 
-def test_switchly_exception_is_base():
-    exc = SwitchlyException("test")
+def test_waygate_exception_is_base():
+    exc = WaygateException("test")
     assert isinstance(exc, Exception)
 
 
@@ -20,7 +20,7 @@ def test_maintenance_exception_attrs():
     exc = MaintenanceException(reason="DB migration", retry_after=retry)
     assert exc.reason == "DB migration"
     assert exc.retry_after == retry
-    assert isinstance(exc, SwitchlyException)
+    assert isinstance(exc, WaygateException)
 
 
 def test_maintenance_exception_defaults():
@@ -36,14 +36,14 @@ def test_env_gated_exception_attrs():
     assert exc.path == "/api/debug"
     assert exc.current_env == "production"
     assert exc.allowed_envs == ["dev", "staging"]
-    assert isinstance(exc, SwitchlyException)
+    assert isinstance(exc, WaygateException)
     assert "production" in str(exc)
 
 
 def test_route_disabled_exception_attrs():
     exc = RouteDisabledException(reason="Use /new-endpoint instead")
     assert exc.reason == "Use /new-endpoint instead"
-    assert isinstance(exc, SwitchlyException)
+    assert isinstance(exc, WaygateException)
 
 
 def test_route_disabled_exception_default():

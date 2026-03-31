@@ -1,10 +1,10 @@
-"""Tests for switchly.fastapi.decorators."""
+"""Tests for waygate.fastapi.decorators."""
 
 from __future__ import annotations
 
 from datetime import UTC
 
-from switchly.fastapi.decorators import disabled, env_only, force_active, maintenance
+from waygate.fastapi.decorators import disabled, env_only, force_active, maintenance
 
 # ---------------------------------------------------------------------------
 # @maintenance
@@ -16,9 +16,9 @@ def test_maintenance_stamps_meta():
     async def endpoint():
         return {"ok": True}
 
-    assert hasattr(endpoint, "__switchly_meta__")
-    assert endpoint.__switchly_meta__["status"] == "maintenance"
-    assert endpoint.__switchly_meta__["reason"] == "DB migration"
+    assert hasattr(endpoint, "__waygate_meta__")
+    assert endpoint.__waygate_meta__["status"] == "maintenance"
+    assert endpoint.__waygate_meta__["reason"] == "DB migration"
 
 
 def test_maintenance_no_window_by_default():
@@ -26,7 +26,7 @@ def test_maintenance_no_window_by_default():
     async def endpoint():
         return {}
 
-    assert endpoint.__switchly_meta__["window"] is None
+    assert endpoint.__waygate_meta__["window"] is None
 
 
 def test_maintenance_with_window():
@@ -39,7 +39,7 @@ def test_maintenance_with_window():
     async def endpoint():
         return {}
 
-    window = endpoint.__switchly_meta__["window"]
+    window = endpoint.__waygate_meta__["window"]
     assert window is not None
     assert window.start == start
     assert window.end == end
@@ -81,8 +81,8 @@ def test_env_only_stamps_meta():
     async def endpoint():
         return {}
 
-    assert endpoint.__switchly_meta__["status"] == "env_gated"
-    assert endpoint.__switchly_meta__["allowed_envs"] == ["dev", "staging"]
+    assert endpoint.__waygate_meta__["status"] == "env_gated"
+    assert endpoint.__waygate_meta__["allowed_envs"] == ["dev", "staging"]
 
 
 async def test_env_only_preserves_async():
@@ -112,8 +112,8 @@ def test_disabled_stamps_meta():
     async def endpoint():
         return {}
 
-    assert endpoint.__switchly_meta__["status"] == "disabled"
-    assert endpoint.__switchly_meta__["reason"] == "Use /new-endpoint instead"
+    assert endpoint.__waygate_meta__["status"] == "disabled"
+    assert endpoint.__waygate_meta__["reason"] == "Use /new-endpoint instead"
 
 
 async def test_disabled_preserves_async():
@@ -130,7 +130,7 @@ def test_disabled_default_reason():
     async def endpoint():
         return {}
 
-    assert endpoint.__switchly_meta__["reason"] == ""
+    assert endpoint.__waygate_meta__["reason"] == ""
 
 
 def test_disabled_preserves_name():
@@ -151,7 +151,7 @@ def test_force_active_stamps_meta():
     async def health():
         return {"status": "ok"}
 
-    assert health.__switchly_meta__["force_active"] is True
+    assert health.__waygate_meta__["force_active"] is True
 
 
 async def test_force_active_preserves_async():
@@ -185,4 +185,4 @@ def test_decorators_do_not_interfere_when_stacked():
         return {}
 
     # The outermost decorator's stamp takes precedence for "status"
-    assert "__switchly_meta__" in dir(endpoint) or hasattr(endpoint, "__switchly_meta__")
+    assert "__waygate_meta__" in dir(endpoint) or hasattr(endpoint, "__waygate_meta__")

@@ -1,9 +1,9 @@
-"""Integration tests — SwitchlySDK OpenFeature flag sync.
+"""Integration tests — WaygateSDK OpenFeature flag sync.
 
 Covers:
-* SwitchlyServerBackend._listen_sse() handling flag events
-* SwitchlySDKFlagProvider REST fetch + SSE hot-reload
-* SwitchlySDK.use_openfeature() integration
+* WaygateServerBackend._listen_sse() handling flag events
+* WaygateSDKFlagProvider REST fetch + SSE hot-reload
+* WaygateSDK.use_openfeature() integration
 """
 
 from __future__ import annotations
@@ -13,9 +13,9 @@ import asyncio
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from switchly.admin.app import SwitchlyAdmin
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.feature_flags.models import (
+from waygate.admin.app import WaygateAdmin
+from waygate.core.engine import WaygateEngine
+from waygate.core.feature_flags.models import (
     FeatureFlag,
     FlagType,
     FlagVariation,
@@ -51,15 +51,15 @@ def _segment(key: str = "beta") -> Segment:
 
 
 # ---------------------------------------------------------------------------
-# SwitchlyServerBackend — flag SSE event handling
+# WaygateServerBackend — flag SSE event handling
 # ---------------------------------------------------------------------------
 
 
-class TestSwitchlyServerBackendFlagSSE:
+class TestWaygateServerBackendFlagSSE:
     def _make_backend(self):
-        from switchly.core.backends.server import SwitchlyServerBackend
+        from waygate.core.backends.server import WaygateServerBackend
 
-        return SwitchlyServerBackend(server_url="http://switchly:9000", app_id="svc")
+        return WaygateServerBackend(server_url="http://waygate:9000", app_id="svc")
 
     async def test_flag_updated_event_updates_cache(self) -> None:
         backend = self._make_backend()
@@ -133,35 +133,35 @@ class TestSwitchlyServerBackendFlagSSE:
 
 
 # ---------------------------------------------------------------------------
-# SwitchlySDKFlagProvider — REST fetch + SSE hot-reload
+# WaygateSDKFlagProvider — REST fetch + SSE hot-reload
 # ---------------------------------------------------------------------------
 
 
-class TestSwitchlySDKFlagProvider:
+class TestWaygateSDKFlagProvider:
     @pytest.fixture
-    def engine(self) -> SwitchlyEngine:
-        return SwitchlyEngine()
+    def engine(self) -> WaygateEngine:
+        return WaygateEngine()
 
     @pytest.fixture
-    def admin(self, engine: SwitchlyEngine):
-        return SwitchlyAdmin(engine=engine, enable_flags=True)
+    def admin(self, engine: WaygateEngine):
+        return WaygateAdmin(engine=engine, enable_flags=True)
 
     async def test_fetch_from_server_populates_flags(self, admin, engine) -> None:
         """Provider fetches flags from /api/flags on initialize()."""
         flag = _bool_flag("fetch-flag")
         await engine.save_flag(flag)
 
-        from switchly.core.backends.server import SwitchlyServerBackend
-        from switchly.sdk.flag_provider import SwitchlySDKFlagProvider
+        from waygate.core.backends.server import WaygateServerBackend
+        from waygate.sdk.flag_provider import WaygateSDKFlagProvider
 
         # Build a backend with ASGI transport pointing at the admin app.
-        sdk_backend = SwitchlyServerBackend(server_url="http://testserver", app_id="test-svc")
+        sdk_backend = WaygateServerBackend(server_url="http://testserver", app_id="test-svc")
         sdk_backend._client = AsyncClient(
             transport=ASGITransport(app=admin),
             base_url="http://testserver",
         )
 
-        provider = SwitchlySDKFlagProvider(sdk_backend)
+        provider = WaygateSDKFlagProvider(sdk_backend)
         await provider._fetch_from_server()
 
         assert "fetch-flag" in provider._flags
@@ -174,16 +174,16 @@ class TestSwitchlySDKFlagProvider:
         seg = _segment("fetch-seg")
         await engine.save_segment(seg)
 
-        from switchly.core.backends.server import SwitchlyServerBackend
-        from switchly.sdk.flag_provider import SwitchlySDKFlagProvider
+        from waygate.core.backends.server import WaygateServerBackend
+        from waygate.sdk.flag_provider import WaygateSDKFlagProvider
 
-        sdk_backend = SwitchlyServerBackend(server_url="http://testserver", app_id="test-svc")
+        sdk_backend = WaygateServerBackend(server_url="http://testserver", app_id="test-svc")
         sdk_backend._client = AsyncClient(
             transport=ASGITransport(app=admin),
             base_url="http://testserver",
         )
 
-        provider = SwitchlySDKFlagProvider(sdk_backend)
+        provider = WaygateSDKFlagProvider(sdk_backend)
         await provider._fetch_from_server()
 
         assert "fetch-seg" in provider._segments
@@ -192,11 +192,11 @@ class TestSwitchlySDKFlagProvider:
 
     async def test_watch_sse_hot_reloads_flag(self) -> None:
         """Provider _watch_sse() updates _flags when a flag_updated event arrives."""
-        from switchly.core.backends.server import SwitchlyServerBackend
-        from switchly.sdk.flag_provider import SwitchlySDKFlagProvider
+        from waygate.core.backends.server import WaygateServerBackend
+        from waygate.sdk.flag_provider import WaygateSDKFlagProvider
 
-        sdk_backend = SwitchlyServerBackend(server_url="http://testserver", app_id="test-svc")
-        provider = SwitchlySDKFlagProvider(sdk_backend)
+        sdk_backend = WaygateServerBackend(server_url="http://testserver", app_id="test-svc")
+        provider = WaygateSDKFlagProvider(sdk_backend)
 
         flag = _bool_flag("hot-flag")
         watch_task = asyncio.create_task(provider._watch_sse())
@@ -220,11 +220,11 @@ class TestSwitchlySDKFlagProvider:
 
     async def test_watch_sse_removes_deleted_flag(self) -> None:
         """Provider _watch_sse() removes flag when flag_deleted event arrives."""
-        from switchly.core.backends.server import SwitchlyServerBackend
-        from switchly.sdk.flag_provider import SwitchlySDKFlagProvider
+        from waygate.core.backends.server import WaygateServerBackend
+        from waygate.sdk.flag_provider import WaygateSDKFlagProvider
 
-        sdk_backend = SwitchlyServerBackend(server_url="http://testserver", app_id="test-svc")
-        provider = SwitchlySDKFlagProvider(sdk_backend)
+        sdk_backend = WaygateServerBackend(server_url="http://testserver", app_id="test-svc")
+        provider = WaygateSDKFlagProvider(sdk_backend)
         flag = _bool_flag("gone-flag")
         provider._flags["gone-flag"] = flag
 
@@ -245,11 +245,11 @@ class TestSwitchlySDKFlagProvider:
 
     async def test_watch_sse_hot_reloads_segment(self) -> None:
         """Provider _watch_sse() updates _segments when segment_updated event arrives."""
-        from switchly.core.backends.server import SwitchlyServerBackend
-        from switchly.sdk.flag_provider import SwitchlySDKFlagProvider
+        from waygate.core.backends.server import WaygateServerBackend
+        from waygate.sdk.flag_provider import WaygateSDKFlagProvider
 
-        sdk_backend = SwitchlyServerBackend(server_url="http://testserver", app_id="test-svc")
-        provider = SwitchlySDKFlagProvider(sdk_backend)
+        sdk_backend = WaygateServerBackend(server_url="http://testserver", app_id="test-svc")
+        provider = WaygateSDKFlagProvider(sdk_backend)
 
         seg = _segment("hot-seg")
         watch_task = asyncio.create_task(provider._watch_sse())
@@ -275,11 +275,11 @@ class TestSwitchlySDKFlagProvider:
 
     async def test_provider_shutdown_cancels_watch_task(self) -> None:
         """shutdown() cancels the SSE watcher without raising."""
-        from switchly.core.backends.server import SwitchlyServerBackend
-        from switchly.sdk.flag_provider import SwitchlySDKFlagProvider
+        from waygate.core.backends.server import WaygateServerBackend
+        from waygate.sdk.flag_provider import WaygateSDKFlagProvider
 
-        sdk_backend = SwitchlyServerBackend(server_url="http://testserver", app_id="test-svc")
-        provider = SwitchlySDKFlagProvider(sdk_backend)
+        sdk_backend = WaygateServerBackend(server_url="http://testserver", app_id="test-svc")
+        provider = WaygateSDKFlagProvider(sdk_backend)
         provider._watch_task = asyncio.create_task(provider._watch_sse())
         await asyncio.sleep(0.05)
         provider.shutdown()
@@ -292,33 +292,33 @@ class TestSwitchlySDKFlagProvider:
 
 
 # ---------------------------------------------------------------------------
-# SwitchlySDK.use_openfeature() integration
+# WaygateSDK.use_openfeature() integration
 # ---------------------------------------------------------------------------
 
 
-class TestSwitchlySDKUseOpenFeature:
+class TestWaygateSDKUseOpenFeature:
     async def test_use_openfeature_sets_flag_provider(self) -> None:
-        """use_openfeature() activates SwitchlySDKFlagProvider on the engine."""
-        from switchly.sdk import SwitchlySDK
+        """use_openfeature() activates WaygateSDKFlagProvider on the engine."""
+        from waygate.sdk import WaygateSDK
 
-        sdk = SwitchlySDK(
-            server_url="http://switchly:9000",
+        sdk = WaygateSDK(
+            server_url="http://waygate:9000",
             app_id="test-svc",
         )
         assert sdk.engine._flag_provider is None
         sdk.use_openfeature()
         assert sdk.engine._flag_provider is not None
 
-        from switchly.sdk.flag_provider import SwitchlySDKFlagProvider
+        from waygate.sdk.flag_provider import WaygateSDKFlagProvider
 
-        assert isinstance(sdk.engine._flag_provider, SwitchlySDKFlagProvider)
+        assert isinstance(sdk.engine._flag_provider, WaygateSDKFlagProvider)
 
     async def test_use_openfeature_enables_flag_client(self) -> None:
         """use_openfeature() should also set up the flag_client property."""
-        from switchly.sdk import SwitchlySDK
+        from waygate.sdk import WaygateSDK
 
-        sdk = SwitchlySDK(
-            server_url="http://switchly:9000",
+        sdk = WaygateSDK(
+            server_url="http://waygate:9000",
             app_id="test-svc",
         )
         sdk.use_openfeature()
@@ -326,10 +326,10 @@ class TestSwitchlySDKUseOpenFeature:
 
     async def test_use_openfeature_with_domain(self) -> None:
         """use_openfeature(domain=...) uses the given domain name."""
-        from switchly.sdk import SwitchlySDK
+        from waygate.sdk import WaygateSDK
 
-        sdk = SwitchlySDK(
-            server_url="http://switchly:9000",
+        sdk = WaygateSDK(
+            server_url="http://waygate:9000",
             app_id="test-svc",
         )
         # Should not raise with a custom domain.
@@ -338,9 +338,9 @@ class TestSwitchlySDKUseOpenFeature:
 
     async def test_use_openfeature_idempotent(self) -> None:
         """Calling use_openfeature() twice should not crash."""
-        from switchly.sdk import SwitchlySDK
+        from waygate.sdk import WaygateSDK
 
-        sdk = SwitchlySDK(server_url="http://switchly:9000", app_id="test-svc")
+        sdk = WaygateSDK(server_url="http://waygate:9000", app_id="test-svc")
         sdk.use_openfeature()
         sdk.use_openfeature()  # second call — should not raise
         assert sdk.engine._flag_provider is not None

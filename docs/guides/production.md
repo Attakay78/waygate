@@ -1,6 +1,6 @@
 # Production Monitoring & Deployment Automation
 
-This guide covers practical patterns for integrating switchly into the scripts and pipelines that keep your production systems healthy.
+This guide covers practical patterns for integrating waygate into the scripts and pipelines that keep your production systems healthy.
 
 ---
 
@@ -8,21 +8,21 @@ This guide covers practical patterns for integrating switchly into the scripts a
 
 ### Poll route health via the REST API
 
-The `SwitchlyAdmin` REST API is JSON over HTTP, so any monitoring tool that can make an HTTP request can query it. No `switchly` CLI install needed on the monitoring host.
+The `WaygateAdmin` REST API is JSON over HTTP, so any monitoring tool that can make an HTTP request can query it. No `waygate` CLI install needed on the monitoring host.
 
 ```bash
 #!/usr/bin/env bash
 # check-routes.sh — exit 1 if any route is unexpectedly disabled
 
-SWITCHLY_URL="${SWITCHLY_SERVER_URL:-http://localhost:8000/switchly}"
-TOKEN="${SWITCHLY_TOKEN}"
+WAYGATE_URL="${WAYGATE_SERVER_URL:-http://localhost:8000/waygate}"
+TOKEN="${WAYGATE_TOKEN}"
 
 routes=$(curl -sf \
-  -H "X-Switchly-Token: $TOKEN" \
-  "$SWITCHLY_URL/api/routes")
+  -H "X-Waygate-Token: $TOKEN" \
+  "$WAYGATE_URL/api/routes")
 
 if [ $? -ne 0 ]; then
-  echo "ERROR: Could not reach SwitchlyAdmin at $SWITCHLY_URL" >&2
+  echo "ERROR: Could not reach WaygateAdmin at $WAYGATE_URL" >&2
   exit 1
 fi
 
@@ -41,7 +41,7 @@ echo "OK: all routes nominal"
 Run this from cron, Datadog, or any scheduler:
 
 ```cron
-*/5 * * * * /opt/scripts/check-routes.sh >> /var/log/switchly-monitor.log 2>&1
+*/5 * * * * /opt/scripts/check-routes.sh >> /var/log/waygate-monitor.log 2>&1
 ```
 
 ---
@@ -50,22 +50,22 @@ Run this from cron, Datadog, or any scheduler:
 
 ```python
 #!/usr/bin/env python3
-"""monitor_routes.py — check switchly route states and alert on anomalies."""
+"""monitor_routes.py — check waygate route states and alert on anomalies."""
 
 import os
 import sys
 import httpx
 
-SWITCHLY_URL = os.environ.get("SWITCHLY_SERVER_URL", "http://localhost:8000/switchly")
-TOKEN = os.environ["SWITCHLY_TOKEN"]
+WAYGATE_URL = os.environ.get("WAYGATE_SERVER_URL", "http://localhost:8000/waygate")
+TOKEN = os.environ["WAYGATE_TOKEN"]
 
 ALERT_ON = {"disabled", "maintenance"}   # statuses that warrant an alert
 
 
 def fetch_routes() -> list[dict]:
     resp = httpx.get(
-        f"{SWITCHLY_URL}/api/routes",
-        headers={"X-Switchly-Token": TOKEN},
+        f"{WAYGATE_URL}/api/routes",
+        headers={"X-Waygate-Token": TOKEN},
         timeout=10,
     )
     resp.raise_for_status()
@@ -98,56 +98,56 @@ if __name__ == "__main__":
 
 ### Webhook alerting (Slack / PagerDuty)
 
-switchly fires webhooks on every state change — enable, disable, maintenance on/off. Webhook delivery always originates from the process that owns the engine where state mutations happen. Where you register them depends on your deployment mode.
+waygate fires webhooks on every state change — enable, disable, maintenance on/off. Webhook delivery always originates from the process that owns the engine where state mutations happen. Where you register them depends on your deployment mode.
 
 #### Embedded mode (single service)
 
-Register directly on the engine before mounting `SwitchlyAdmin`:
+Register directly on the engine before mounting `WaygateAdmin`:
 
 ```python
-from switchly import SwitchlyEngine
-from switchly import SlackWebhookFormatter
-from switchly.fastapi import SwitchlyAdmin
+from waygate import WaygateEngine
+from waygate import SlackWebhookFormatter
+from waygate.fastapi import WaygateAdmin
 
-engine = SwitchlyEngine()
+engine = WaygateEngine()
 engine.add_webhook(
     url=os.environ["SLACK_WEBHOOK_URL"],
     formatter=SlackWebhookFormatter(),
 )
 engine.add_webhook(url=os.environ["PAGERDUTY_WEBHOOK_URL"])
 
-admin = SwitchlyAdmin(engine=engine, auth=("admin", os.environ["SWITCHLY_PASS"]))
-app.mount("/switchly", admin)
+admin = WaygateAdmin(engine=engine, auth=("admin", os.environ["WAYGATE_PASS"]))
+app.mount("/waygate", admin)
 ```
 
-#### Switchly Server mode (multi-service)
+#### Waygate Server mode (multi-service)
 
-State mutations happen on the **Switchly Server**, not on SDK clients. Build the engine explicitly so you can call `add_webhook()` on it before passing it to `SwitchlyAdmin`:
+State mutations happen on the **Waygate Server**, not on SDK clients. Build the engine explicitly so you can call `add_webhook()` on it before passing it to `WaygateAdmin`:
 
 ```python
-# switchly_server.py
+# waygate_server.py
 import os
-from switchly import SwitchlyEngine
-from switchly import RedisBackend
-from switchly import SlackWebhookFormatter
-from switchly.fastapi import SwitchlyAdmin
+from waygate import WaygateEngine
+from waygate import RedisBackend
+from waygate import SlackWebhookFormatter
+from waygate.fastapi import WaygateAdmin
 
-engine = SwitchlyEngine(backend=RedisBackend(os.environ["REDIS_URL"]))
+engine = WaygateEngine(backend=RedisBackend(os.environ["REDIS_URL"]))
 engine.add_webhook(
     url=os.environ["SLACK_WEBHOOK_URL"],
     formatter=SlackWebhookFormatter(),
 )
 engine.add_webhook(url=os.environ["PAGERDUTY_WEBHOOK_URL"])
 
-switchly_app = SwitchlyAdmin(
+waygate_app = WaygateAdmin(
     engine=engine,
-    auth=("admin", os.environ["SWITCHLY_PASS"]),
-    secret_key=os.environ["SWITCHLY_SECRET_KEY"],
+    auth=("admin", os.environ["WAYGATE_PASS"]),
+    secret_key=os.environ["WAYGATE_SECRET_KEY"],
 )
 ```
 
 !!! note
-    SDK service apps (`SwitchlySDK`) never fire webhooks. They only enforce state locally — all mutations and therefore all webhook triggers originate on the Switchly Server.
+    SDK service apps (`WaygateSDK`) never fire webhooks. They only enforce state locally — all mutations and therefore all webhook triggers originate on the Waygate Server.
 
 Webhook payload sent on every state change:
 
@@ -161,7 +161,7 @@ Webhook payload sent on every state change:
 }
 ```
 
-Webhook failures are non-blocking; they are logged and never affect the request path. On multi-node Switchly Server deployments (`RedisBackend`), Redis `SET NX` deduplication ensures only one node fires per event.
+Webhook failures are non-blocking; they are logged and never affect the request path. On multi-node Waygate Server deployments (`RedisBackend`), Redis `SET NX` deduplication ensures only one node fires per event.
 
 ---
 
@@ -176,14 +176,14 @@ The safest deployment pattern: enable maintenance before the deploy, run migrati
 # deploy.sh
 set -euo pipefail
 
-SWITCHLY_URL="${SWITCHLY_SERVER_URL:-http://localhost:8000/switchly}"
+WAYGATE_URL="${WAYGATE_SERVER_URL:-http://localhost:8000/waygate}"
 
-switchly_cmd() {
-  switchly --server-url "$SWITCHLY_URL" "$@"
+waygate_cmd() {
+  waygate --server-url "$WAYGATE_URL" "$@"
 }
 
 echo "==> Enabling global maintenance..."
-switchly_cmd global enable \
+waygate_cmd global enable \
   --reason "Deploying v$(cat VERSION) — back in ~5 minutes" \
   --exempt /health \
   --exempt GET:/readiness
@@ -198,7 +198,7 @@ echo "==> Waiting for health check..."
 until curl -sf http://localhost:8000/health; do sleep 2; done
 
 echo "==> Disabling global maintenance..."
-switchly_cmd global disable
+waygate_cmd global disable
 
 echo "==> Deploy complete."
 ```
@@ -214,7 +214,7 @@ For zero-downtime deploys where only specific routes need to go offline:
 # rolling-deploy.sh
 set -euo pipefail
 
-switchly maintenance "POST:/orders" \
+waygate maintenance "POST:/orders" \
   --reason "Order service upgrade — ETA 10 minutes" \
   --start "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --end "$(date -u -d '+10 minutes' +%Y-%m-%dT%H:%M:%SZ)"
@@ -225,7 +225,7 @@ docker compose up -d --no-deps --build orders
 # Wait for readiness
 until curl -sf http://localhost:8001/health; do sleep 2; done
 
-switchly enable "POST:/orders"
+waygate enable "POST:/orders"
 echo "Orders service back online."
 ```
 
@@ -245,20 +245,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      SWITCHLY_SERVER_URL: ${{ secrets.SWITCHLY_SERVER_URL }}
+      WAYGATE_SERVER_URL: ${{ secrets.WAYGATE_SERVER_URL }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install switchly CLI
-        run: pip install "switchly[cli]"
+      - name: Install waygate CLI
+        run: pip install "waygate[cli]"
 
-      - name: Authenticate with SwitchlyAdmin
-        run: switchly login ${{ secrets.SWITCHLY_USER }} --password ${{ secrets.SWITCHLY_PASS }}
+      - name: Authenticate with WaygateAdmin
+        run: waygate login ${{ secrets.WAYGATE_USER }} --password ${{ secrets.WAYGATE_PASS }}
 
       - name: Enable global maintenance
         run: |
-          switchly global enable \
+          waygate global enable \
             --reason "GitHub Actions deploy — commit ${{ github.sha }}" \
             --exempt /health
 
@@ -273,13 +273,13 @@ jobs:
 
       - name: Disable global maintenance
         if: always()   # run even if a previous step failed
-        run: switchly global disable
+        run: waygate global disable
 
       - name: Verify routes
         run: |
-          switchly status
+          waygate status
           # fail the workflow if any route is unexpectedly disabled
-          switchly status | grep -qv DISABLED || exit 1
+          waygate status | grep -qv DISABLED || exit 1
 ```
 
 !!! tip "Always disable on failure"
@@ -305,7 +305,7 @@ spec:
                   - sh
                   - -c
                   - |
-                    switchly --server-url $SWITCHLY_SERVER_URL \
+                    waygate --server-url $WAYGATE_SERVER_URL \
                       maintenance GET:/payments \
                       --reason "Pod shutting down (rolling update)"
           readinessProbe:
@@ -323,31 +323,31 @@ And a post-deploy Job to re-enable:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: switchly-enable-routes
+  name: waygate-enable-routes
 spec:
   template:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: switchly-cli
+        - name: waygate-cli
           image: python:3.13-slim
           command:
             - sh
             - -c
             - |
-              pip install -q "switchly[cli]"
-              switchly login $SWITCHLY_USER --password $SWITCHLY_PASS
-              switchly enable GET:/payments
-              switchly global disable
+              pip install -q "waygate[cli]"
+              waygate login $WAYGATE_USER --password $WAYGATE_PASS
+              waygate enable GET:/payments
+              waygate global disable
           env:
-            - name: SWITCHLY_SERVER_URL
-              value: "http://api-svc/switchly"
-            - name: SWITCHLY_USER
+            - name: WAYGATE_SERVER_URL
+              value: "http://api-svc/waygate"
+            - name: WAYGATE_USER
               valueFrom:
-                secretKeyRef: { name: switchly-creds, key: username }
-            - name: SWITCHLY_PASS
+                secretKeyRef: { name: waygate-creds, key: username }
+            - name: WAYGATE_PASS
               valueFrom:
-                secretKeyRef: { name: switchly-creds, key: password }
+                secretKeyRef: { name: waygate-creds, key: password }
 ```
 
 ---
@@ -358,7 +358,7 @@ For recurring maintenance windows (nightly jobs, weekly DB vacuums):
 
 ```bash
 # crontab — every Sunday 02:00–04:00 UTC
-0 2 * * 0 switchly schedule GET:/reports \
+0 2 * * 0 waygate schedule GET:/reports \
   --start "$(date -u +\%Y-\%m-\%dT02:00:00Z)" \
   --end   "$(date -u +\%Y-\%m-\%dT04:00:00Z)" \
   --reason "Weekly report rebuild"
@@ -369,10 +369,10 @@ Or schedule programmatically from Python:
 ```python
 import asyncio
 from datetime import datetime, UTC, timedelta
-from switchly import SwitchlyEngine
-from switchly import MaintenanceWindow
+from waygate import WaygateEngine
+from waygate import MaintenanceWindow
 
-async def schedule_nightly(engine: SwitchlyEngine) -> None:
+async def schedule_nightly(engine: WaygateEngine) -> None:
     now = datetime.now(UTC)
     tonight = now.replace(hour=2, minute=0, second=0, microsecond=0)
     if tonight < now:
@@ -400,12 +400,12 @@ Pull the audit log to detect unexpected state changes (e.g. a route disabled by 
 import httpx, os, sys
 from datetime import datetime, UTC, timedelta
 
-SWITCHLY_URL = os.environ.get("SWITCHLY_SERVER_URL", "http://localhost:8000/switchly")
-TOKEN = os.environ["SWITCHLY_TOKEN"]
+WAYGATE_URL = os.environ.get("WAYGATE_SERVER_URL", "http://localhost:8000/waygate")
+TOKEN = os.environ["WAYGATE_TOKEN"]
 LOOKBACK = timedelta(minutes=15)
 
 resp = httpx.get(
-    f"{SWITCHLY_URL}/api/audit?limit=50",
+    f"{WAYGATE_URL}/api/audit?limit=50",
     headers={"Authorization": f"Bearer {TOKEN}"},
     timeout=10,
 )
@@ -432,9 +432,9 @@ print("OK")
 
 | Variable | Used by | Description |
 |---|---|---|
-| `SWITCHLY_SERVER_URL` | CLI, monitoring scripts | Base URL of the `SwitchlyAdmin` mount point |
-| `SWITCHLY_TOKEN` | Monitoring scripts (direct API calls) | Bearer token from `switchly login` |
-| `SWITCHLY_BACKEND` | App server | Backend type: `memory`, `file`, `redis` |
-| `SWITCHLY_ENV` | App server | Current environment name (`dev`, `staging`, `production`) |
-| `SWITCHLY_REDIS_URL` | App server | Redis connection URL for `RedisBackend` |
-| `SWITCHLY_FILE_PATH` | App server | JSON file path for `FileBackend` |
+| `WAYGATE_SERVER_URL` | CLI, monitoring scripts | Base URL of the `WaygateAdmin` mount point |
+| `WAYGATE_TOKEN` | Monitoring scripts (direct API calls) | Bearer token from `waygate login` |
+| `WAYGATE_BACKEND` | App server | Backend type: `memory`, `file`, `redis` |
+| `WAYGATE_ENV` | App server | Current environment name (`dev`, `staging`, `production`) |
+| `WAYGATE_REDIS_URL` | App server | Redis connection URL for `RedisBackend` |
+| `WAYGATE_FILE_PATH` | App server | JSON file path for `FileBackend` |

@@ -1,4 +1,4 @@
-"""Tests for switchly.core.feature_flags.models.
+"""Tests for waygate.core.feature_flags.models.
 
 All tests are sync and pure — no I/O, no async, no openfeature dependency.
 Models are importable without the [flags] extra.
@@ -11,7 +11,7 @@ from datetime import UTC
 import pytest
 from pydantic import ValidationError
 
-from switchly.core.feature_flags.models import (
+from waygate.core.feature_flags.models import (
     EvaluationContext,
     EvaluationReason,
     FeatureFlag,

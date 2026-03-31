@@ -1,14 +1,14 @@
 """Tests for eager route scanning at ASGI lifespan startup.
 
 Verifies the two issues that existed when using only plain ``APIRouter``
-(no ``SwitchlyRouter``):
+(no ``WaygateRouter``):
 
 1. **CLI shows no routes** — state was never written to the backend until
-   the first HTTP request.  The fix: ``SwitchlyMiddleware.__call__`` intercepts
+   the first HTTP request.  The fix: ``WaygateMiddleware.__call__`` intercepts
    ``lifespan.startup.complete`` and runs ``scan_routes()`` immediately after
-   the app's own startup events (e.g. ``SwitchlyRouter.on_startup``) have fired.
+   the app's own startup events (e.g. ``WaygateRouter.on_startup``) have fired.
 
-2. **OpenAPI schema unfiltered** — ``apply_switchly_to_openapi`` reads state from
+2. **OpenAPI schema unfiltered** — ``apply_waygate_to_openapi`` reads state from
    the engine.  If state was not registered (no request had been made), all
    routes appeared in ``/docs`` regardless of their decorator.  The fix:
    ``_ensure_routes_scanned`` is now called on EVERY request (including
@@ -23,14 +23,14 @@ from typing import Any
 from fastapi import APIRouter, FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import RouteStatus
-from switchly.fastapi.decorators import deprecated, disabled, env_only, maintenance
-from switchly.fastapi.middleware import SwitchlyMiddleware
-from switchly.fastapi.openapi import apply_switchly_to_openapi
-from switchly.fastapi.router import SwitchlyRouter
 from tests.fastapi._helpers import _trigger_startup
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import RouteStatus
+from waygate.fastapi.decorators import deprecated, disabled, env_only, maintenance
+from waygate.fastapi.middleware import WaygateMiddleware
+from waygate.fastapi.openapi import apply_waygate_to_openapi
+from waygate.fastapi.router import WaygateRouter
 
 # ---------------------------------------------------------------------------
 # Helper: simulate ASGI lifespan startup
@@ -46,7 +46,7 @@ async def _lifespan_startup(app: FastAPI) -> None:
 
     Starlette sets ``scope["app"] = app`` inside its ``__call__`` before
     delegating to the middleware stack, so by the time
-    ``SwitchlyMiddleware.__call__`` runs, ``scope["app"]`` is the FastAPI app.
+    ``WaygateMiddleware.__call__`` runs, ``scope["app"]`` is the FastAPI app.
     """
     startup_complete: asyncio.Event = asyncio.Event()
     call_count = 0
@@ -87,9 +87,9 @@ async def test_plain_router_state_registered_at_lifespan_before_any_request():
     This is the CLI scenario: the CLI talks directly to the backend and would
     show no routes if we only scanned lazily on HTTP requests.
     """
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
     router = APIRouter()
 
@@ -121,17 +121,17 @@ async def test_plain_router_state_registered_at_lifespan_before_any_request():
     assert item_state.status == RouteStatus.MAINTENANCE
 
 
-async def test_lifespan_scan_is_idempotent_with_switchly_router():
-    """When SwitchlyRouter coexists with plain APIRouter, the lifespan scan must
-    not double-register SwitchlyRouter routes (engine.register is idempotent,
+async def test_lifespan_scan_is_idempotent_with_waygate_router():
+    """When WaygateRouter coexists with plain APIRouter, the lifespan scan must
+    not double-register WaygateRouter routes (engine.register is idempotent,
     but state must not be reset to decorator default after a runtime change)."""
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
-    switchly_router = SwitchlyRouter(engine=engine)
+    waygate_router = WaygateRouter(engine=engine)
 
-    @switchly_router.get("/payments")
+    @waygate_router.get("/payments")
     @maintenance(reason="DB migration")
     async def payments():
         return {}
@@ -143,10 +143,10 @@ async def test_lifespan_scan_is_idempotent_with_switchly_router():
     async def orders():
         return {}
 
-    app.include_router(switchly_router)
+    app.include_router(waygate_router)
     app.include_router(plain_router)
 
-    # SwitchlyRouter startup hook fires first (via app.router.startup).
+    # WaygateRouter startup hook fires first (via app.router.startup).
     await _trigger_startup(app)
 
     # Simulate a runtime state change — engine.enable overrides the decorator.
@@ -157,7 +157,7 @@ async def test_lifespan_scan_is_idempotent_with_switchly_router():
     # Now run lifespan startup — the middleware's scan runs here.
     await _lifespan_startup(app)
 
-    # SwitchlyRouter route must NOT be reset to MAINTENANCE by the scan.
+    # WaygateRouter route must NOT be reset to MAINTENANCE by the scan.
     post_scan_state = await engine.backend.get_state("GET:/payments")
     assert post_scan_state.status == RouteStatus.ACTIVE, (
         "Lifespan scan reset runtime state — engine.register idempotency broken"
@@ -177,9 +177,9 @@ async def test_lifespan_scan_is_idempotent_with_switchly_router():
 async def test_openapi_request_triggers_fallback_scan():
     """/openapi.json must trigger the lazy scan so the schema is filtered
     even when the ASGI lifespan was not used (e.g. httpx test transport)."""
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env="production")
+    engine = WaygateEngine(backend=MemoryBackend(), current_env="production")
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
     router = APIRouter()
 
@@ -193,7 +193,7 @@ async def test_openapi_request_triggers_fallback_scan():
         return {}
 
     app.include_router(router)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # First request is to /openapi.json — no route request has been made.
@@ -207,14 +207,14 @@ async def test_openapi_request_triggers_fallback_scan():
 
 
 # ---------------------------------------------------------------------------
-# OpenAPI filtering with plain APIRouter (no SwitchlyRouter at all)
+# OpenAPI filtering with plain APIRouter (no WaygateRouter at all)
 # ---------------------------------------------------------------------------
 
 
 async def test_openapi_hides_disabled_plain_router_route_after_lifespan():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
     router = APIRouter()
 
@@ -230,7 +230,7 @@ async def test_openapi_hides_disabled_plain_router_route_after_lifespan():
     app.include_router(router)
 
     await _lifespan_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     assert "/legacy" not in schema["paths"], "/legacy is DISABLED — must be hidden"
@@ -238,9 +238,9 @@ async def test_openapi_hides_disabled_plain_router_route_after_lifespan():
 
 
 async def test_openapi_hides_env_gated_plain_router_route_after_lifespan():
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env="production")
+    engine = WaygateEngine(backend=MemoryBackend(), current_env="production")
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
     router = APIRouter()
 
@@ -252,7 +252,7 @@ async def test_openapi_hides_env_gated_plain_router_route_after_lifespan():
     app.include_router(router)
 
     await _lifespan_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     assert "/debug" not in schema["paths"], (
@@ -261,9 +261,9 @@ async def test_openapi_hides_env_gated_plain_router_route_after_lifespan():
 
 
 async def test_openapi_marks_deprecated_plain_router_route_after_lifespan():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
     router = APIRouter()
 
@@ -275,7 +275,7 @@ async def test_openapi_marks_deprecated_plain_router_route_after_lifespan():
     app.include_router(router)
 
     await _lifespan_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     assert "/v1/items" in schema["paths"]
@@ -290,18 +290,18 @@ async def test_openapi_marks_deprecated_plain_router_route_after_lifespan():
 
 async def test_scope_app_is_set_during_lifespan():
     """Confirm that Starlette sets scope['app'] before the middleware stack
-    is invoked — this is the mechanism SwitchlyMiddleware relies on."""
+    is invoked — this is the mechanism WaygateMiddleware relies on."""
     captured_app: list[Any] = []
 
     from starlette.types import Receive, Scope, Send
 
-    class CapturingMiddleware(SwitchlyMiddleware):
+    class CapturingMiddleware(WaygateMiddleware):
         async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
             if scope["type"] == "lifespan":
                 captured_app.append(scope.get("app"))
             await super().__call__(scope, receive, send)
 
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     app = FastAPI()
     app.add_middleware(CapturingMiddleware, engine=engine)
 

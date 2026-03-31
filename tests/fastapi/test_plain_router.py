@@ -1,12 +1,12 @@
-"""Integration tests: switchly decorators on plain APIRouter (not SwitchlyRouter).
+"""Integration tests: waygate decorators on plain APIRouter (not WaygateRouter).
 
 These tests verify that ``@maintenance``, ``@disabled``, ``@env_only``, and
 ``@deprecated`` work correctly when applied to routes on a vanilla
 ``fastapi.APIRouter`` or directly on the ``FastAPI`` app — without
-``SwitchlyRouter`` being involved.
+``WaygateRouter`` being involved.
 
-The ``SwitchlyMiddleware`` lazy-scans all app routes on the first request and
-registers any ``__switchly_meta__``-bearing endpoints with the engine.
+The ``WaygateMiddleware`` lazy-scans all app routes on the first request and
+registers any ``__waygate_meta__``-bearing endpoints with the engine.
 """
 
 from __future__ import annotations
@@ -14,16 +14,16 @@ from __future__ import annotations
 from fastapi import APIRouter, FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.fastapi.decorators import deprecated, disabled, env_only, maintenance
-from switchly.fastapi.middleware import SwitchlyMiddleware
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.fastapi.decorators import deprecated, disabled, env_only, maintenance
+from waygate.fastapi.middleware import WaygateMiddleware
 
 
-def _make_app(env: str = "dev") -> tuple[FastAPI, SwitchlyEngine]:
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env=env)
+def _make_app(env: str = "dev") -> tuple[FastAPI, WaygateEngine]:
+    engine = WaygateEngine(backend=MemoryBackend(), current_env=env)
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
     return app, engine
 
 
@@ -189,9 +189,9 @@ async def test_plain_router_undecorated_passes_through():
 async def test_scan_routes_standalone():
     """scan_routes() can be called manually (e.g. in a lifespan) to register
     all decorated routes before the first request."""
-    from switchly.fastapi.router import scan_routes
+    from waygate.fastapi.router import scan_routes
 
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env="production")
+    engine = WaygateEngine(backend=MemoryBackend(), current_env="production")
     app = FastAPI()
     router = APIRouter()
 

@@ -1,8 +1,8 @@
-site_name: switchly
+site_name: WayGate
 site_description: Runtime control for your APIs. Toggle features, schedule maintenance, enforce rate limits, and perform rollouts without redeploying.
-site_url: https://attakay78.github.io/switchly
-repo_url: https://github.com/Attakay78/switchly
-repo_name: Attakay78/switchly
+site_url: https://attakay78.github.io/waygate
+repo_url: https://github.com/Attakay78/waygate
+repo_name: Attakay78/waygate
 edit_uri: edit/main/docs/
 
 theme:
@@ -95,7 +95,7 @@ markdown_extensions:
       permalink: true
 
 nav:
-  - Switchly: index.md
+  - WayGate: index.md
   - Tutorial:
       - Installation: tutorial/installation.md
       - First Decorator: tutorial/first-decorator.md
@@ -109,14 +109,14 @@ nav:
       - Decorators: reference/decorators.md
       - Rate Limiting: reference/rate-limiting.md
       - Feature Flags: reference/feature-flags.md
-      - SwitchlyEngine: reference/engine.md
+      - WaygateEngine: reference/engine.md
       - Backends: reference/backends.md
       - Middleware: reference/middleware.md
       - Models: reference/models.md
       - Exceptions: reference/exceptions.md
       - CLI Commands: reference/cli.md
   - Guides:
-      - Switchly Server (Multi-Service): guides/switchly-server.md
+      - Waygate Server (Multi-Service): guides/waygate-server.md
       - Distributed Deployments: guides/distributed.md
       - Production Monitoring & Deployment: guides/production.md
   - Adapters:
@@ -129,9 +129,9 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/Attakay78/switchly
+      link: https://github.com/Attakay78/waygate
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/switchly
+      link: https://pypi.org/project/waygate
 
 extra_css:
   - stylesheets/extra.css

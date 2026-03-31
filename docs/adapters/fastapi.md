@@ -1,18 +1,18 @@
 # FastAPI Adapter
 
-The FastAPI adapter provides middleware, decorators, a drop-in router, and OpenAPI integration — all built on top of the framework-agnostic `switchly.core`.
+The FastAPI adapter provides middleware, decorators, a drop-in router, and OpenAPI integration — all built on top of the framework-agnostic `waygate.core`.
 
 !!! info "More adapters on the way"
-    We currently support FastAPI. Other framework adapters are on the way. [Open an issue](https://github.com/Attakay78/switchly/issues) if you'd like to see your framework supported sooner.
+    We currently support FastAPI. Other framework adapters are on the way. [Open an issue](https://github.com/Attakay78/waygate/issues) if you'd like to see your framework supported sooner.
 
 ---
 
 ## Installation
 
 ```bash
-uv add "switchly[fastapi]"              # adapter only
-uv add "switchly[fastapi,rate-limit]"   # with rate limiting
-uv add "switchly[all]"                  # everything including CLI + admin
+uv add "waygate[fastapi]"              # adapter only
+uv add "waygate[fastapi,rate-limit]"   # with rate limiting
+uv add "waygate[all]"                  # everything including CLI + admin
 ```
 
 ---
@@ -21,12 +21,12 @@ uv add "switchly[all]"                  # everything including CLI + admin
 
 ```python title="main.py"
 from fastapi import FastAPI
-from switchly import make_engine
-from switchly.fastapi import (
-    SwitchlyMiddleware,
-    SwitchlyAdmin,
-    apply_switchly_to_openapi,
-    setup_switchly_docs,
+from waygate import make_engine
+from waygate.fastapi import (
+    WaygateMiddleware,
+    WaygateAdmin,
+    apply_waygate_to_openapi,
+    setup_waygate_docs,
     maintenance,
     env_only,
     disabled,
@@ -34,10 +34,10 @@ from switchly.fastapi import (
     deprecated,
 )
 
-engine = make_engine()  # reads SWITCHLY_BACKEND, SWITCHLY_ENV from env / .switchly
+engine = make_engine()  # reads WAYGATE_BACKEND, WAYGATE_ENV from env / .waygate
 
 app = FastAPI()
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 
 @app.get("/payments")
 @maintenance(reason="DB migration")
@@ -49,22 +49,22 @@ async def get_payments():
 async def health():
     return {"status": "ok"}
 
-apply_switchly_to_openapi(app, engine)
-setup_switchly_docs(app, engine)
+apply_waygate_to_openapi(app, engine)
+setup_waygate_docs(app, engine)
 
-app.mount("/switchly", SwitchlyAdmin(engine=engine, auth=("admin", "secret")))
+app.mount("/waygate", WaygateAdmin(engine=engine, auth=("admin", "secret")))
 ```
 
 ---
 
 ## Components
 
-### SwitchlyMiddleware
+### WaygateMiddleware
 
 ASGI middleware that enforces route state on every request.
 
 ```python
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 ```
 
 See [**Reference: Middleware**](../reference/middleware.md) for full details.
@@ -73,29 +73,29 @@ See [**Reference: Middleware**](../reference/middleware.md) for full details.
 
 ### Decorators
 
-All decorators work with any router type (plain `APIRouter`, `SwitchlyRouter`, or routes added directly to `app`).
+All decorators work with any router type (plain `APIRouter`, `WaygateRouter`, or routes added directly to `app`).
 
 | Decorator | Import | Behaviour |
 |---|---|---|
-| `@maintenance(reason, start, end)` | `switchly.fastapi` | 503 temporarily |
-| `@disabled(reason)` | `switchly.fastapi` | 503 permanently |
-| `@env_only(*envs)` | `switchly.fastapi` | 404 in other envs |
-| `@deprecated(sunset, use_instead)` | `switchly.fastapi` | 200 + headers |
-| `@force_active` | `switchly.fastapi` | Always 200 |
-| `@rate_limit("100/minute")` | `switchly.fastapi.decorators` | 429 when exceeded |
+| `@maintenance(reason, start, end)` | `waygate.fastapi` | 503 temporarily |
+| `@disabled(reason)` | `waygate.fastapi` | 503 permanently |
+| `@env_only(*envs)` | `waygate.fastapi` | 404 in other envs |
+| `@deprecated(sunset, use_instead)` | `waygate.fastapi` | 200 + headers |
+| `@force_active` | `waygate.fastapi` | Always 200 |
+| `@rate_limit("100/minute")` | `waygate.fastapi.decorators` | 429 when exceeded |
 
 See [**Reference: Decorators**](../reference/decorators.md) for full details.
 
 ---
 
-### SwitchlyRouter
+### WaygateRouter
 
 A drop-in replacement for `APIRouter` that automatically registers route metadata with the engine at startup.
 
 ```python
-from switchly.fastapi import SwitchlyRouter
+from waygate.fastapi import WaygateRouter
 
-router = SwitchlyRouter(engine=engine)
+router = WaygateRouter(engine=engine)
 
 @router.get("/payments")
 @maintenance(reason="DB migration")
@@ -106,18 +106,18 @@ app.include_router(router)
 ```
 
 !!! note
-    `SwitchlyRouter` is optional. `SwitchlyMiddleware` also registers routes by scanning `app.routes` at startup (lazy, on first request). Use `SwitchlyRouter` for explicit control over registration order.
+    `WaygateRouter` is optional. `WaygateMiddleware` also registers routes by scanning `app.routes` at startup (lazy, on first request). Use `WaygateRouter` for explicit control over registration order.
 
 ---
 
-### SwitchlyAdmin
+### WaygateAdmin
 
-Mounts the admin dashboard UI and the REST API (used by the `switchly` CLI) under a single path.
+Mounts the admin dashboard UI and the REST API (used by the `waygate` CLI) under a single path.
 
 ```python
-from switchly.fastapi import SwitchlyAdmin
+from waygate.fastapi import WaygateAdmin
 
-app.mount("/switchly", SwitchlyAdmin(engine=engine, auth=("admin", "secret")))
+app.mount("/waygate", WaygateAdmin(engine=engine, auth=("admin", "secret")))
 ```
 
 See [**Tutorial: Admin Dashboard**](../tutorial/admin-dashboard.md) for full details.
@@ -126,10 +126,10 @@ See [**Tutorial: Admin Dashboard**](../tutorial/admin-dashboard.md) for full det
 
 ## Rate limiting
 
-Requires `switchly[rate-limit]` on the server.
+Requires `waygate[rate-limit]` on the server.
 
 ```python
-from switchly.fastapi import rate_limit
+from waygate.fastapi import rate_limit
 
 @router.get("/public/posts")
 @rate_limit("10/minute")               # 10 req/min per IP
@@ -155,7 +155,7 @@ Custom response on rate limit violations:
 ```python
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from switchly import RateLimitExceededException
+from waygate import RateLimitExceededException
 
 def my_429(request: Request, exc: RateLimitExceededException) -> JSONResponse:
     return JSONResponse(
@@ -173,18 +173,18 @@ Global default (applies to all rate-limited routes without a per-route factory):
 
 ```python
 app.add_middleware(
-    SwitchlyMiddleware,
+    WaygateMiddleware,
     engine=engine,
     responses={"rate_limited": my_429},
 )
 ```
 
-Mutate policies at runtime without redeploying (`switchly rl` and `switchly rate-limits` are aliases):
+Mutate policies at runtime without redeploying (`waygate rl` and `waygate rate-limits` are aliases):
 
 ```bash
-switchly rl set GET:/public/posts 20/minute
-switchly rl reset GET:/public/posts
-switchly rl hits
+waygate rl set GET:/public/posts 20/minute
+waygate rl reset GET:/public/posts
+waygate rl hits
 ```
 
 See [**Tutorial: Rate Limiting**](../tutorial/rate-limiting.md) and [**Reference: Rate Limiting**](../reference/rate-limiting.md) for full details.
@@ -193,13 +193,13 @@ See [**Tutorial: Rate Limiting**](../tutorial/rate-limiting.md) and [**Reference
 
 ## Dependency injection
 
-Switchly decorators work as FastAPI `Depends()` dependencies for per-handler enforcement without middleware.
+Waygate decorators work as FastAPI `Depends()` dependencies for per-handler enforcement without middleware.
 
 ```python title="two patterns"
 from fastapi import Depends
-from switchly.fastapi import disabled, maintenance
+from waygate.fastapi import disabled, maintenance
 
-# Pattern A — decorator (relies on SwitchlyMiddleware to enforce)
+# Pattern A — decorator (relies on WaygateMiddleware to enforce)
 @router.get("/payments")
 @maintenance(reason="DB migration")
 async def get_payments():
@@ -218,7 +218,7 @@ async def get_orders():
 `@rate_limit` also works as a `Depends()`:
 
 ```python
-from switchly.fastapi import rate_limit
+from waygate.fastapi import rate_limit
 
 @router.get("/export", dependencies=[Depends(rate_limit("5/hour", key="user"))])
 async def export():
@@ -229,7 +229,7 @@ Both the decorator path and the `Depends()` path share the same counter — they
 
 | Pattern | Best for |
 |---|---|
-| Decorator | Apps that always run `SwitchlyMiddleware` |
+| Decorator | Apps that always run `WaygateMiddleware` |
 | `Depends()` | Serverless / edge runtimes without middleware, or when middleware is not used |
 
 ---
@@ -245,7 +245,7 @@ async def lifespan(app: FastAPI):
         yield
 
 app = FastAPI(lifespan=lifespan)
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 ```
 
 ---
@@ -257,18 +257,18 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from switchly import MemoryBackend
-from switchly import SwitchlyEngine
-from switchly.fastapi import maintenance, force_active
-from switchly.fastapi import SwitchlyMiddleware
-from switchly.fastapi import SwitchlyRouter
+from waygate import MemoryBackend
+from waygate import WaygateEngine
+from waygate.fastapi import maintenance, force_active
+from waygate.fastapi import WaygateMiddleware
+from waygate.fastapi import WaygateRouter
 
 
 async def test_maintenance_returns_503():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
-    router = SwitchlyRouter(engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/payments")
     @maintenance(reason="DB migration")
@@ -276,7 +276,7 @@ async def test_maintenance_returns_503():
         return {"ok": True}
 
     app.include_router(router)
-    await app.router.startup()   # trigger switchly route registration
+    await app.router.startup()   # trigger waygate route registration
 
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
@@ -288,7 +288,7 @@ async def test_maintenance_returns_503():
 
 
 async def test_runtime_enable_via_engine():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
 
     await engine.set_maintenance("GET:/orders", reason="Upgrade")
     await engine.enable("GET:/orders")
@@ -314,11 +314,11 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
 ### Basic usage
 
-??? example "All core decorators + SwitchlyAdmin"
+??? example "All core decorators + WaygateAdmin"
 
-    [:material-github: View on GitHub](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/basic.py){ .md-button }
+    [:material-github: View on GitHub](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/basic.py){ .md-button }
 
-    Demonstrates every decorator (`@maintenance`, `@disabled`, `@env_only`, `@force_active`, `@deprecated`) together with the `SwitchlyAdmin` unified interface (dashboard + CLI REST API).
+    Demonstrates every decorator (`@maintenance`, `@disabled`, `@env_only`, `@force_active`, `@deprecated`) together with the `WaygateAdmin` unified interface (dashboard + CLI REST API).
 
     **Expected behavior:**
 
@@ -335,17 +335,17 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
     ```bash
     uv run uvicorn examples.fastapi.basic:app --reload
     # Swagger UI:       http://localhost:8000/docs
-    # Admin dashboard:  http://localhost:8000/switchly/   (admin / secret)
-    # Audit log:        http://localhost:8000/switchly/audit
+    # Admin dashboard:  http://localhost:8000/waygate/   (admin / secret)
+    # Audit log:        http://localhost:8000/waygate/audit
     ```
 
     **CLI quick-start:**
 
     ```bash
-    switchly login admin          # password: secret
-    switchly status
-    switchly disable GET:/payments --reason "hotfix"
-    switchly enable  GET:/payments
+    waygate login admin          # password: secret
+    waygate status
+    waygate disable GET:/payments --reason "hotfix"
+    waygate enable  GET:/payments
     ```
 
     **Full source:**
@@ -358,17 +358,17 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
 ### Dependency injection
 
-??? example "Switchly decorators as FastAPI `Depends()`"
+??? example "Waygate decorators as FastAPI `Depends()`"
 
-    [:material-github: View on GitHub](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/dependency_injection.py){ .md-button }
+    [:material-github: View on GitHub](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/dependency_injection.py){ .md-button }
 
-    Shows how to use switchly decorators as `Depends()` instead of (or alongside) middleware. Once `configure_switchly(app, engine)` is called — or `SwitchlyMiddleware` is added, which calls it automatically — all decorator dependencies find the engine via `request.app.state` without needing an explicit `engine=` argument per route.
+    Shows how to use waygate decorators as `Depends()` instead of (or alongside) middleware. Once `configure_waygate(app, engine)` is called — or `WaygateMiddleware` is added, which calls it automatically — all decorator dependencies find the engine via `request.app.state` without needing an explicit `engine=` argument per route.
 
     **Expected behavior:**
 
     | Endpoint | Response |
     |---|---|
-    | `GET /payments` | 503 (maintenance) — toggle off with `switchly enable GET:/payments` |
+    | `GET /payments` | 503 (maintenance) — toggle off with `waygate enable GET:/payments` |
     | `GET /old-endpoint` | 503 (disabled) |
     | `GET /debug` | 404 in production, 200 in dev/staging |
     | `GET /v1/users` | 200 + `Deprecation` / `Sunset` / `Link` headers |
@@ -378,14 +378,14 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
     ```bash
     uv run uvicorn examples.fastapi.dependency_injection:app --reload
-    # Admin dashboard: http://localhost:8000/switchly/   (admin / secret)
+    # Admin dashboard: http://localhost:8000/waygate/   (admin / secret)
     ```
 
     **Try it:**
 
     ```bash
     curl -i http://localhost:8000/payments      # → 503
-    switchly enable GET:/payments                 # toggle off without redeploy
+    waygate enable GET:/payments                 # toggle off without redeploy
     curl -i http://localhost:8000/payments      # → 200
     ```
 
@@ -401,7 +401,7 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
 ??? example "Auto-activating and auto-deactivating windows"
 
-    [:material-github: View on GitHub](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/scheduled_maintenance.py){ .md-button }
+    [:material-github: View on GitHub](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/scheduled_maintenance.py){ .md-button }
 
     Demonstrates how to schedule a maintenance window that activates and deactivates automatically at the specified times — no manual intervention required.
 
@@ -411,7 +411,7 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
     |---|---|
     | `GET /orders` | Normal route — enters maintenance during the window |
     | `GET /admin/schedule` | Schedules a 10-second window starting 5 seconds from now |
-    | `GET /admin/status` | Current switchly state for all routes |
+    | `GET /admin/status` | Current waygate state for all routes |
     | `GET /health` | Always 200 |
 
     **Run:**
@@ -448,7 +448,7 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
 ??? example "Blocking all routes at once"
 
-    [:material-github: View on GitHub](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/global_maintenance.py){ .md-button }
+    [:material-github: View on GitHub](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/global_maintenance.py){ .md-button }
 
     Demonstrates enabling and disabling global maintenance mode, which blocks every route in one call without per-route decorators. `@force_active` routes are exempt by default.
 
@@ -492,7 +492,7 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
 ??? example "HTML pages, redirects, and branded JSON errors"
 
-    [:material-github: View on GitHub](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/custom_responses.py){ .md-button }
+    [:material-github: View on GitHub](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/custom_responses.py){ .md-button }
 
     Shows how to replace the default JSON error body with any Starlette response — HTML maintenance pages, redirects, plain text, or a different JSON shape — either per-route or as an app-wide default on the middleware.
 
@@ -514,7 +514,7 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
     ```bash
     uv run uvicorn examples.fastapi.custom_responses:app --reload
-    # Admin dashboard: http://localhost:8000/switchly/   (admin / secret)
+    # Admin dashboard: http://localhost:8000/waygate/   (admin / secret)
     ```
 
     **Full source:**
@@ -529,24 +529,24 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
 ??? example "HTTP notifications on every state change"
 
-    [:material-github: View on GitHub](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/webhooks.py){ .md-button }
+    [:material-github: View on GitHub](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/webhooks.py){ .md-button }
 
     Fully self-contained webhook demo: three receivers (generic JSON, Slack-formatted, and a custom payload) are mounted on the same app — no external service needed. Change a route state via the CLI or dashboard and watch the events appear at `/webhook-log`.
 
     Webhooks are always registered on the engine that owns state mutations:
 
-    - **Embedded mode** — register on the engine before passing it to `SwitchlyAdmin`
-    - **Switchly Server mode** — build the engine explicitly and register on it before passing to `SwitchlyAdmin`; SDK service apps never fire webhooks
+    - **Embedded mode** — register on the engine before passing it to `WaygateAdmin`
+    - **Waygate Server mode** — build the engine explicitly and register on it before passing to `WaygateAdmin`; SDK service apps never fire webhooks
 
     ```python
-    # Switchly Server mode
-    from switchly import SwitchlyEngine
-    from switchly import SlackWebhookFormatter
-    from switchly.fastapi import SwitchlyAdmin
+    # Waygate Server mode
+    from waygate import WaygateEngine
+    from waygate import SlackWebhookFormatter
+    from waygate.fastapi import WaygateAdmin
 
-    engine = SwitchlyEngine(backend=RedisBackend(...))
+    engine = WaygateEngine(backend=RedisBackend(...))
     engine.add_webhook("https://hooks.slack.com/...", formatter=SlackWebhookFormatter())
-    switchly_app = SwitchlyAdmin(engine=engine, auth=("admin", "secret"))
+    waygate_app = WaygateAdmin(engine=engine, auth=("admin", "secret"))
     ```
 
     **Webhook receivers (all `@force_active`):**
@@ -562,18 +562,18 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
     ```bash
     uv run uvicorn examples.fastapi.webhooks:app --reload
     # Webhook log: http://localhost:8000/webhook-log  (auto-refreshes every 5 s)
-    # Admin:       http://localhost:8000/switchly/       (admin / secret)
+    # Admin:       http://localhost:8000/waygate/       (admin / secret)
     ```
 
     **Trigger events:**
 
     ```bash
-    switchly config set-url http://localhost:8000/switchly
-    switchly login admin                                   # password: secret
-    switchly disable GET:/payments --reason "hotfix"
-    switchly enable  GET:/payments
-    switchly maintenance GET:/orders --reason "stock sync"
-    switchly enable  GET:/orders
+    waygate config set-url http://localhost:8000/waygate
+    waygate login admin                                   # password: secret
+    waygate disable GET:/payments --reason "hotfix"
+    waygate enable  GET:/payments
+    waygate maintenance GET:/orders --reason "stock sync"
+    waygate enable  GET:/orders
     ```
 
     Then open `http://localhost:8000/webhook-log` to see all three receivers fire for each state change.
@@ -590,9 +590,9 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
 ??? example "Per-IP, per-user, tiered limits, and custom 429 responses"
 
-    [:material-github: View on GitHub](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/rate_limiting.py){ .md-button }
+    [:material-github: View on GitHub](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/rate_limiting.py){ .md-button }
 
-    Demonstrates IP-based, user-based, and tiered rate limiting with a custom 429 response factory. Requires `switchly[rate-limit]`.
+    Demonstrates IP-based, user-based, and tiered rate limiting with a custom 429 response factory. Requires `waygate[rate-limit]`.
 
     **Expected behavior:**
 
@@ -606,21 +606,21 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
     **Run:**
 
     ```bash
-    uv add "switchly[all,rate-limit]"
+    uv add "waygate[all,rate-limit]"
     uv run uvicorn examples.fastapi.rate_limiting:app --reload
-    # Admin dashboard:  http://localhost:8000/switchly/   (admin / secret)
-    # Rate limits tab:  http://localhost:8000/switchly/rate-limits
-    # Blocked log:      http://localhost:8000/switchly/blocked
+    # Admin dashboard:  http://localhost:8000/waygate/   (admin / secret)
+    # Rate limits tab:  http://localhost:8000/waygate/rate-limits
+    # Blocked log:      http://localhost:8000/waygate/blocked
     ```
 
     **CLI quick-start:**
 
     ```bash
-    switchly login admin
-    switchly rl list
-    switchly rl set GET:/public/posts 20/minute   # raise limit live
-    switchly rl reset GET:/public/posts           # clear counters
-    switchly rl hits                              # blocked requests log
+    waygate login admin
+    waygate rl list
+    waygate rl set GET:/public/posts 20/minute   # raise limit live
+    waygate rl reset GET:/public/posts           # clear counters
+    waygate rl hits                              # blocked requests log
     ```
 
     **Full source:**
@@ -631,27 +631,27 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
 ---
 
-### Switchly Server (single service)
+### Waygate Server (single service)
 
-??? example "Centralized Switchly Server + one service via SwitchlySDK"
+??? example "Centralized Waygate Server + one service via WaygateSDK"
 
-    [:material-github: View on GitHub](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/switchly_server.py){ .md-button }
+    [:material-github: View on GitHub](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/waygate_server.py){ .md-button }
 
-    Demonstrates the centralized Switchly Server architecture: one Switchly Server process owns all route state, and one service app connects via `SwitchlySDK`. State is enforced locally — zero per-request network overhead.
+    Demonstrates the centralized Waygate Server architecture: one Waygate Server process owns all route state, and one service app connects via `WaygateSDK`. State is enforced locally — zero per-request network overhead.
 
     **Two ASGI apps — run each in its own terminal:**
 
     ```bash
-    # Switchly Server (port 8001)
-    uv run uvicorn examples.fastapi.switchly_server:switchly_app --port 8001 --reload
+    # Waygate Server (port 8001)
+    uv run uvicorn examples.fastapi.waygate_server:waygate_app --port 8001 --reload
 
     # Service app (port 8000)
-    uv run uvicorn examples.fastapi.switchly_server:service_app --port 8000 --reload
+    uv run uvicorn examples.fastapi.waygate_server:service_app --port 8000 --reload
     ```
 
     **Then visit:**
 
-    - `http://localhost:8001/` — Switchly dashboard (`admin` / `secret`)
+    - `http://localhost:8001/` — Waygate dashboard (`admin` / `secret`)
     - `http://localhost:8000/docs` — service Swagger UI
 
     **Expected behavior:**
@@ -668,7 +668,7 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
     ```python
     # Option 1 — Auto-login (recommended): SDK logs in on startup, no token management
-    sdk = SwitchlySDK(
+    sdk = WaygateSDK(
         server_url="http://localhost:8001",
         app_id="payments-service",
         username="admin",
@@ -676,56 +676,56 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
     )
 
     # Option 2 — Pre-issued token
-    sdk = SwitchlySDK(
+    sdk = WaygateSDK(
         server_url="http://localhost:8001",
         app_id="payments-service",
-        token="<token-from-switchly-login>",
+        token="<token-from-waygate-login>",
     )
 
-    # Option 3 — No auth on the Switchly Server
-    sdk = SwitchlySDK(server_url="http://localhost:8001", app_id="payments-service")
+    # Option 3 — No auth on the Waygate Server
+    sdk = WaygateSDK(server_url="http://localhost:8001", app_id="payments-service")
     ```
 
-    **CLI — always targets the Switchly Server:**
+    **CLI — always targets the Waygate Server:**
 
     ```bash
-    switchly config set-url http://localhost:8001
-    switchly login admin              # password: secret
-    switchly status
-    switchly enable /api/payments
-    switchly disable /api/orders --reason "hotfix"
-    switchly maintenance /api/payments --reason "DB migration"
-    switchly audit
+    waygate config set-url http://localhost:8001
+    waygate login admin              # password: secret
+    waygate status
+    waygate enable /api/payments
+    waygate disable /api/orders --reason "hotfix"
+    waygate maintenance /api/payments --reason "DB migration"
+    waygate audit
     ```
 
     **Full source:**
 
-    ```python title="examples/fastapi/switchly_server.py"
-    --8<-- "examples/fastapi/switchly_server.py"
+    ```python title="examples/fastapi/waygate_server.py"
+    --8<-- "examples/fastapi/waygate_server.py"
     ```
 
 ---
 
-### Switchly Server (multi-service)
+### Waygate Server (multi-service)
 
-??? example "Two independent services sharing one Switchly Server"
+??? example "Two independent services sharing one Waygate Server"
 
-    [:material-github: View on GitHub](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/multi_service.py){ .md-button }
+    [:material-github: View on GitHub](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/multi_service.py){ .md-button }
 
-    Demonstrates two independent FastAPI services (`payments-service` and `orders-service`) both connecting to the same Switchly Server. Each service registers its routes under its own `app_id` namespace so the dashboard service dropdown and CLI `SWITCHLY_SERVICE` env var can manage them independently or together.
+    Demonstrates two independent FastAPI services (`payments-service` and `orders-service`) both connecting to the same Waygate Server. Each service registers its routes under its own `app_id` namespace so the dashboard service dropdown and CLI `WAYGATE_SERVICE` env var can manage them independently or together.
 
-    Each service authenticates using `username`/`password` so the SDK obtains its own long-lived `sdk`-platform token on startup — no manual token management required. The Switchly Server is configured with separate expiry times for human sessions and service tokens:
+    Each service authenticates using `username`/`password` so the SDK obtains its own long-lived `sdk`-platform token on startup — no manual token management required. The Waygate Server is configured with separate expiry times for human sessions and service tokens:
 
     ```python
-    switchly_app = SwitchlyServer(
+    waygate_app = WaygateServer(
         backend=MemoryBackend(),
         auth=("admin", "secret"),
         token_expiry=3600,          # dashboard / CLI: 1 hour
         sdk_token_expiry=31536000,  # SDK services: 1 year
     )
 
-    payments_sdk = SwitchlySDK(
-        server_url="http://switchly-server:9000",
+    payments_sdk = WaygateSDK(
+        server_url="http://waygate-server:9000",
         app_id="payments-service",
         username="admin",
         password="secret",          # inject from env in production
@@ -735,8 +735,8 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
     **Three ASGI apps — run each in its own terminal:**
 
     ```bash
-    # Switchly Server (port 8001)
-    uv run uvicorn examples.fastapi.multi_service:switchly_app --port 8001 --reload
+    # Waygate Server (port 8001)
+    uv run uvicorn examples.fastapi.multi_service:waygate_app --port 8001 --reload
 
     # Payments service (port 8000)
     uv run uvicorn examples.fastapi.multi_service:payments_app --port 8000 --reload
@@ -747,7 +747,7 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
     **Then visit:**
 
-    - `http://localhost:8001/` — Switchly dashboard (use service dropdown to switch)
+    - `http://localhost:8001/` — Waygate dashboard (use service dropdown to switch)
     - `http://localhost:8000/docs` — Payments Swagger UI
     - `http://localhost:8002/docs` — Orders Swagger UI
 
@@ -767,26 +767,26 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
     **CLI — multi-service workflow:**
 
     ```bash
-    switchly config set-url http://localhost:8001
-    switchly login admin              # password: secret
-    switchly services                 # list all connected services
+    waygate config set-url http://localhost:8001
+    waygate login admin              # password: secret
+    waygate services                 # list all connected services
 
     # Scope to payments via env var
-    export SWITCHLY_SERVICE=payments-service
-    switchly status
-    switchly enable /api/payments
-    switchly current-service          # confirm active context
+    export WAYGATE_SERVICE=payments-service
+    waygate status
+    waygate enable /api/payments
+    waygate current-service          # confirm active context
 
     # Switch to orders with explicit flag (overrides env var)
-    switchly status --service orders-service
-    switchly disable /api/cart --reason "redesign" --service orders-service
+    waygate status --service orders-service
+    waygate disable /api/cart --reason "redesign" --service orders-service
 
     # Unscoped — operates across all services
-    unset SWITCHLY_SERVICE
-    switchly status
-    switchly audit
-    switchly global disable --reason "emergency maintenance"
-    switchly global enable
+    unset WAYGATE_SERVICE
+    waygate status
+    waygate audit
+    waygate global disable --reason "emergency maintenance"
+    waygate global enable
     ```
 
     **Full source:**
@@ -799,9 +799,9 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
 
 ### Custom backend (SQLite)
 
-??? example "Implementing `SwitchlyBackend` with aiosqlite"
+??? example "Implementing `WaygateBackend` with aiosqlite"
 
-    [:material-github: View on GitHub](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/custom_backend/sqlite_backend.py){ .md-button }
+    [:material-github: View on GitHub](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/custom_backend/sqlite_backend.py){ .md-button }
 
     A complete, working custom backend that stores all route state and audit log entries in a SQLite database via `aiosqlite`. Restart the server and the state survives. The same CLI workflow works unchanged — the CLI talks to the app's REST API, never to the database directly.
 
@@ -825,19 +825,19 @@ Each example below is a complete, self-contained FastAPI app. Click to expand th
     ```bash
     uv run uvicorn examples.fastapi.custom_backend.sqlite_backend:app --reload
     # Swagger UI:  http://localhost:8000/docs
-    # Admin:       http://localhost:8000/switchly/   (admin / secret)
-    # Audit log:   http://localhost:8000/switchly/audit
+    # Admin:       http://localhost:8000/waygate/   (admin / secret)
+    # Audit log:   http://localhost:8000/waygate/audit
     ```
 
     **CLI quick-start:**
 
     ```bash
-    switchly config set-url http://localhost:8000/switchly
-    switchly login admin          # password: secret
-    switchly status
-    switchly disable GET:/payments --reason "hotfix"
-    switchly enable  GET:/payments
-    switchly log
+    waygate config set-url http://localhost:8000/waygate
+    waygate login admin          # password: secret
+    waygate status
+    waygate disable GET:/payments --reason "hotfix"
+    waygate enable  GET:/payments
+    waygate log
     ```
 
     **Full source:**

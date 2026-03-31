@@ -26,34 +26,35 @@ Then exercise the endpoints:
     curl http://localhost:8000/burst             # 5/minute + burst 3 = 8 total
 
 Admin dashboard (login: admin / secret):
-    http://localhost:8000/switchly/
+    http://localhost:8000/waygate/
 
 CLI — view and mutate policies at runtime (no redeploy needed):
-    switchly login admin
-    switchly rl list
-    switchly rl set GET:/public/posts 20/minute   # raise the limit live
-    switchly rl set POST:/data 10/second --algorithm fixed_window
-    switchly rl hits                              # blocked requests log
-    switchly rl reset GET:/public/posts           # clear counters
-    switchly rl delete GET:/public/posts          # remove persisted override
+    waygate login admin
+    waygate rl list
+    waygate rl set GET:/public/posts 20/minute   # raise the limit live
+    waygate rl set POST:/data 10/second --algorithm fixed_window
+    waygate rl hits                              # blocked requests log
+    waygate rl reset GET:/public/posts           # clear counters
+    waygate rl delete GET:/public/posts          # remove persisted override
 """
 
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
 
-from switchly import make_engine
-from switchly.fastapi import (
-    SwitchlyAdmin,
-    SwitchlyMiddleware,
-    SwitchlyRouter,
-    apply_switchly_to_openapi,
+from waygate import make_engine
+from waygate.fastapi import (
+    WaygateAdmin,
+    WaygateMiddleware,
+    WaygateRouter,
+    apply_waygate_to_openapi,
     maintenance,
     rate_limit,
+    setup_waygate_docs,
 )
 
 engine = make_engine()
-router = SwitchlyRouter(engine=engine)
+router = WaygateRouter(engine=engine)
 
 
 # ---------------------------------------------------------------------------
@@ -260,9 +261,9 @@ async def checkout():
     quota is fully preserved when the route comes back online.
 
     Try it:
-        switchly maintenance /checkout --reason "upgrade"   # put in maintenance
+        waygate maintenance /checkout --reason "upgrade"   # put in maintenance
         # hammer the endpoint — counters stay at 0
-        switchly enable /checkout                           # restore
+        waygate enable /checkout                           # restore
         # full quota available immediately
     """
     return {"checkout": "ok"}
@@ -279,22 +280,23 @@ def health():
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="switchly — Rate Limiting Example",
+    title="waygate — Rate Limiting Example",
     description=(
         "Demonstrates `@rate_limit` with all key strategies, algorithms, "
         "burst, tiers, exempt IPs, and runtime policy mutation via the CLI."
     ),
 )
 
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 app.include_router(router)
-apply_switchly_to_openapi(app, engine)
+apply_waygate_to_openapi(app, engine)
+setup_waygate_docs(app, engine)
 
 app.mount(
-    "/switchly",
-    SwitchlyAdmin(
+    "/waygate",
+    WaygateAdmin(
         engine=engine,
         auth=("admin", "secret"),
-        prefix="/switchly",
+        prefix="/waygate",
     ),
 )

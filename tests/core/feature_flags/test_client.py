@@ -1,17 +1,17 @@
-"""Tests for SwitchlyFeatureClient and engine.use_openfeature()."""
+"""Tests for WaygateFeatureClient and engine.use_openfeature()."""
 
 from __future__ import annotations
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.feature_flags.client import SwitchlyFeatureClient
-from switchly.core.feature_flags.models import (
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.core.feature_flags.client import WaygateFeatureClient
+from waygate.core.feature_flags.models import (
     EvaluationContext,
     FeatureFlag,
     FlagType,
     FlagVariation,
 )
-from switchly.core.feature_flags.provider import SwitchlyOpenFeatureProvider
+from waygate.core.feature_flags.provider import WaygateOpenFeatureProvider
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -99,7 +99,7 @@ class _FakeBackend:
     async def load_all_segments(self):
         return []
 
-    # Minimal stubs so SwitchlyEngine can use this as backend
+    # Minimal stubs so WaygateEngine can use this as backend
     async def startup(self):
         pass
 
@@ -122,43 +122,43 @@ class _FakeBackend:
 
 
 class TestUseOpenFeature:
-    def test_returns_switchly_feature_client(self):
-        engine = SwitchlyEngine()
+    def test_returns_waygate_feature_client(self):
+        engine = WaygateEngine()
         client = engine.use_openfeature(domain="test_uof")
-        assert isinstance(client, SwitchlyFeatureClient)
+        assert isinstance(client, WaygateFeatureClient)
 
     def test_flag_client_property_returns_client(self):
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         client = engine.use_openfeature(domain="test_prop")
         assert engine.flag_client is client
 
     def test_flag_client_none_before_use_openfeature(self):
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         assert engine.flag_client is None
 
     def test_custom_provider_accepted(self):
-        engine = SwitchlyEngine()
-        custom = SwitchlyOpenFeatureProvider(MemoryBackend())
+        engine = WaygateEngine()
+        custom = WaygateOpenFeatureProvider(MemoryBackend())
         client = engine.use_openfeature(provider=custom, domain="test_custom")
         assert engine._flag_provider is custom
-        assert isinstance(client, SwitchlyFeatureClient)
+        assert isinstance(client, WaygateFeatureClient)
 
-    def test_default_provider_is_switchly_provider(self):
-        engine = SwitchlyEngine()
+    def test_default_provider_is_waygate_provider(self):
+        engine = WaygateEngine()
         engine.use_openfeature(domain="test_default_prov")
-        assert isinstance(engine._flag_provider, SwitchlyOpenFeatureProvider)
+        assert isinstance(engine._flag_provider, WaygateOpenFeatureProvider)
 
     async def test_start_initializes_provider(self):
         initialized = []
 
-        class _TrackedProvider(SwitchlyOpenFeatureProvider):
+        class _TrackedProvider(WaygateOpenFeatureProvider):
             def initialize(self, evaluation_context=None):
                 initialized.append(True)
 
             def shutdown(self):
                 pass
 
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         engine.use_openfeature(provider=_TrackedProvider(MemoryBackend()), domain="test_start")
         await engine.start()
         assert initialized == [True]
@@ -167,21 +167,21 @@ class TestUseOpenFeature:
     async def test_stop_shuts_down_provider(self):
         shutdown = []
 
-        class _TrackedProvider(SwitchlyOpenFeatureProvider):
+        class _TrackedProvider(WaygateOpenFeatureProvider):
             def initialize(self, evaluation_context=None):
                 pass
 
             def shutdown(self):
                 shutdown.append(True)
 
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         engine.use_openfeature(provider=_TrackedProvider(MemoryBackend()), domain="test_stop")
         await engine.start()
         await engine.stop()
         assert shutdown == [True]
 
     def test_use_openfeature_multiple_calls_replaces_provider(self):
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         engine.use_openfeature(domain="test_multi_1")
         p1 = engine._flag_provider
         engine.use_openfeature(domain="test_multi_2")
@@ -191,20 +191,20 @@ class TestUseOpenFeature:
 
 
 # ---------------------------------------------------------------------------
-# SwitchlyFeatureClient — evaluation
+# WaygateFeatureClient — evaluation
 # ---------------------------------------------------------------------------
 
 
-class TestSwitchlyFeatureClientEvaluation:
-    async def _make_client(self, flags, domain) -> SwitchlyFeatureClient:
+class TestWaygateFeatureClientEvaluation:
+    async def _make_client(self, flags, domain) -> WaygateFeatureClient:
         """Wire up a provider with the given flags and return a client."""
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=flags))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=flags))
         await provider._load_all()
 
         import openfeature.api as of_api
 
         of_api.set_provider(provider, domain=domain)
-        return SwitchlyFeatureClient(domain=domain)
+        return WaygateFeatureClient(domain=domain)
 
     async def test_get_boolean_value_true(self):
         client = await self._make_client([_bool_flag(fallthrough_variation="on")], "cli_bool")

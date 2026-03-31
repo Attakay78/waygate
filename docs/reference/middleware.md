@@ -1,35 +1,35 @@
 # Middleware & OpenAPI
 
-This page covers `SwitchlyMiddleware`, which enforces route state on every HTTP request, and the two OpenAPI helpers that keep your `/docs` accurate at runtime.
+This page covers `WaygateMiddleware`, which enforces route state on every HTTP request, and the two OpenAPI helpers that keep your `/docs` accurate at runtime.
 
 ---
 
-## SwitchlyMiddleware
+## WaygateMiddleware
 
-`SwitchlyMiddleware` is a standard ASGI middleware (Starlette `BaseHTTPMiddleware`). Add it once to your ASGI app and it automatically intercepts every request, calls `engine.check()`, and returns the appropriate error response when a route is blocked. It works with any Starlette-compatible ASGI framework, including FastAPI.
+`WaygateMiddleware` is a standard ASGI middleware (Starlette `BaseHTTPMiddleware`). Add it once to your ASGI app and it automatically intercepts every request, calls `engine.check()`, and returns the appropriate error response when a route is blocked. It works with any Starlette-compatible ASGI framework, including FastAPI.
 
 ```python
-from switchly.fastapi import SwitchlyMiddleware
+from waygate.fastapi import WaygateMiddleware
 ```
 
 ### Setup
 
 ```python title="main.py"
 from fastapi import FastAPI
-from switchly.fastapi import SwitchlyMiddleware
-from switchly import SwitchlyEngine
+from waygate.fastapi import WaygateMiddleware
+from waygate import WaygateEngine
 
-engine = SwitchlyEngine()
+engine = WaygateEngine()
 app = FastAPI()
 
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 ```
 
 ### Parameters
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `engine` | `SwitchlyEngine` | required | The engine instance to delegate all `check()` calls to. Read more in [SwitchlyEngine](engine.md). |
+| `engine` | `WaygateEngine` | required | The engine instance to delegate all `check()` calls to. Read more in [WaygateEngine](engine.md). |
 | `responses` | `dict \| None` | `None` | App-wide custom response factories, keyed by error type. Read more in [Custom responses](decorators.md#custom-responses). |
 
 ### Request flow
@@ -40,12 +40,12 @@ Every incoming request passes through this sequence:
 Incoming HTTP request
         │
         ▼
-SwitchlyMiddleware.dispatch()
+WaygateMiddleware.dispatch()
         │
         ├─ Path is /docs, /redoc, or /openapi.json?  → pass through
-        ├─ Path starts with /switchly/ (admin)?         → pass through
+        ├─ Path starts with /waygate/ (admin)?         → pass through
         │
-        ├─ Lazy-scan routes for __switchly_meta__ (once, on first request)
+        ├─ Lazy-scan routes for __waygate_meta__ (once, on first request)
         │
         ├─ Route has force_active=True?               → pass through
         │
@@ -98,38 +98,38 @@ Link: </v2/users>; rel="successor-version"
 
 ---
 
-## `apply_switchly_to_openapi` (FastAPI only)
+## `apply_waygate_to_openapi` (FastAPI only)
 
 Keep your FastAPI OpenAPI schema accurate by filtering it based on the current route states at runtime. Disabled and env-gated routes are hidden. Maintenance routes are annotated. Deprecated routes are flagged.
 
 ```python
-from switchly.fastapi import apply_switchly_to_openapi
+from waygate.fastapi import apply_waygate_to_openapi
 ```
 
 ### Setup
 
 ```python title="main.py"
-from switchly.fastapi import apply_switchly_to_openapi
+from waygate.fastapi import apply_waygate_to_openapi
 
-apply_switchly_to_openapi(app, engine)
+apply_waygate_to_openapi(app, engine)
 ```
 
 !!! warning "Call after `app.include_router()`"
-    `apply_switchly_to_openapi` patches `app.openapi()`. Call it after all routers have been included so the full route list is available when the patch is applied.
+    `apply_waygate_to_openapi` patches `app.openapi()`. Call it after all routers have been included so the full route list is available when the patch is applied.
 
 ### Parameters
 
 | Parameter | Type | Description |
 |---|---|---|
 | `app` | `FastAPI` | The FastAPI application instance to patch |
-| `engine` | `SwitchlyEngine` | The engine whose current state is used to filter the schema |
+| `engine` | `WaygateEngine` | The engine whose current state is used to filter the schema |
 
 ### Schema behavior by route status
 
 | Route status | OpenAPI schema behavior |
 |---|---|
 | `ACTIVE` | No change |
-| `MAINTENANCE` | Summary prefixed with `🔧`; description block shows a warning; `x-switchly-status` extension added |
+| `MAINTENANCE` | Summary prefixed with `🔧`; description block shows a warning; `x-waygate-status` extension added |
 | `DISABLED` | Hidden from all schemas — not visible in `/docs`, `/redoc`, or `/openapi.json` |
 | `ENV_GATED` (wrong environment) | Hidden from all schemas |
 | `DEPRECATED` | Marked `deprecated: true`; successor path shown in description |
@@ -138,20 +138,20 @@ The schema is re-computed on every request to `/openapi.json`, so runtime state 
 
 ---
 
-## `setup_switchly_docs` (FastAPI only)
+## `setup_waygate_docs` (FastAPI only)
 
 Enhance FastAPI's `/docs` and `/redoc` with live status indicators that update automatically as route states change.
 
 ```python
-from switchly.fastapi import apply_switchly_to_openapi, setup_switchly_docs
+from waygate.fastapi import apply_waygate_to_openapi, setup_waygate_docs
 ```
 
 ### Setup
 
 ```python title="main.py"
-# apply_switchly_to_openapi must be called first
-apply_switchly_to_openapi(app, engine)
-setup_switchly_docs(app, engine)
+# apply_waygate_to_openapi must be called first
+apply_waygate_to_openapi(app, engine)
+setup_waygate_docs(app, engine)
 ```
 
 ### Parameters
@@ -159,7 +159,7 @@ setup_switchly_docs(app, engine)
 | Parameter | Type | Description |
 |---|---|---|
 | `app` | `FastAPI` | The FastAPI application instance |
-| `engine` | `SwitchlyEngine` | The engine whose state drives the UI indicators |
+| `engine` | `WaygateEngine` | The engine whose state drives the UI indicators |
 
 ### What it adds to `/docs`
 
@@ -170,4 +170,4 @@ setup_switchly_docs(app, engine)
 | Per-route maintenance | Orange left-border on the operation block with a `🔧 MAINTENANCE` badge |
 
 !!! tip "Use both together"
-    `apply_switchly_to_openapi` keeps the schema accurate (hiding disabled routes, marking deprecated ones). `setup_switchly_docs` adds the live status UI on top. They are independent — use one, both, or neither.
+    `apply_waygate_to_openapi` keeps the schema accurate (hiding disabled routes, marking deprecated ones). `setup_waygate_docs` adds the live status UI on top. They are independent — use one, both, or neither.

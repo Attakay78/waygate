@@ -1,34 +1,34 @@
 """Tests for maintenance-mode visual annotations in the OpenAPI schema
-and the custom Swagger UI provided by setup_switchly_docs."""
+and the custom Swagger UI provided by setup_waygate_docs."""
 
 from __future__ import annotations
 
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.fastapi.decorators import maintenance
-from switchly.fastapi.middleware import SwitchlyMiddleware
-from switchly.fastapi.openapi import apply_switchly_to_openapi, setup_switchly_docs
-from switchly.fastapi.router import SwitchlyRouter
 from tests.fastapi._helpers import _trigger_startup
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.fastapi.decorators import maintenance
+from waygate.fastapi.middleware import WaygateMiddleware
+from waygate.fastapi.openapi import apply_waygate_to_openapi, setup_waygate_docs
+from waygate.fastapi.router import WaygateRouter
 
 
-def _build(env: str = "dev") -> tuple[FastAPI, SwitchlyEngine, SwitchlyRouter]:
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env=env)
-    router = SwitchlyRouter(engine=engine)
+def _build(env: str = "dev") -> tuple[FastAPI, WaygateEngine, WaygateRouter]:
+    engine = WaygateEngine(backend=MemoryBackend(), current_env=env)
+    router = WaygateRouter(engine=engine)
     app = FastAPI(title="Test API")
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
     return app, engine, router
 
 
 # ---------------------------------------------------------------------------
-# apply_switchly_to_openapi — maintenance schema annotations
+# apply_waygate_to_openapi — maintenance schema annotations
 # ---------------------------------------------------------------------------
 
 
-async def test_maintenance_route_gets_x_switchly_status_extension():
+async def test_maintenance_route_gets_x_waygate_status_extension():
     app, engine, router = _build()
 
     @router.get("/payments")
@@ -38,12 +38,12 @@ async def test_maintenance_route_gets_x_switchly_status_extension():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     op = schema["paths"]["/payments"]["get"]
-    assert op.get("x-switchly-status") == "maintenance"
-    assert op.get("x-switchly-reason") == "DB migration"
+    assert op.get("x-waygate-status") == "maintenance"
+    assert op.get("x-waygate-reason") == "DB migration"
 
 
 async def test_maintenance_route_description_contains_warning_banner():
@@ -56,7 +56,7 @@ async def test_maintenance_route_description_contains_warning_banner():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     desc = schema["paths"]["/payments"]["get"].get("description", "")
@@ -76,7 +76,7 @@ async def test_maintenance_route_summary_prefixed_with_wrench():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     summary = schema["paths"]["/payments"]["get"].get("summary", "")
@@ -95,7 +95,7 @@ async def test_maintenance_route_summary_prefix_not_doubled():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     _ = app.openapi()
     schema2 = app.openapi()
@@ -114,7 +114,7 @@ async def test_maintenance_route_remains_visible_in_schema():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     assert "/payments" in schema["paths"]
@@ -131,7 +131,7 @@ async def test_existing_description_preserved_after_banner():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
+    apply_waygate_to_openapi(app, engine)
 
     schema = app.openapi()
     desc = schema["paths"]["/payments"]["get"].get("description", "")
@@ -141,11 +141,11 @@ async def test_existing_description_preserved_after_banner():
 
 
 # ---------------------------------------------------------------------------
-# setup_switchly_docs — custom Swagger UI with maintenance CSS/JS injected
+# setup_waygate_docs — custom Swagger UI with maintenance CSS/JS injected
 # ---------------------------------------------------------------------------
 
 
-async def test_setup_switchly_docs_serves_html():
+async def test_setup_waygate_docs_serves_html():
     app, engine, router = _build()
 
     @router.get("/payments")
@@ -155,8 +155,8 @@ async def test_setup_switchly_docs_serves_html():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
-    setup_switchly_docs(app, engine)
+    apply_waygate_to_openapi(app, engine)
+    setup_waygate_docs(app, engine)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/docs")
@@ -165,7 +165,7 @@ async def test_setup_switchly_docs_serves_html():
     assert "text/html" in resp.headers["content-type"]
 
 
-async def test_setup_switchly_docs_injects_maintenance_script():
+async def test_setup_waygate_docs_injects_maintenance_script():
     app, engine, router = _build()
 
     @router.get("/payments")
@@ -175,26 +175,26 @@ async def test_setup_switchly_docs_injects_maintenance_script():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
-    setup_switchly_docs(app, engine)
+    apply_waygate_to_openapi(app, engine)
+    setup_waygate_docs(app, engine)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/docs")
 
     html = resp.text
     # Verify the injected JS payload is present.
-    assert "x-switchly-status" in html
-    assert "switchly-maintenance-block" in html
-    assert "switchly-maintenance-badge" in html
+    assert "x-waygate-status" in html
+    assert "waygate-maintenance-block" in html
+    assert "waygate-maintenance-badge" in html
     assert "🔧 MAINTENANCE" in html
 
 
-async def test_setup_switchly_docs_embeds_openapi_url():
+async def test_setup_waygate_docs_embeds_openapi_url():
     app, engine, router = _build()
 
     app.include_router(router)
-    apply_switchly_to_openapi(app, engine)
-    setup_switchly_docs(app, engine)
+    apply_waygate_to_openapi(app, engine)
+    setup_waygate_docs(app, engine)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/docs")
@@ -204,8 +204,8 @@ async def test_setup_switchly_docs_embeds_openapi_url():
     assert 'data-openapi-url="/openapi.json"' in resp.text
 
 
-async def test_setup_switchly_docs_does_not_break_normal_routes():
-    """After setup_switchly_docs, normal API routes must still work."""
+async def test_setup_waygate_docs_does_not_break_normal_routes():
+    """After setup_waygate_docs, normal API routes must still work."""
     app, engine, router = _build()
 
     @router.get("/health")
@@ -214,8 +214,8 @@ async def test_setup_switchly_docs_does_not_break_normal_routes():
 
     app.include_router(router)
     await _trigger_startup(app)
-    apply_switchly_to_openapi(app, engine)
-    setup_switchly_docs(app, engine)
+    apply_waygate_to_openapi(app, engine)
+    setup_waygate_docs(app, engine)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/health")

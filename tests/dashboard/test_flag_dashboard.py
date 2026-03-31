@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from switchly.admin.app import SwitchlyAdmin
-from switchly.core.engine import SwitchlyEngine
+from waygate.admin.app import WaygateAdmin
+from waygate.core.engine import WaygateEngine
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -14,17 +14,17 @@ from switchly.core.engine import SwitchlyEngine
 
 
 @pytest.fixture
-async def engine() -> SwitchlyEngine:
-    e = SwitchlyEngine()
+async def engine() -> WaygateEngine:
+    e = WaygateEngine()
     await e.start()
     yield e
     await e.stop()
 
 
 @pytest.fixture
-def admin_app(engine: SwitchlyEngine) -> object:
-    """SwitchlyAdmin with flags enabled, no auth."""
-    return SwitchlyAdmin(engine=engine, auth=None, enable_flags=True)
+def admin_app(engine: WaygateEngine) -> object:
+    """WaygateAdmin with flags enabled, no auth."""
+    return WaygateAdmin(engine=engine, auth=None, enable_flags=True)
 
 
 @pytest.fixture
@@ -37,9 +37,9 @@ async def client(admin_app: object) -> AsyncClient:
 
 
 @pytest.fixture
-def admin_app_no_flags(engine: SwitchlyEngine) -> object:
-    """SwitchlyAdmin with flags disabled."""
-    return SwitchlyAdmin(engine=engine, auth=None, enable_flags=False)
+def admin_app_no_flags(engine: WaygateEngine) -> object:
+    """WaygateAdmin with flags disabled."""
+    return WaygateAdmin(engine=engine, auth=None, enable_flags=False)
 
 
 @pytest.fixture
@@ -109,7 +109,7 @@ class TestFlagsPage:
         assert resp.status_code == 200
 
     async def test_flags_page_shows_flag_key(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         await client.post("/api/flags", json=_flag_payload("checkout-flag"))
         resp = await client.get("/flags")
@@ -346,8 +346,8 @@ class TestFlagEvalForm:
         # Eval returns rich result HTML + HX-Trigger header with the result payload
         assert "HX-Trigger" in resp.headers
         trigger = _json.loads(resp.headers["HX-Trigger"])
-        assert "switchlyEvalDone" in trigger
-        payload = trigger["switchlyEvalDone"]
+        assert "waygateEvalDone" in trigger
+        payload = trigger["waygateEvalDone"]
         assert "value" in payload
         assert "reason" in payload
         assert payload["flagKey"] == "eval-flag"
@@ -570,7 +570,7 @@ class TestFlagSettingsSave:
         assert resp.status_code == 200
 
     async def test_settings_save_updates_name(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         await client.post("/api/flags", json=_flag_payload("s-flag"))
         await client.post(
@@ -581,7 +581,7 @@ class TestFlagSettingsSave:
         assert flag.name == "Renamed Flag"
 
     async def test_settings_save_updates_description(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         await client.post("/api/flags", json=_flag_payload("s-flag"))
         await client.post(
@@ -627,7 +627,7 @@ class TestFlagVariationsSave:
         assert resp.status_code == 200
 
     async def test_variations_save_updates_names(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         await client.post("/api/flags", json=_flag_payload("v-flag"))
         await client.post(
@@ -685,7 +685,7 @@ class TestFlagVariationsSave:
 
 class TestFlagTargetingSave:
     async def test_targeting_save_off_variation(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         await client.post("/api/flags", json=_flag_payload("t-flag"))
         resp = await client.post(
@@ -697,7 +697,7 @@ class TestFlagTargetingSave:
         assert flag.off_variation == "on"
 
     async def test_targeting_save_fallthrough(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         await client.post("/api/flags", json=_flag_payload("t-flag"))
         resp = await client.post(
@@ -717,7 +717,7 @@ class TestFlagTargetingSave:
         assert resp.status_code == 400
 
     async def test_targeting_save_with_rule(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         await client.post("/api/flags", json=_flag_payload("t-flag"))
         resp = await client.post(
@@ -737,7 +737,7 @@ class TestFlagTargetingSave:
         assert flag.rules[0].clauses[0].attribute == "plan"
 
     async def test_targeting_save_with_segment_rule(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         """in_segment clauses should auto-set attribute to 'key' even when omitted."""
         await client.post("/api/flags", json=_flag_payload("t-flag"))
@@ -784,7 +784,7 @@ class TestFlagTargetingSave:
 
 class TestFlagPrerequisitesSave:
     async def test_prerequisites_save_empty(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         """POST empty form clears prerequisites, returns 200."""
         await client.post("/api/flags", json=_flag_payload("prereq-flag"))
@@ -794,7 +794,7 @@ class TestFlagPrerequisitesSave:
         assert flag.prerequisites == []
 
     async def test_prerequisites_save_adds_prereq(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         """POST with prereqs[0][flag_key]=other_flag&prereqs[0][variation]=on saves it, persists."""
         await client.post("/api/flags", json=_flag_payload("main-flag"))
@@ -848,9 +848,7 @@ class TestFlagPrerequisitesSave:
 
 
 class TestFlagTargetsSave:
-    async def test_targets_save_adds_keys(
-        self, client: AsyncClient, engine: SwitchlyEngine
-    ) -> None:
+    async def test_targets_save_adds_keys(self, client: AsyncClient, engine: WaygateEngine) -> None:
         """POST with targets[on]=user_123\\nuser_456, persists correctly."""
         await client.post("/api/flags", json=_flag_payload("tgt-flag"))
         resp = await client.post(
@@ -863,7 +861,7 @@ class TestFlagTargetsSave:
         assert "user_456" in flag.targets.get("on", [])
 
     async def test_targets_save_clears_targets(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         """POST with empty textareas clears targets."""
         await client.post(
@@ -879,7 +877,7 @@ class TestFlagTargetsSave:
         assert flag.targets == {} or flag.targets.get("on", []) == []
 
     async def test_targets_save_ignores_unknown_variation(
-        self, client: AsyncClient, engine: SwitchlyEngine
+        self, client: AsyncClient, engine: WaygateEngine
     ) -> None:
         """POST with targets[nonexistent]=user_x doesn't save it."""
         await client.post("/api/flags", json=_flag_payload("tgt-unk-flag"))

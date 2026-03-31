@@ -22,7 +22,7 @@ body:
       description: Minimal code snippet or steps to reproduce the issue.
       placeholder: |
         ```python
-        from switchly.fastapi import ...
+        from waygate.fastapi import ...
         ```
     validations:
       required: true
@@ -44,7 +44,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: switchly version
+      label: waygate version
       placeholder: "e.g. 0.1.0"
     validations:
       required: true

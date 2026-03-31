@@ -1,10 +1,10 @@
-"""Tests for switchly.core.feature_flags.provider — SwitchlyOpenFeatureProvider."""
+"""Tests for waygate.core.feature_flags.provider — WaygateOpenFeatureProvider."""
 
 from __future__ import annotations
 
 from openfeature.flag_evaluation import Reason
 
-from switchly.core.feature_flags.models import (
+from waygate.core.feature_flags.models import (
     FeatureFlag,
     FlagType,
     FlagVariation,
@@ -14,7 +14,7 @@ from switchly.core.feature_flags.models import (
     SegmentRule,
     TargetingRule,
 )
-from switchly.core.feature_flags.provider import SwitchlyOpenFeatureProvider
+from waygate.core.feature_flags.provider import WaygateOpenFeatureProvider
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -123,11 +123,11 @@ def _object_flag(key="config_flag") -> FeatureFlag:
 
 class TestProviderMetadata:
     def test_name(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
-        assert provider.get_metadata().name == "switchly"
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
+        assert provider.get_metadata().name == "waygate"
 
     def test_hooks_empty(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         assert provider.get_provider_hooks() == []
 
 
@@ -141,7 +141,7 @@ class TestInitialize:
         flag = _bool_flag()
         seg = Segment(key="beta", name="Beta")
         backend = _FakeBackend(flags=[flag], segments=[seg])
-        provider = SwitchlyOpenFeatureProvider(backend)
+        provider = WaygateOpenFeatureProvider(backend)
 
         await provider._load_all()
 
@@ -149,14 +149,14 @@ class TestInitialize:
         assert "beta" in provider._segments
 
     async def test_graceful_on_missing_backend_support(self):
-        provider = SwitchlyOpenFeatureProvider(_NoFlagBackend())
+        provider = WaygateOpenFeatureProvider(_NoFlagBackend())
         # Should not raise — operate with empty caches
         await provider._load_all()
         assert provider._flags == {}
         assert provider._segments == {}
 
     def test_shutdown_noop(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         provider.shutdown()  # must not raise
 
 
@@ -167,7 +167,7 @@ class TestInitialize:
 
 class TestResolveBooleanDetails:
     async def test_flag_not_found_returns_default(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         await provider._load_all()
 
         result = provider.resolve_boolean_details("missing", True)
@@ -177,7 +177,7 @@ class TestResolveBooleanDetails:
 
     async def test_disabled_flag_returns_off_variation(self):
         flag = _bool_flag(enabled=False)
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_boolean_details("my_flag", True)
@@ -196,7 +196,7 @@ class TestResolveBooleanDetails:
             off_variation="off",
             fallthrough="on",
         )
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_boolean_details("feat", False)
@@ -206,7 +206,7 @@ class TestResolveBooleanDetails:
     async def test_type_coercion_fallback_on_mismatch(self):
         # String flag evaluated as boolean — should return default
         flag = _string_flag(key="color")
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_boolean_details("color", True)
@@ -223,14 +223,14 @@ class TestResolveBooleanDetails:
 class TestResolveStringDetails:
     async def test_string_fallthrough(self):
         flag = _string_flag()
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_string_details("color_flag", "default")
         assert result.value == "red"
 
     async def test_string_missing_returns_default(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         await provider._load_all()
 
         result = provider.resolve_string_details("missing", "fallback")
@@ -246,14 +246,14 @@ class TestResolveStringDetails:
 class TestResolveIntegerDetails:
     async def test_integer_fallthrough(self):
         flag = _int_flag()
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_integer_details("limit_flag", 0)
         assert result.value == 100
 
     async def test_integer_missing(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         await provider._load_all()
 
         result = provider.resolve_integer_details("nope", 42)
@@ -268,7 +268,7 @@ class TestResolveIntegerDetails:
 class TestResolveFloatDetails:
     async def test_float_fallthrough(self):
         flag = _float_flag()
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_float_details("rate_flag", 0.0)
@@ -276,7 +276,7 @@ class TestResolveFloatDetails:
 
     async def test_float_coercion_from_int(self):
         flag = _int_flag(key="int_flag")
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_float_details("int_flag", 0.0)
@@ -291,14 +291,14 @@ class TestResolveFloatDetails:
 class TestResolveObjectDetails:
     async def test_object_fallthrough(self):
         flag = _object_flag()
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_object_details("config_flag", {})
         assert result.value == {"limit": 100}
 
     async def test_object_missing(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         await provider._load_all()
 
         result = provider.resolve_object_details("nope", {"x": 1})
@@ -326,7 +326,7 @@ class TestTargeting:
             fallthrough="off",
             targets={"on": ["user_1", "user_2"]},
         )
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         ctx = OFCtx(targeting_key="user_1")
@@ -349,7 +349,7 @@ class TestTargeting:
             fallthrough="off",
             targets={"on": ["user_1"]},
         )
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         ctx = OFCtx(targeting_key="user_99")
@@ -389,7 +389,7 @@ class TestTargetingRules:
                 )
             ],
         )
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         ctx = OFCtx(targeting_key="user_1", attributes={"role": "admin"})
@@ -406,7 +406,7 @@ class TestTargetingRules:
 class TestFlagMetadata:
     async def test_metadata_keys_present(self):
         flag = _bool_flag()
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_boolean_details("my_flag", True)
@@ -422,37 +422,37 @@ class TestFlagMetadata:
 
 class TestCacheManagement:
     def test_upsert_flag(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         flag = _bool_flag()
         provider.upsert_flag(flag)
         assert "my_flag" in provider._flags
 
     def test_delete_flag(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         flag = _bool_flag()
         provider.upsert_flag(flag)
         provider.delete_flag("my_flag")
         assert "my_flag" not in provider._flags
 
     def test_delete_flag_missing_is_noop(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         provider.delete_flag("nonexistent")  # must not raise
 
     def test_upsert_segment(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         seg = Segment(key="beta", name="Beta")
         provider.upsert_segment(seg)
         assert "beta" in provider._segments
 
     def test_delete_segment(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         seg = Segment(key="beta", name="Beta")
         provider.upsert_segment(seg)
         provider.delete_segment("beta")
         assert "beta" not in provider._segments
 
     def test_delete_segment_missing_is_noop(self):
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend())
+        provider = WaygateOpenFeatureProvider(_FakeBackend())
         provider.delete_segment("nonexistent")  # must not raise
 
 
@@ -464,7 +464,7 @@ class TestCacheManagement:
 class TestReasonMapping:
     async def test_off_reason_maps_to_disabled(self):
         flag = _bool_flag(enabled=False)
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_boolean_details("my_flag", True)
@@ -472,7 +472,7 @@ class TestReasonMapping:
 
     async def test_fallthrough_reason_maps_to_default(self):
         flag = _bool_flag()
-        provider = SwitchlyOpenFeatureProvider(_FakeBackend(flags=[flag]))
+        provider = WaygateOpenFeatureProvider(_FakeBackend(flags=[flag]))
         await provider._load_all()
 
         result = provider.resolve_boolean_details("my_flag", True)
@@ -520,7 +520,7 @@ class TestReasonMapping:
             ],
         )
         backend = _FakeBackend(flags=[flag], segments=[seg])
-        provider = SwitchlyOpenFeatureProvider(backend)
+        provider = WaygateOpenFeatureProvider(backend)
         await provider._load_all()
 
         ctx = OFCtx(targeting_key="user_1", attributes={"plan": "pro"})

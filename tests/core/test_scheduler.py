@@ -7,15 +7,15 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import MaintenanceWindow, RouteStatus
-from switchly.core.scheduler import MaintenanceScheduler
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import MaintenanceWindow, RouteStatus
+from waygate.core.scheduler import MaintenanceScheduler
 
 
 @pytest.fixture
-def engine() -> SwitchlyEngine:
-    return SwitchlyEngine(backend=MemoryBackend())
+def engine() -> WaygateEngine:
+    return WaygateEngine(backend=MemoryBackend())
 
 
 @pytest.fixture
@@ -180,7 +180,7 @@ async def test_restore_skips_expired_windows(engine):
         end=now - timedelta(hours=1),  # already expired
         reason="expired",
     )
-    from switchly.core.models import RouteState, RouteStatus
+    from waygate.core.models import RouteState, RouteStatus
 
     await engine.backend.set_state(
         "/api/old",

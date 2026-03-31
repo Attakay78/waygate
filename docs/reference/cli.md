@@ -1,17 +1,17 @@
 # CLI Reference
 
-The `switchly` CLI lets you manage routes, view the audit log, and control global maintenance from the terminal. It communicates with a running `SwitchlyAdmin` instance over HTTP — it does not access the backend directly.
+The `waygate` CLI lets you manage routes, view the audit log, and control global maintenance from the terminal. It communicates with a running `WaygateAdmin` instance over HTTP — it does not access the backend directly.
 
 ```bash
-uv add "switchly[cli]"
+uv add "waygate[cli]"
 ```
 
 !!! tip "Set the server URL first"
     Before using any commands, point the CLI at your running server:
 
     ```bash
-    switchly config set-url http://localhost:8000/switchly
-    switchly login admin
+    waygate config set-url http://localhost:8000/waygate
+    waygate login admin
     ```
 
     See [Server URL discovery](#server-url-discovery) for other ways to configure the URL.
@@ -20,101 +20,101 @@ uv add "switchly[cli]"
 
 ## Auth commands
 
-### `switchly login`
+### `waygate login`
 
-Authenticate with a `SwitchlyAdmin` server and store the token locally. The CLI will prompt for a password if `--password` is omitted.
+Authenticate with a `WaygateAdmin` server and store the token locally. The CLI will prompt for a password if `--password` is omitted.
 
 ```bash
-switchly login <username>
+waygate login <username>
 ```
 
 ```bash
-switchly login admin                     # prompts for password interactively
-switchly login admin --password secret   # inline, useful in CI pipelines
+waygate login admin                     # prompts for password interactively
+waygate login admin --password secret   # inline, useful in CI pipelines
 ```
 
 | Option | Description |
 |---|---|
 | `--password TEXT` | Password for the given username. Omit to be prompted securely. |
 
-Tokens are saved to `~/.switchly/config.json` with an expiry timestamp. The CLI automatically uses the stored token for all subsequent commands until it expires or you log out.
+Tokens are saved to `~/.waygate/config.json` with an expiry timestamp. The CLI automatically uses the stored token for all subsequent commands until it expires or you log out.
 
 ---
 
-### `switchly logout`
+### `waygate logout`
 
 Revoke the server-side token and clear local credentials.
 
 ```bash
-switchly logout
+waygate logout
 ```
 
 ---
 
 ## Multi-service commands
 
-### `switchly services`
+### `waygate services`
 
-List all distinct service names registered with the Switchly Server. Use this to discover which services are currently connected before switching context with `SWITCHLY_SERVICE`.
+List all distinct service names registered with the Waygate Server. Use this to discover which services are currently connected before switching context with `WAYGATE_SERVICE`.
 
 ```bash
-switchly services
+waygate services
 ```
 
 ---
 
-### `switchly current-service`
+### `waygate current-service`
 
-Show the active service context (the value of the `SWITCHLY_SERVICE` environment variable). Useful for confirming which service subsequent commands will target.
+Show the active service context (the value of the `WAYGATE_SERVICE` environment variable). Useful for confirming which service subsequent commands will target.
 
 ```bash
-switchly current-service
+waygate current-service
 ```
 
-**When `SWITCHLY_SERVICE` is set:**
+**When `WAYGATE_SERVICE` is set:**
 
 ```
-Active service: payments-service  (from SWITCHLY_SERVICE)
+Active service: payments-service  (from WAYGATE_SERVICE)
 ```
 
-**When `SWITCHLY_SERVICE` is not set:**
+**When `WAYGATE_SERVICE` is not set:**
 
 ```
 No active service set.
-Set one with: export SWITCHLY_SERVICE=<service-name>
+Set one with: export WAYGATE_SERVICE=<service-name>
 ```
 
 ---
 
 ## Route commands
 
-Route commands accept an optional `--service` flag to scope to a specific service. All five commands also read the `SWITCHLY_SERVICE` environment variable as a fallback — an explicit `--service` flag always wins.
+Route commands accept an optional `--service` flag to scope to a specific service. All five commands also read the `WAYGATE_SERVICE` environment variable as a fallback — an explicit `--service` flag always wins.
 
 ```bash
-export SWITCHLY_SERVICE=payments-service   # set once
-switchly status                            # scoped to payments-service
-switchly enable GET:/payments              # scoped to payments-service
-unset SWITCHLY_SERVICE
-switchly status --service orders-service   # explicit flag, no env var needed
+export WAYGATE_SERVICE=payments-service   # set once
+waygate status                            # scoped to payments-service
+waygate enable GET:/payments              # scoped to payments-service
+unset WAYGATE_SERVICE
+waygate status --service orders-service   # explicit flag, no env var needed
 ```
 
-### `switchly status`
+### `waygate status`
 
 Show all registered routes and their current state, or inspect a single route in detail.
 
 ```bash
-switchly status                          # all routes, page 1
-switchly status GET:/payments            # one route
-switchly status --page 2                 # next page
-switchly status --per-page 50           # 50 rows per page
-switchly status --service payments-service  # scope to one service
+waygate status                          # all routes, page 1
+waygate status GET:/payments            # one route
+waygate status --page 2                 # next page
+waygate status --per-page 50           # 50 rows per page
+waygate status --service payments-service  # scope to one service
 ```
 
 | Option | Description |
 |---|---|
 | `--page INT` | Page number to display when listing all routes (default: 1) |
 | `--per-page INT` | Rows per page (default: 20) |
-| `--service TEXT` | Filter to a specific service. Falls back to `SWITCHLY_SERVICE` env var. |
+| `--service TEXT` | Filter to a specific service. Falls back to `WAYGATE_SERVICE` env var. |
 
 **Example output:**
 
@@ -131,52 +131,52 @@ switchly status --service payments-service  # scope to one service
 
 ---
 
-### `switchly enable`
+### `waygate enable`
 
 Restore a route to `ACTIVE`. Works regardless of the current status.
 
 ```bash
-switchly enable GET:/payments
-switchly enable GET:/payments --service payments-service
+waygate enable GET:/payments
+waygate enable GET:/payments --service payments-service
 ```
 
 | Option | Description |
 |---|---|
-| `--service TEXT` | Target service. Falls back to `SWITCHLY_SERVICE` env var. |
+| `--service TEXT` | Target service. Falls back to `WAYGATE_SERVICE` env var. |
 
 ---
 
-### `switchly disable`
+### `waygate disable`
 
 Permanently disable a route. Returns 503 to all callers.
 
 ```bash
-switchly disable GET:/payments
-switchly disable GET:/payments --reason "Use /v2/payments instead"
-switchly disable GET:/payments --reason "hotfix" --until 2h
-switchly disable GET:/payments --service payments-service --reason "hotfix"
+waygate disable GET:/payments
+waygate disable GET:/payments --reason "Use /v2/payments instead"
+waygate disable GET:/payments --reason "hotfix" --until 2h
+waygate disable GET:/payments --service payments-service --reason "hotfix"
 ```
 
 | Option | Description |
 |---|---|
 | `--reason TEXT` | Reason shown in error responses and recorded in the audit log |
 | `--until DURATION` | Automatically re-enable after this duration. Accepts `2h`, `30m`, `1d`, or an ISO 8601 datetime. |
-| `--service TEXT` | Target service. Falls back to `SWITCHLY_SERVICE` env var. |
+| `--service TEXT` | Target service. Falls back to `WAYGATE_SERVICE` env var. |
 
 ---
 
-### `switchly maintenance`
+### `waygate maintenance`
 
 Put a route in maintenance mode. Optionally schedule automatic activation and deactivation.
 
 ```bash
-switchly maintenance GET:/payments --reason "DB swap"
-switchly maintenance GET:/payments --service payments-service --reason "DB swap"
+waygate maintenance GET:/payments --reason "DB swap"
+waygate maintenance GET:/payments --service payments-service --reason "DB swap"
 ```
 
 ```bash
 # Scheduled window
-switchly maintenance GET:/payments \
+waygate maintenance GET:/payments \
   --reason "Planned migration" \
   --start 2025-06-01T02:00Z \
   --end   2025-06-01T04:00Z
@@ -187,20 +187,20 @@ switchly maintenance GET:/payments \
 | `--reason TEXT` | Shown in the 503 error response |
 | `--start DATETIME` | Start of the maintenance window (ISO 8601). Maintenance activates automatically at this time. |
 | `--end DATETIME` | End of the maintenance window. Sets the `Retry-After` header and restores `ACTIVE` automatically. |
-| `--service TEXT` | Target service. Falls back to `SWITCHLY_SERVICE` env var. |
+| `--service TEXT` | Target service. Falls back to `WAYGATE_SERVICE` env var. |
 
 ---
 
-### `switchly schedule`
+### `waygate schedule`
 
 Schedule a future maintenance window without activating maintenance now. The route stays `ACTIVE` until `--start` is reached.
 
 ```bash
-switchly schedule GET:/payments \
+waygate schedule GET:/payments \
   --start 2025-06-01T02:00Z \
   --end   2025-06-01T04:00Z \
   --reason "Planned migration"
-switchly schedule GET:/payments --service payments-service \
+waygate schedule GET:/payments --service payments-service \
   --start 2025-06-01T02:00Z --end 2025-06-01T04:00Z
 ```
 
@@ -209,7 +209,7 @@ switchly schedule GET:/payments --service payments-service \
 | `--start DATETIME` | When to activate maintenance (ISO 8601, required) |
 | `--end DATETIME` | When to restore the route to `ACTIVE` (ISO 8601, required) |
 | `--reason TEXT` | Reason shown in the 503 response during the window |
-| `--service TEXT` | Target service. Falls back to `SWITCHLY_SERVICE` env var. |
+| `--service TEXT` | Target service. Falls back to `WAYGATE_SERVICE` env var. |
 
 ---
 
@@ -217,24 +217,24 @@ switchly schedule GET:/payments --service payments-service \
 
 Global maintenance blocks every non-exempt route at once, without requiring individual route changes.
 
-### `switchly global status`
+### `waygate global status`
 
 Show the current global maintenance state, including whether it is active, the reason, and any exempt paths.
 
 ```bash
-switchly global status
+waygate global status
 ```
 
 ---
 
-### `switchly global enable`
+### `waygate global enable`
 
 Block all non-exempt routes immediately.
 
 ```bash
-switchly global enable --reason "Deploying v2"
-switchly global enable --reason "Deploying v2" --exempt /health --exempt GET:/status
-switchly global enable --reason "Hard lockdown" --include-force-active
+waygate global enable --reason "Deploying v2"
+waygate global enable --reason "Deploying v2" --exempt /health --exempt GET:/status
+waygate global enable --reason "Hard lockdown" --include-force-active
 ```
 
 | Option | Description |
@@ -247,60 +247,60 @@ switchly global enable --reason "Hard lockdown" --include-force-active
     Always exempt your health and readiness probe endpoints before enabling global maintenance, unless you intend to take the instance out of rotation:
 
     ```bash
-    switchly global enable --reason "Deploying v2" --exempt /health --exempt /ready
+    waygate global enable --reason "Deploying v2" --exempt /health --exempt /ready
     ```
 
 ---
 
-### `switchly global disable`
+### `waygate global disable`
 
 Restore all routes to their individual states. Each route resumes the status it had before global maintenance was enabled.
 
 ```bash
-switchly global disable
+waygate global disable
 ```
 
 ---
 
-### `switchly global exempt-add`
+### `waygate global exempt-add`
 
 Add a path to the exemption list while global maintenance is already active, without toggling the mode.
 
 ```bash
-switchly global exempt-add /monitoring/ping
+waygate global exempt-add /monitoring/ping
 ```
 
 ---
 
-### `switchly global exempt-remove`
+### `waygate global exempt-remove`
 
 Remove a path from the exemption list.
 
 ```bash
-switchly global exempt-remove /monitoring/ping
+waygate global exempt-remove /monitoring/ping
 ```
 
 ---
 
-## `switchly sm` / `switchly service-maintenance`
+## `waygate sm` / `waygate service-maintenance`
 
-`switchly sm` and `switchly service-maintenance` are aliases for the same command group. Puts all routes of one service into maintenance mode without affecting other services. The affected SDK client's `app_id` must match the service name.
+`waygate sm` and `waygate service-maintenance` are aliases for the same command group. Puts all routes of one service into maintenance mode without affecting other services. The affected SDK client's `app_id` must match the service name.
 
 ```bash
-switchly sm enable payments-service --reason "DB migration"
-switchly service-maintenance enable payments-service   # identical
+waygate sm enable payments-service --reason "DB migration"
+waygate service-maintenance enable payments-service   # identical
 ```
 
-### `switchly sm status`
+### `waygate sm status`
 
 Show the current maintenance configuration for a service.
 
 ```bash
-switchly sm status <service>
+waygate sm status <service>
 ```
 
 ```bash
-switchly sm status payments-service
+waygate sm status payments-service
 ```
 
 **Example output:**
@@ -315,18 +315,18 @@ switchly sm status payments-service
 
 ---
 
-### `switchly sm enable`
+### `waygate sm enable`
 
-Block all routes of a service immediately. Routes return `503` until `switchly sm disable` is called.
+Block all routes of a service immediately. Routes return `503` until `waygate sm disable` is called.
 
 ```bash
-switchly sm enable <service>
+waygate sm enable <service>
 ```
 
 ```bash
-switchly sm enable payments-service --reason "DB migration"
-switchly sm enable payments-service --reason "Upgrade" --exempt /health --exempt GET:/ready
-switchly sm enable orders-service --include-force-active
+waygate sm enable payments-service --reason "DB migration"
+waygate sm enable payments-service --reason "Upgrade" --exempt /health --exempt GET:/ready
+waygate sm enable orders-service --include-force-active
 ```
 
 | Option | Description |
@@ -337,37 +337,37 @@ switchly sm enable orders-service --include-force-active
 
 ---
 
-### `switchly sm disable`
+### `waygate sm disable`
 
 Restore all routes of a service to their individual states.
 
 ```bash
-switchly sm disable <service>
+waygate sm disable <service>
 ```
 
 ```bash
-switchly sm disable payments-service
+waygate sm disable payments-service
 ```
 
 ---
 
 ## Rate limit commands
 
-`switchly rl` and `switchly rate-limits` are aliases for the same command group — use whichever you prefer. Requires `switchly[rate-limit]` on the server.
+`waygate rl` and `waygate rate-limits` are aliases for the same command group — use whichever you prefer. Requires `waygate[rate-limit]` on the server.
 
 ```bash
-switchly rl list          # short form
-switchly rate-limits list # identical
+waygate rl list          # short form
+waygate rate-limits list # identical
 ```
 
-### `switchly rl list`
+### `waygate rl list`
 
 Show all registered rate limit policies.
 
 ```bash
-switchly rl list
-switchly rl list --page 2
-switchly rl list --per-page 50
+waygate rl list
+waygate rl list --page 2
+waygate rl list --per-page 50
 ```
 
 | Option | Description |
@@ -377,18 +377,18 @@ switchly rl list --per-page 50
 
 ---
 
-### `switchly rl set`
+### `waygate rl set`
 
 Register or update a rate limit policy at runtime. Changes take effect on the next request.
 
 ```bash
-switchly rl set <route> <limit>
+waygate rl set <route> <limit>
 ```
 
 ```bash
-switchly rl set GET:/public/posts 20/minute
-switchly rl set GET:/public/posts 5/second --algorithm fixed_window
-switchly rl set GET:/search 10/minute --key global
+waygate rl set GET:/public/posts 20/minute
+waygate rl set GET:/public/posts 5/second --algorithm fixed_window
+waygate rl set GET:/search 10/minute --key global
 ```
 
 | Option | Description |
@@ -398,35 +398,35 @@ switchly rl set GET:/search 10/minute --key global
 
 ---
 
-### `switchly rl reset`
+### `waygate rl reset`
 
 Clear all counters for a route immediately. Clients get their full quota back on the next request.
 
 ```bash
-switchly rl reset GET:/public/posts
+waygate rl reset GET:/public/posts
 ```
 
 ---
 
-### `switchly rl delete`
+### `waygate rl delete`
 
 Remove a persisted policy override from the backend.
 
 ```bash
-switchly rl delete GET:/public/posts
+waygate rl delete GET:/public/posts
 ```
 
 ---
 
-### `switchly rl hits`
+### `waygate rl hits`
 
 Show the blocked requests log, newest first. The `Path` column combines the HTTP method and route path.
 
 ```bash
-switchly rl hits                    # page 1, 20 rows
-switchly rl hits --page 2           # next page
-switchly rl hits --per-page 50     # 50 rows per page
-switchly rl hits --route /api/pay   # filter to one route
+waygate rl hits                    # page 1, 20 rows
+waygate rl hits --page 2           # next page
+waygate rl hits --per-page 50     # 50 rows per page
+waygate rl hits --route /api/pay   # filter to one route
 ```
 
 | Option | Description |
@@ -439,35 +439,35 @@ switchly rl hits --route /api/pay   # filter to one route
 
 ## Global rate limit commands
 
-`switchly grl` and `switchly global-rate-limit` are aliases for the same command group. Requires `switchly[rate-limit]` on the server.
+`waygate grl` and `waygate global-rate-limit` are aliases for the same command group. Requires `waygate[rate-limit]` on the server.
 
 ```bash
-switchly grl get
-switchly global-rate-limit get   # identical
+waygate grl get
+waygate global-rate-limit get   # identical
 ```
 
-### `switchly grl get`
+### `waygate grl get`
 
 Show the current global rate limit policy, including limit, algorithm, key strategy, burst, exempt routes, and enabled state.
 
 ```bash
-switchly grl get
+waygate grl get
 ```
 
 ---
 
-### `switchly grl set`
+### `waygate grl set`
 
 Configure the global rate limit. Creates a new policy or replaces the existing one.
 
 ```bash
-switchly grl set <limit>
+waygate grl set <limit>
 ```
 
 ```bash
-switchly grl set 1000/minute
-switchly grl set 500/minute --algorithm sliding_window --key ip
-switchly grl set 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
+waygate grl set 1000/minute
+waygate grl set 500/minute --algorithm sliding_window --key ip
+waygate grl set 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
 ```
 
 | Option | Description |
@@ -479,81 +479,81 @@ switchly grl set 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
 
 ---
 
-### `switchly grl delete`
+### `waygate grl delete`
 
 Remove the global rate limit policy entirely.
 
 ```bash
-switchly grl delete
+waygate grl delete
 ```
 
 ---
 
-### `switchly grl reset`
+### `waygate grl reset`
 
 Clear all global rate limit counters. The policy is kept; clients get their full quota back on the next request.
 
 ```bash
-switchly grl reset
+waygate grl reset
 ```
 
 ---
 
-### `switchly grl enable`
+### `waygate grl enable`
 
 Resume a paused global rate limit policy.
 
 ```bash
-switchly grl enable
+waygate grl enable
 ```
 
 ---
 
-### `switchly grl disable`
+### `waygate grl disable`
 
 Pause the global rate limit without removing it. Per-route policies continue to enforce normally.
 
 ```bash
-switchly grl disable
+waygate grl disable
 ```
 
 ---
 
-## `switchly srl` / `switchly service-rate-limit`
+## `waygate srl` / `waygate service-rate-limit`
 
-`switchly srl` and `switchly service-rate-limit` are aliases for the same command group. Manages the rate limit policy for a single service — applies to all routes of that service. Requires `switchly[rate-limit]` on the server.
+`waygate srl` and `waygate service-rate-limit` are aliases for the same command group. Manages the rate limit policy for a single service — applies to all routes of that service. Requires `waygate[rate-limit]` on the server.
 
 ```bash
-switchly srl get payments-service
-switchly service-rate-limit get payments-service   # identical
+waygate srl get payments-service
+waygate service-rate-limit get payments-service   # identical
 ```
 
-### `switchly srl get`
+### `waygate srl get`
 
 Show the current rate limit policy for a service, including limit, algorithm, key strategy, burst, exempt routes, and enabled state.
 
 ```bash
-switchly srl get <service>
+waygate srl get <service>
 ```
 
 ```bash
-switchly srl get payments-service
+waygate srl get payments-service
 ```
 
 ---
 
-### `switchly srl set`
+### `waygate srl set`
 
 Configure the rate limit for a service. Creates a new policy or replaces the existing one.
 
 ```bash
-switchly srl set <service> <limit>
+waygate srl set <service> <limit>
 ```
 
 ```bash
-switchly srl set payments-service 1000/minute
-switchly srl set payments-service 500/minute --algorithm sliding_window --key ip
-switchly srl set payments-service 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
+waygate srl set payments-service 1000/minute
+waygate srl set payments-service 500/minute --algorithm sliding_window --key ip
+waygate srl set payments-service 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
 ```
 
 | Option | Description |
@@ -565,65 +565,65 @@ switchly srl set payments-service 2000/hour --burst 50 --exempt /health --exempt
 
 ---
 
-### `switchly srl delete`
+### `waygate srl delete`
 
 Remove the service rate limit policy entirely.
 
 ```bash
-switchly srl delete <service>
+waygate srl delete <service>
 ```
 
 ```bash
-switchly srl delete payments-service
+waygate srl delete payments-service
 ```
 
 ---
 
-### `switchly srl reset`
+### `waygate srl reset`
 
 Clear all counters for the service. The policy is kept; clients get their full quota back on the next request.
 
 ```bash
-switchly srl reset <service>
+waygate srl reset <service>
 ```
 
 ```bash
-switchly srl reset payments-service
+waygate srl reset payments-service
 ```
 
 ---
 
-### `switchly srl enable`
+### `waygate srl enable`
 
 Resume a paused service rate limit policy.
 
 ```bash
-switchly srl enable <service>
+waygate srl enable <service>
 ```
 
 ---
 
-### `switchly srl disable`
+### `waygate srl disable`
 
 Pause the service rate limit without removing it. Per-route policies continue to enforce normally.
 
 ```bash
-switchly srl disable <service>
+waygate srl disable <service>
 ```
 
 ---
 
 ## Audit log
 
-### `switchly log`
+### `waygate log`
 
 Display the audit log, newest entries first. The `Status` column shows `old > new` for route state changes and a coloured action label for rate limit policy changes (including global RL actions such as `global set`, `global reset`, `global enabled`, `global disabled`, and service RL actions such as `svc set`, `svc reset`, `svc enabled`, `svc disabled`). The `Path` column shows human-readable labels for sentinel-keyed entries: `[Global Maintenance]`, `[Global Rate Limit]`, `[{service} Maintenance]`, and `[{service} Rate Limit]`.
 
 ```bash
-switchly log                          # page 1, 20 rows
-switchly log --route GET:/payments    # filter by route
-switchly log --page 2                 # next page
-switchly log --per-page 50           # 50 rows per page
+waygate log                          # page 1, 20 rows
+waygate log --route GET:/payments    # filter by route
+waygate log --page 2                 # next page
+waygate log --per-page 50           # 50 rows per page
 ```
 
 | Option | Description |
@@ -636,22 +636,22 @@ switchly log --per-page 50           # 50 rows per page
 
 ## Config commands
 
-### `switchly config set-url`
+### `waygate config set-url`
 
-Override the server URL and save it to `~/.switchly/config.json`. All subsequent commands will use this URL.
+Override the server URL and save it to `~/.waygate/config.json`. All subsequent commands will use this URL.
 
 ```bash
-switchly config set-url http://prod.example.com/switchly
+waygate config set-url http://prod.example.com/waygate
 ```
 
 ---
 
-### `switchly config show`
+### `waygate config show`
 
-Display the resolved server URL, its source (env var, `.switchly` file, or config file), and the current auth session status.
+Display the resolved server URL, its source (env var, `.waygate` file, or config file), and the current auth session status.
 
 ```bash
-switchly config show
+waygate config show
 ```
 
 ---
@@ -662,16 +662,16 @@ The CLI resolves the server URL using the following priority order — highest w
 
 | Priority | Source | Example |
 |---|---|---|
-| 1 (highest) | `SWITCHLY_SERVER_URL` environment variable | `export SWITCHLY_SERVER_URL=http://...` |
-| 2 | `SWITCHLY_SERVER_URL` in a `.switchly` file (walked up from the current directory) | `.switchly` file in project root |
-| 3 | `server_url` in `~/.switchly/config.json` | Set via `switchly config set-url` |
-| 4 (default) | Hard-coded default | `http://localhost:8000/switchly` |
+| 1 (highest) | `WAYGATE_SERVER_URL` environment variable | `export WAYGATE_SERVER_URL=http://...` |
+| 2 | `WAYGATE_SERVER_URL` in a `.waygate` file (walked up from the current directory) | `.waygate` file in project root |
+| 3 | `server_url` in `~/.waygate/config.json` | Set via `waygate config set-url` |
+| 4 (default) | Hard-coded default | `http://localhost:8000/waygate` |
 
-!!! tip "Commit a `.switchly` file"
-    Add a `.switchly` file to your project root so the whole team automatically uses the correct server URL without manual configuration:
+!!! tip "Commit a `.waygate` file"
+    Add a `.waygate` file to your project root so the whole team automatically uses the correct server URL without manual configuration:
 
-    ```ini title=".switchly"
-    SWITCHLY_SERVER_URL=http://localhost:8000/switchly
+    ```ini title=".waygate"
+    WAYGATE_SERVER_URL=http://localhost:8000/waygate
     ```
 
 ---
@@ -687,8 +687,8 @@ Routes are identified by a method-prefixed key. Use the same format in all CLI c
 | `@router.get("/api/v1/users")` | `GET:/api/v1/users` |
 
 ```bash
-switchly disable "GET:/payments"    # specific method
-switchly enable "/payments"         # applies to all methods registered under /payments
+waygate disable "GET:/payments"    # specific method
+waygate enable "/payments"         # applies to all methods registered under /payments
 ```
 
 ---
@@ -699,7 +699,7 @@ Auth tokens are stored in a JSON file at a platform-specific location:
 
 | Platform | Location |
 |---|---|
-| macOS / Linux | `~/.switchly/config.json` |
-| Windows | `%USERPROFILE%\AppData\Local\switchly\config.json` |
+| macOS / Linux | `~/.waygate/config.json` |
+| Windows | `%USERPROFILE%\AppData\Local\waygate\config.json` |
 
 The config file stores the server URL, the current token, the username, and the token expiry timestamp. Delete this file to clear all credentials.

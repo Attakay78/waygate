@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{# ── Page header ───────────────────────────────────────────────────── #}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+    <div>
+        <h1 class="text-xl font-semibold text-slate-900">Feature Flags</h1>
+        <p class="text-sm text-slate-500 mt-0.5">Manage and roll out features to your users</p>
+    </div>
+    <button
+        hx-get="{{ prefix }}/modal/flag/create"
+        hx-target="#waygate-modal"
+        hx-swap="innerHTML"
+        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white
+               bg-violet-700 hover:bg-violet-600 rounded-lg shadow-sm
+               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-600 focus:ring-offset-white
+               transition-all active:scale-95 self-start sm:self-auto whitespace-nowrap">
+        <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+        </svg>
+        Create Flag
+    </button>
+</div>
+
+{# ── Stats bar — always visible ────────────────────────────────────── #}
+{% set total = flags | length %}
+{% set enabled_count = flags | selectattr('enabled') | list | length %}
+{% set disabled_count = total - enabled_count %}
+<div class="stats-grid">
+    <div class="bg-white rounded-xl border border-slate-200 px-3 py-2.5 sm:px-4 sm:py-3 flex items-center gap-2 sm:gap-3">
+        <div class="hidden sm:flex w-8 h-8 rounded-lg bg-slate-100 items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5"/>
+            </svg>
+        </div>
+        <div>
+            <div class="text-lg sm:text-2xl font-bold text-slate-900 tabular-nums leading-none">{{ total }}</div>
+            <div class="text-[10px] sm:text-xs text-slate-500 mt-0.5 leading-tight">Total</div>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 px-3 py-2.5 sm:px-4 sm:py-3 flex items-center gap-2 sm:gap-3">
+        <div class="hidden sm:flex w-8 h-8 rounded-lg bg-emerald-50 items-center justify-center shrink-0">
+            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+        </div>
+        <div>
+            <div class="text-lg sm:text-2xl font-bold text-emerald-600 tabular-nums leading-none">{{ enabled_count }}</div>
+            <div class="text-[10px] sm:text-xs text-slate-500 mt-0.5 leading-tight">Enabled</div>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 px-3 py-2.5 sm:px-4 sm:py-3 flex items-center gap-2 sm:gap-3">
+        <div class="hidden sm:flex w-8 h-8 rounded-lg bg-slate-100 items-center justify-center shrink-0">
+            <span class="w-3 h-3 rounded-full bg-slate-400"></span>
+        </div>
+        <div>
+            <div class="text-lg sm:text-2xl font-bold text-slate-400 tabular-nums leading-none">{{ disabled_count }}</div>
+            <div class="text-[10px] sm:text-xs text-slate-500 mt-0.5 leading-tight">Disabled</div>
+        </div>
+    </div>
+</div>
+
+{# ── Filters — only show if flags exist ────────────────────────────── #}
+{% if flags %}
+<div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+    {# Search — left on sm+ #}
+    <div class="flex items-center gap-2 border border-slate-200 rounded-lg bg-white px-3 py-2
+                 focus-within:ring-1 focus-within:ring-violet-500 focus-within:border-violet-500
+                 transition-all sm:flex-1 sm:max-w-xs">
+        <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0016.803 15.803z"/>
+        </svg>
+        <input type="text"
+               name="q"
+               placeholder="Search flags…"
+               autocomplete="off"
+               hx-get="{{ prefix }}/flags/rows"
+               hx-trigger="input changed delay:300ms"
+               hx-target="#flag-table-body"
+               hx-include="[name='type'],[name='status']"
+               class="flex-1 text-sm bg-transparent outline-none text-slate-700 placeholder:text-slate-400 min-w-0">
+    </div>
+    {# Filters — right on sm+ #}
+    <div class="flex gap-2 sm:ml-auto">
+        <select name="type"
+                hx-get="{{ prefix }}/flags/rows"
+                hx-trigger="change"
+                hx-target="#flag-table-body"
+                hx-include="[name='q'],[name='status']"
+                class="flex-1 sm:flex-none text-sm border border-slate-200 bg-white rounded-lg px-3 py-2 text-slate-700
+                       focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500
+                       cursor-pointer transition-colors">
+            <option value="">All types</option>
+            <option value="boolean">Boolean</option>
+            <option value="string">String</option>
+            <option value="integer">Integer</option>
+            <option value="float">Float</option>
+            <option value="json">JSON</option>
+        </select>
+        <select name="status"
+                hx-get="{{ prefix }}/flags/rows"
+                hx-trigger="change"
+                hx-target="#flag-table-body"
+                hx-include="[name='q'],[name='type']"
+                class="flex-1 sm:flex-none text-sm border border-slate-200 bg-white rounded-lg px-3 py-2 text-slate-700
+                       focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500
+                       cursor-pointer transition-colors">
+            <option value="">All statuses</option>
+            <option value="enabled">Enabled</option>
+            <option value="disabled">Disabled</option>
+        </select>
+    </div>
+</div>
+{% endif %}
+
+{# ── Flags table — ALWAYS rendered so #flag-table-body always exists ─ #}
+<div class="bg-white rounded-xl border border-slate-200 overflow-hidden waygate-table-outer">
+    <div class="scroll-x">
+        <table class="w-full text-left min-w-[600px] mobile-cards">
+            <thead>
+                <tr class="border-b border-slate-200 bg-slate-50">
+                    <th class="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-widest">Key</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-widest">Type</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-widest">Status</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-widest hidden md:table-cell">Variations</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-widest hidden lg:table-cell">Fallthrough</th>
+                    <th class="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-widest text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="flag-table-body" class="divide-y divide-slate-100">
+                {% include "partials/flag_rows.html" with context %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

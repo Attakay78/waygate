@@ -1,9 +1,9 @@
 """Custom Backend Example — SQLite via aiosqlite.
 
-This file shows how to wire switchly to a storage layer it does not ship
-with by implementing the ``SwitchlyBackend`` abstract base class.
+This file shows how to wire waygate to a storage layer it does not ship
+with by implementing the ``WaygateBackend`` abstract base class.
 
-The contract is simple: implement six async methods and switchly handles the
+The contract is simple: implement six async methods and waygate handles the
 rest (engine logic, middleware, decorators, dashboard, CLI, audit log).
 
 Requirements:
@@ -15,17 +15,17 @@ Run the demo app:
 
 Then visit:
     http://localhost:8000/docs           — filtered Swagger UI
-    http://localhost:8000/switchly/        — admin dashboard (login: admin / secret)
-    http://localhost:8000/switchly/audit   — audit log
+    http://localhost:8000/waygate/        — admin dashboard (login: admin / secret)
+    http://localhost:8000/waygate/audit   — audit log
 
 CLI quick-start (the CLI talks to the app's admin API — it never touches
 the database directly):
-    switchly config set-url http://localhost:8000/switchly
-    switchly login admin          # password: secret
-    switchly status
-    switchly disable GET:/payments --reason "hotfix"
-    switchly enable GET:/payments
-    switchly log
+    waygate config set-url http://localhost:8000/waygate
+    waygate login admin          # password: secret
+    waygate status
+    waygate disable GET:/payments --reason "hotfix"
+    waygate enable GET:/payments
+    waygate log
 """
 
 from __future__ import annotations
@@ -37,30 +37,30 @@ from contextlib import asynccontextmanager
 import aiosqlite
 from fastapi import FastAPI
 
-from switchly import AuditEntry, RouteState, SwitchlyBackend, SwitchlyEngine
-from switchly.fastapi import (
-    SwitchlyAdmin,
-    SwitchlyMiddleware,
-    SwitchlyRouter,
-    apply_switchly_to_openapi,
+from waygate import AuditEntry, RouteState, WaygateBackend, WaygateEngine
+from waygate.fastapi import (
+    WaygateAdmin,
+    WaygateMiddleware,
+    WaygateRouter,
+    apply_waygate_to_openapi,
     disabled,
     force_active,
     maintenance,
 )
 
 # ---------------------------------------------------------------------------
-# SQLiteBackend — implements the SwitchlyBackend contract
+# SQLiteBackend — implements the WaygateBackend contract
 #
 # Rules to follow when building any custom backend:
 #
-#   1. Subclass ``SwitchlyBackend`` from ``switchly.core.backends.base``.
+#   1. Subclass ``WaygateBackend`` from ``waygate.core.backends.base``.
 #   2. Implement all six @abstractmethod methods.
 #   3. Override ``startup()`` / ``shutdown()`` for async initialisation —
 #      the engine calls these automatically when used as ``async with engine:``.
 #   4. RouteState and AuditEntry are Pydantic models — use .model_dump_json()
 #      to serialise and .model_validate_json() to deserialise.
 #   5. get_state() must raise KeyError when the path is not found.
-#   6. Fail-open: let exceptions bubble up — SwitchlyEngine wraps every backend
+#   6. Fail-open: let exceptions bubble up — WaygateEngine wraps every backend
 #      call in try/except and allows the request through on failure.
 #   7. subscribe() is optional. Leave it as-is if your backend doesn't support
 #      pub/sub (the base class raises NotImplementedError and the dashboard
@@ -70,14 +70,14 @@ from switchly.fastapi import (
 _MAX_AUDIT_ROWS = 1000
 
 _CREATE_STATES_TABLE = """
-CREATE TABLE IF NOT EXISTS switchly_states (
+CREATE TABLE IF NOT EXISTS waygate_states (
     path      TEXT PRIMARY KEY,
     state_json TEXT NOT NULL
 )
 """
 
 _CREATE_AUDIT_TABLE = """
-CREATE TABLE IF NOT EXISTS switchly_audit (
+CREATE TABLE IF NOT EXISTS waygate_audit (
     id           TEXT PRIMARY KEY,
     timestamp    TEXT NOT NULL,
     path         TEXT NOT NULL,
@@ -86,8 +86,8 @@ CREATE TABLE IF NOT EXISTS switchly_audit (
 """
 
 
-class SQLiteBackend(SwitchlyBackend):
-    """switchly backend backed by a SQLite database.
+class SQLiteBackend(WaygateBackend):
+    """waygate backend backed by a SQLite database.
 
     Parameters
     ----------
@@ -97,24 +97,24 @@ class SQLiteBackend(SwitchlyBackend):
 
     Example
     -------
-    >>> backend = SQLiteBackend("switchly-state.db")
-    >>> engine  = SwitchlyEngine(backend=backend)
+    >>> backend = SQLiteBackend("waygate-state.db")
+    >>> engine  = WaygateEngine(backend=backend)
     >>> async with engine:           # calls startup() then shutdown()
     ...     states = await engine.list_states()
     """
 
-    def __init__(self, db_path: str = "switchly-state.db") -> None:
+    def __init__(self, db_path: str = "waygate-state.db") -> None:
         self._db_path = db_path
         self._db: aiosqlite.Connection | None = None
 
     # ------------------------------------------------------------------
-    # Lifecycle hooks — called automatically by SwitchlyEngine
+    # Lifecycle hooks — called automatically by WaygateEngine
     # ------------------------------------------------------------------
 
     async def startup(self) -> None:
         """Open the database connection and create tables if needed.
 
-        Called automatically by ``SwitchlyEngine.__aenter__``.  You do not
+        Called automatically by ``WaygateEngine.__aenter__``.  You do not
         need to call this yourself when using ``async with engine:``.
         """
         self._db = await aiosqlite.connect(self._db_path)
@@ -126,7 +126,7 @@ class SQLiteBackend(SwitchlyBackend):
     async def shutdown(self) -> None:
         """Close the database connection.
 
-        Called automatically by ``SwitchlyEngine.__aexit__``.
+        Called automatically by ``WaygateEngine.__aexit__``.
         """
         if self._db is not None:
             await self._db.close()
@@ -142,7 +142,7 @@ class SQLiteBackend(SwitchlyBackend):
         return self._db
 
     # ------------------------------------------------------------------
-    # SwitchlyBackend — required methods
+    # WaygateBackend — required methods
     # ------------------------------------------------------------------
 
     async def get_state(self, path: str) -> RouteState:
@@ -153,7 +153,7 @@ class SQLiteBackend(SwitchlyBackend):
         "not registered" from "registered but active".
         """
         async with self._conn.execute(
-            "SELECT state_json FROM switchly_states WHERE path = ?", (path,)
+            "SELECT state_json FROM waygate_states WHERE path = ?", (path,)
         ) as cursor:
             row = await cursor.fetchone()
 
@@ -166,7 +166,7 @@ class SQLiteBackend(SwitchlyBackend):
         """Persist *state* for *path*, creating or replacing the existing row."""
         await self._conn.execute(
             """
-            INSERT INTO switchly_states (path, state_json)
+            INSERT INTO waygate_states (path, state_json)
             VALUES (?, ?)
             ON CONFLICT(path) DO UPDATE SET state_json = excluded.state_json
             """,
@@ -176,12 +176,12 @@ class SQLiteBackend(SwitchlyBackend):
 
     async def delete_state(self, path: str) -> None:
         """Remove the state row for *path*. No-op if not found."""
-        await self._conn.execute("DELETE FROM switchly_states WHERE path = ?", (path,))
+        await self._conn.execute("DELETE FROM waygate_states WHERE path = ?", (path,))
         await self._conn.commit()
 
     async def list_states(self) -> list[RouteState]:
         """Return all registered route states."""
-        async with self._conn.execute("SELECT state_json FROM switchly_states") as cursor:
+        async with self._conn.execute("SELECT state_json FROM waygate_states") as cursor:
             rows = await cursor.fetchall()
         return [RouteState.model_validate_json(row["state_json"]) for row in rows]
 
@@ -189,7 +189,7 @@ class SQLiteBackend(SwitchlyBackend):
         """Append *entry* to the audit log, capping the table at 1000 rows."""
         await self._conn.execute(
             """
-            INSERT OR IGNORE INTO switchly_audit (id, timestamp, path, entry_json)
+            INSERT OR IGNORE INTO waygate_audit (id, timestamp, path, entry_json)
             VALUES (?, ?, ?, ?)
             """,
             (
@@ -202,9 +202,9 @@ class SQLiteBackend(SwitchlyBackend):
         # Keep the table from growing unbounded.
         await self._conn.execute(
             """
-            DELETE FROM switchly_audit
+            DELETE FROM waygate_audit
             WHERE id NOT IN (
-                SELECT id FROM switchly_audit
+                SELECT id FROM waygate_audit
                 ORDER BY timestamp DESC
                 LIMIT ?
             )
@@ -217,7 +217,7 @@ class SQLiteBackend(SwitchlyBackend):
         """Return audit entries, newest first, optionally filtered by *path*."""
         if path is not None:
             query = """
-                SELECT entry_json FROM switchly_audit
+                SELECT entry_json FROM waygate_audit
                 WHERE path = ?
                 ORDER BY timestamp DESC
                 LIMIT ?
@@ -225,7 +225,7 @@ class SQLiteBackend(SwitchlyBackend):
             params: tuple[object, ...] = (path, limit)
         else:
             query = """
-                SELECT entry_json FROM switchly_audit
+                SELECT entry_json FROM waygate_audit
                 ORDER BY timestamp DESC
                 LIMIT ?
             """
@@ -251,15 +251,15 @@ class SQLiteBackend(SwitchlyBackend):
 # Demo FastAPI app using SQLiteBackend
 # ---------------------------------------------------------------------------
 
-backend = SQLiteBackend("switchly-state.db")
-engine = SwitchlyEngine(backend=backend)
-router = SwitchlyRouter(engine=engine)
+backend = SQLiteBackend("waygate-state.db")
+engine = WaygateEngine(backend=backend)
+router = WaygateRouter(engine=engine)
 
 
 @router.get("/health")
 @force_active
 async def health():
-    """Always 200 — bypasses every switchly check."""
+    """Always 200 — bypasses every waygate check."""
     return {"status": "ok", "backend": "sqlite"}
 
 
@@ -291,32 +291,32 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="switchly — SQLite Custom Backend Example",
+    title="waygate — SQLite Custom Backend Example",
     description=(
-        "All route state and audit log entries are persisted in `switchly-state.db`. "
+        "All route state and audit log entries are persisted in `waygate-state.db`. "
         "Restart the server and the state survives.\n\n"
-        "Admin UI and CLI API available at `/switchly/`."
+        "Admin UI and CLI API available at `/waygate/`."
     ),
     lifespan=lifespan,
 )
 
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 app.include_router(router)
-apply_switchly_to_openapi(app, engine)
+apply_waygate_to_openapi(app, engine)
 
 # Mount the unified admin interface:
-#   - Dashboard UI  → http://localhost:8000/switchly/
-#   - REST API      → http://localhost:8000/switchly/api/...  (used by the CLI)
+#   - Dashboard UI  → http://localhost:8000/waygate/
+#   - REST API      → http://localhost:8000/waygate/api/...  (used by the CLI)
 #
 # The CLI communicates with the app via this REST API — it never touches
 # the SQLite database directly.  This means the same CLI workflow works
 # regardless of which backend the app uses.
 app.mount(
-    "/switchly",
-    SwitchlyAdmin(
+    "/waygate",
+    WaygateAdmin(
         engine=engine,
         auth=("admin", "secret"),
-        prefix="/switchly",
+        prefix="/waygate",
         # secret_key="change-me-in-production",
         # token_expiry=86400,  # seconds — default 24 h
     ),
