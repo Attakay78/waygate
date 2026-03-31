@@ -1,9 +1,9 @@
 # Backends
 
-A backend is the storage layer for switchly. It persists route state and the audit log. All backends implement the `SwitchlyBackend` abstract base class, so you can swap them with a one-line change and nothing else in your application needs to change.
+A backend is the storage layer for waygate. It persists route state and the audit log. All backends implement the `WaygateBackend` abstract base class, so you can swap them with a one-line change and nothing else in your application needs to change.
 
 ```python
-from switchly import SwitchlyBackend
+from waygate import WaygateBackend
 ```
 
 | Backend | Storage | Survives restart | Live push (SSE) | Best for |
@@ -14,11 +14,11 @@ from switchly import SwitchlyBackend
 
 ---
 
-## SwitchlyBackend (ABC)
+## WaygateBackend (ABC)
 
 The contract all backends must implement. If you are building a custom backend, subclass this.
 
-::: switchly.core.backends.base.SwitchlyBackend
+::: waygate.core.backends.base.WaygateBackend
     options:
       show_source: false
 
@@ -28,21 +28,21 @@ The contract all backends must implement. If you are building a custom backend, 
 
 Stores all state in a Python `dict` in the current process. No installation required and no configuration needed — the default choice for getting started.
 
-::: switchly.core.backends.memory.MemoryBackend
+::: waygate.core.backends.memory.MemoryBackend
     options:
       show_source: false
 
 ### Usage
 
 ```python title="main.py"
-from switchly import SwitchlyEngine
+from waygate import WaygateEngine
 
 # MemoryBackend is the default — no need to pass it explicitly
-engine = SwitchlyEngine()
+engine = WaygateEngine()
 
 # Or explicitly
-from switchly import MemoryBackend
-engine = SwitchlyEngine(backend=MemoryBackend())
+from waygate import MemoryBackend
+engine = WaygateEngine(backend=MemoryBackend())
 ```
 
 ### Characteristics
@@ -60,17 +60,17 @@ engine = SwitchlyEngine(backend=MemoryBackend())
 
 Reads and writes a JSON file using `aiofiles`. State survives process restarts and can be shared between processes on the same machine by pointing them at the same file.
 
-::: switchly.core.backends.file.FileBackend
+::: waygate.core.backends.file.FileBackend
     options:
       show_source: false
 
 ### Usage
 
 ```python title="main.py"
-from switchly import FileBackend
-from switchly import SwitchlyEngine
+from waygate import FileBackend
+from waygate import WaygateEngine
 
-engine = SwitchlyEngine(backend=FileBackend(path="switchly-state.json"))
+engine = WaygateEngine(backend=FileBackend(path="waygate-state.json"))
 ```
 
 ### Parameters
@@ -119,23 +119,23 @@ engine = SwitchlyEngine(backend=FileBackend(path="switchly-state.json"))
 
 Uses `redis.asyncio` for fully async, multi-instance deployments. State is shared across all app instances, and the `subscribe()` method enables real-time SSE push in the admin dashboard via Redis pub/sub.
 
-::: switchly.core.backends.redis.RedisBackend
+::: waygate.core.backends.redis.RedisBackend
     options:
       show_source: false
 
 ### Installation
 
 ```bash
-uv add "switchly[redis]"
+uv add "waygate[redis]"
 ```
 
 ### Usage
 
 ```python title="main.py"
-from switchly import RedisBackend
-from switchly import SwitchlyEngine
+from waygate import RedisBackend
+from waygate import WaygateEngine
 
-engine = SwitchlyEngine(backend=RedisBackend(url="redis://localhost:6379/0"))
+engine = WaygateEngine(backend=RedisBackend(url="redis://localhost:6379/0"))
 ```
 
 ### Parameters
@@ -148,32 +148,32 @@ engine = SwitchlyEngine(backend=RedisBackend(url="redis://localhost:6379/0"))
 
 | Redis key | Type | Contents |
 |---|---|---|
-| `switchly:state:{path}` | String | JSON-serialised `RouteState` |
-| `switchly:audit` | List | JSON-serialised `AuditEntry` items (LPUSH, LTRIM to 1000) |
-| `switchly:global` | String | JSON-serialised `GlobalMaintenanceConfig` |
-| `switchly:changes` | Pub/sub channel | Published on every `set_state()` for SSE live updates |
+| `waygate:state:{path}` | String | JSON-serialised `RouteState` |
+| `waygate:audit` | List | JSON-serialised `AuditEntry` items (LPUSH, LTRIM to 1000) |
+| `waygate:global` | String | JSON-serialised `GlobalMaintenanceConfig` |
+| `waygate:changes` | Pub/sub channel | Published on every `set_state()` for SSE live updates |
 
 ### Characteristics
 
-- `subscribe()` is implemented via Redis pub/sub on `switchly:changes`, enabling live SSE updates in the admin dashboard.
+- `subscribe()` is implemented via Redis pub/sub on `waygate:changes`, enabling live SSE updates in the admin dashboard.
 - Uses connection pooling via `redis.asyncio.ConnectionPool` for efficiency under load.
-- Redis connection errors are handled gracefully — the backend surfaces them as exceptions and the engine fails open. Read more in [SwitchlyEngine: fail-open](engine.md#check).
+- Redis connection errors are handled gracefully — the backend surfaces them as exceptions and the engine fails open. Read more in [WaygateEngine: fail-open](engine.md#check).
 
 !!! tip "Use the lifespan context manager"
-    `RedisBackend` opens a connection pool on `startup()` and closes it on `shutdown()`. Always wrap the engine in the lifespan context manager to ensure clean teardown. Read more in [SwitchlyEngine: lifecycle](engine.md#lifecycle).
+    `RedisBackend` opens a connection pool on `startup()` and closes it on `shutdown()`. Always wrap the engine in the lifespan context manager to ensure clean teardown. Read more in [WaygateEngine: lifecycle](engine.md#lifecycle).
 
 ---
 
 ## Writing a custom backend
 
-Subclass `SwitchlyBackend` and implement the six required async methods. The contract is intentionally minimal.
+Subclass `WaygateBackend` and implement the six required async methods. The contract is intentionally minimal.
 
 ```python title="my_backend.py"
-from switchly import SwitchlyBackend
-from switchly import AuditEntry, RouteState
+from waygate import WaygateBackend
+from waygate import AuditEntry, RouteState
 
 
-class MyBackend(SwitchlyBackend):
+class MyBackend(WaygateBackend):
 
     async def get_state(self, path: str) -> RouteState:
         """Return stored state. Must raise KeyError if path is not found."""
@@ -228,7 +228,7 @@ class MyBackend(SwitchlyBackend):
     Override `startup()` and `shutdown()` to manage connections:
 
     ```python
-    class MyBackend(SwitchlyBackend):
+    class MyBackend(WaygateBackend):
 
         async def startup(self) -> None:
             self._conn = await create_connection()

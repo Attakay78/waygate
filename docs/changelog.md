@@ -6,19 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [0.1.1]
-
-### Fixed
-
-- Fixed README badge and image URLs (no code changes).
-
----
-
 ## [0.1.0]
 
 ### Changed
 
-- **`api-shield` is deprecated. `switchly` is the new package name.** All future releases will be published under `switchly` on PyPI. Replace `pip install api-shield` with `pip install switchly` (or `uv add switchly`). The import root changes from `shield` to `switchly` and the CLI command from `shield` to `switchly`.
+- **`api-shield` is deprecated. `waygate` is the new package name.** All future releases will be published under `waygate` on PyPI. Replace `pip install api-shield` with `pip install waygate` (or `uv add waygate`). The import root changes from `shield` to `waygate` and the CLI command from `shield` to `waygate`.
 
 ---
 
@@ -31,17 +23,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-- **Feature flags** (`switchly[flags]`): a full feature flag system built on the [OpenFeature](https://openfeature.dev/) standard, supporting boolean, string, integer, float, and JSON flag types with multi-condition targeting rules, reusable user segments (explicit included/excluded lists plus attribute-based rules), percentage rollouts, prerequisite flags, individual user targeting, and a live SSE evaluation stream. Flags and segments are manageable from the admin dashboard (`/switchly/flags`, `/switchly/segments`) and the CLI (`switchly flags *`, `switchly segments *`) — including a new `switchly segments add-rule` command and an "Add Rule" panel in the Edit Segment modal that lets operators add attribute-based targeting rules without touching code or the REST API directly.
+- **Feature flags** (`waygate[flags]`): a full feature flag system built on the [OpenFeature](https://openfeature.dev/) standard, supporting boolean, string, integer, float, and JSON flag types with multi-condition targeting rules, reusable user segments (explicit included/excluded lists plus attribute-based rules), percentage rollouts, prerequisite flags, individual user targeting, and a live SSE evaluation stream. Flags and segments are manageable from the admin dashboard (`/waygate/flags`, `/waygate/segments`) and the CLI (`waygate flags *`, `waygate segments *`) — including a new `waygate segments add-rule` command and an "Add Rule" panel in the Edit Segment modal that lets operators add attribute-based targeting rules without touching code or the REST API directly.
 
-- **`SWITCHLY_SERVICE` env var fallback on all `--service` CLI options**: `switchly status`, `switchly enable`, `switchly disable`, `switchly maintenance`, and `switchly schedule` all read `SWITCHLY_SERVICE` automatically — set it once with `export SWITCHLY_SERVICE=payments-service` and every command scopes itself to that service without repeating `--service`. An explicit `--service` flag always wins.
-- **`switchly current-service` command**: shows the active service context from the `SWITCHLY_SERVICE` environment variable, or a hint to set it when the variable is absent.
-- **`switchly services` command**: lists all distinct service names registered with the Switchly Server, so you can discover which services are connected before switching context.
+- **`WAYGATE_SERVICE` env var fallback on all `--service` CLI options**: `waygate status`, `waygate enable`, `waygate disable`, `waygate maintenance`, and `waygate schedule` all read `WAYGATE_SERVICE` automatically — set it once with `export WAYGATE_SERVICE=payments-service` and every command scopes itself to that service without repeating `--service`. An explicit `--service` flag always wins.
+- **`waygate current-service` command**: shows the active service context from the `WAYGATE_SERVICE` environment variable, or a hint to set it when the variable is absent.
+- **`waygate services` command**: lists all distinct service names registered with the Waygate Server, so you can discover which services are connected before switching context.
 - **Dashboard "Unprotected Routes" section**: the Rate Limits page now surfaces all routes that have no rate limit policy, with an "Add Limit" button per row that opens a modal to configure method, limit, algorithm, and key strategy in-place — no CLI required.
 - **Route existence validation in `set_rate_limit_policy()`**: attempting to add a rate limit policy for a route that does not exist now raises `RouteNotFoundException` immediately; the REST API returns `404` and the CLI prints a clear error, preventing phantom policies from accumulating.
-- **`SwitchlySDK.rate_limit_backend` parameter**: pass a `RedisBackend` instance to share rate limit counters across all replicas of a service connected to the same Switchly Server; without it each replica enforces limits independently.
-- **Rate limit policy SSE propagation to SDK clients**: policies set or deleted via the CLI or dashboard are now broadcast over the Switchly Server's SSE stream as typed `rl_policy` envelopes and applied to every connected SDK client in real time — no restart required.
-- **`SwitchlySDK` auto-login (`username` / `password` params)**: pass credentials directly to `SwitchlySDK` instead of a pre-issued token; on startup the SDK calls `POST /api/auth/login` with `platform="sdk"` and caches the resulting long-lived token for the life of the process — no manual token management required.
-- **Separate SDK token lifetime (`sdk_token_expiry`)**: `SwitchlyServer` and `SwitchlyAdmin` now accept `sdk_token_expiry` (default 1 year) independently from `token_expiry` (default 24 h for dashboard / CLI users), so service apps can run indefinitely without re-authentication while human sessions remain short-lived.
+- **`WaygateSDK.rate_limit_backend` parameter**: pass a `RedisBackend` instance to share rate limit counters across all replicas of a service connected to the same Waygate Server; without it each replica enforces limits independently.
+- **Rate limit policy SSE propagation to SDK clients**: policies set or deleted via the CLI or dashboard are now broadcast over the Waygate Server's SSE stream as typed `rl_policy` envelopes and applied to every connected SDK client in real time — no restart required.
+- **`WaygateSDK` auto-login (`username` / `password` params)**: pass credentials directly to `WaygateSDK` instead of a pre-issued token; on startup the SDK calls `POST /api/auth/login` with `platform="sdk"` and caches the resulting long-lived token for the life of the process — no manual token management required.
+- **Separate SDK token lifetime (`sdk_token_expiry`)**: `WaygateServer` and `WaygateAdmin` now accept `sdk_token_expiry` (default 1 year) independently from `token_expiry` (default 24 h for dashboard / CLI users), so service apps can run indefinitely without re-authentication while human sessions remain short-lived.
 - **`platform` field on `POST /api/auth/login`**: the login endpoint now accepts `"cli"` (default) or `"sdk"` in the request body; `"sdk"` tokens use `sdk_token_expiry` and are intended for machine-to-machine service authentication.
 
 ---
@@ -50,9 +42,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-- **`engine.sync` — synchronous proxy for sync route handlers and background threads**: every async engine method (`enable`, `disable`, `set_maintenance`, `schedule_maintenance`, `set_env_only`, `enable_global_maintenance`, `disable_global_maintenance`, `set_rate_limit_policy`, `delete_rate_limit_policy`, `reset_rate_limit`, `get_state`, `list_states`, `get_audit_log`) is now mirrored on `engine.sync` using `anyio.from_thread.run()`, the same mechanism the switchly decorators use internally. Use `engine.sync.*` from plain `def` FastAPI handlers (which FastAPI runs in a worker thread automatically) and background threads — no event-loop wiring required.
-- **Env-gate management from dashboard and CLI**: routes can now have their environment gate set or cleared at runtime — without redeployment — via the dashboard "Env Gate" button (opens an inline modal) and the new `switchly env set` / `switchly env clear` CLI commands.
-- **Global rate limit** (`engine.set_global_rate_limit`): a single rate limit policy applied across all routes with higher precedence than per-route limits — checked first, so a request blocked globally never touches a per-route counter. Supports all key strategies, burst allowance, and per-route exemptions (`exempt_routes`). Configurable from the dashboard Rate Limits page and the new `switchly grl` CLI command group (`get`, `set`, `delete`, `reset`, `enable`, `disable`).
+- **`engine.sync` — synchronous proxy for sync route handlers and background threads**: every async engine method (`enable`, `disable`, `set_maintenance`, `schedule_maintenance`, `set_env_only`, `enable_global_maintenance`, `disable_global_maintenance`, `set_rate_limit_policy`, `delete_rate_limit_policy`, `reset_rate_limit`, `get_state`, `list_states`, `get_audit_log`) is now mirrored on `engine.sync` using `anyio.from_thread.run()`, the same mechanism the waygate decorators use internally. Use `engine.sync.*` from plain `def` FastAPI handlers (which FastAPI runs in a worker thread automatically) and background threads — no event-loop wiring required.
+- **Env-gate management from dashboard and CLI**: routes can now have their environment gate set or cleared at runtime — without redeployment — via the dashboard "Env Gate" button (opens an inline modal) and the new `waygate env set` / `waygate env clear` CLI commands.
+- **Global rate limit** (`engine.set_global_rate_limit`): a single rate limit policy applied across all routes with higher precedence than per-route limits — checked first, so a request blocked globally never touches a per-route counter. Supports all key strategies, burst allowance, and per-route exemptions (`exempt_routes`). Configurable from the dashboard Rate Limits page and the new `waygate grl` CLI command group (`get`, `set`, `delete`, `reset`, `enable`, `disable`).
 - **Global rate limit pause / resume** (`engine.disable_global_rate_limit` / `engine.enable_global_rate_limit`): suspend enforcement without removing the policy, then resume it later. Per-route policies are always unaffected.
 
 ### Documentation
@@ -65,7 +57,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
-- **OpenAPI schema stale across Gunicorn workers** (`RedisBackend`): route filtering in `/docs`/`/redoc` was inconsistent and the global maintenance banner never appeared after changes made by another worker. The `_run_global_config_listener` task was invalidating the in-process config cache but not bumping `_schema_version`, so the OpenAPI schema cache on receiving workers never expired. A new `switchly-route-state-listener` background task now bumps `_schema_version` on every remote route state change too, ensuring all workers rebuild their schema on the next `/openapi.json` request.
+- **OpenAPI schema stale across Gunicorn workers** (`RedisBackend`): route filtering in `/docs`/`/redoc` was inconsistent and the global maintenance banner never appeared after changes made by another worker. The `_run_global_config_listener` task was invalidating the in-process config cache but not bumping `_schema_version`, so the OpenAPI schema cache on receiving workers never expired. A new `waygate-route-state-listener` background task now bumps `_schema_version` on every remote route state change too, ensuring all workers rebuild their schema on the next `/openapi.json` request.
 - **`RedisBackend` crashes with "attached to a different loop" / "Event loop is closed" after worker restart**: `ConnectionPool` was created once at `__init__` time and shared for the process lifetime; after a gunicorn worker recycle or `uvicorn --reload`, all Redis calls failed because the pool's internal futures were bound to the replaced event loop. Fixed by replacing the single shared pool with a per-event-loop pool dict (`dict[id(loop), (weakref.ref(loop), pool)]`): pools are now created lazily on first use within each event loop and dead entries are pruned automatically when the loop is GC'd.
 
 ---
@@ -74,10 +66,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
-- **Rate limit policies not synced across workers** (`RedisBackend`): updating a policy via the admin API or CLI only updated the in-process dict of the worker that handled the request. Other workers continued enforcing the old (decorator-declared) limit until restart. Fixed by adding a `switchly:rl-policy-change` Redis pub/sub channel, every `set` and `delete` now broadcasts the change to all instances, which apply it to their local `_rate_limit_policies` dict immediately via a new background listener task (`switchly-rl-policy-listener`), mirroring the existing `switchly:global_invalidate` pattern.
-- **Rate limit policies reverted to decorator defaults on restart** (`SwitchlyRouter`): `register_switchly_routes()` called `restore_rate_limit_policies()` (via `register_batch`) before re-registering decorator-declared policies, so persisted admin/CLI updates were immediately overwritten on every app startup. Fixed by registering decorator policies first and running `restore_rate_limit_policies()` last, consistent with the order already used by `scan_routes()`.
+- **Rate limit policies not synced across workers** (`RedisBackend`): updating a policy via the admin API or CLI only updated the in-process dict of the worker that handled the request. Other workers continued enforcing the old (decorator-declared) limit until restart. Fixed by adding a `waygate:rl-policy-change` Redis pub/sub channel, every `set` and `delete` now broadcasts the change to all instances, which apply it to their local `_rate_limit_policies` dict immediately via a new background listener task (`waygate-rl-policy-listener`), mirroring the existing `waygate:global_invalidate` pattern.
+- **Rate limit policies reverted to decorator defaults on restart** (`WaygateRouter`): `register_waygate_routes()` called `restore_rate_limit_policies()` (via `register_batch`) before re-registering decorator-declared policies, so persisted admin/CLI updates were immediately overwritten on every app startup. Fixed by registering decorator policies first and running `restore_rate_limit_policies()` last, consistent with the order already used by `scan_routes()`.
 - **`RedisRateLimitStorage.reset()` blocked the event loop**: the underlying `limits` library exposes a synchronous Redis client; calling `.scan()` and `.delete()` directly inside `async def reset()` stalled the event loop during every admin reset and route `enable()` call. Fixed by offloading the SCAN + DELETE loop to `asyncio.to_thread()`.
-- **`enable()` reset rate limit counters with seven sequential calls**: a `for _method in (…)` loop called `_rate_limiter.reset()` once per HTTP method. Replaced with a single `reset_all_for_path()` call (`method=None`), which is the existing one-shot API on `SwitchlyRateLimiter`.
+- **`enable()` reset rate limit counters with seven sequential calls**: a `for _method in (…)` loop called `_rate_limiter.reset()` once per HTTP method. Replaced with a single `reset_all_for_path()` call (`method=None`), which is the existing one-shot API on `WaygateRateLimiter`.
 
 ---
 
@@ -91,10 +83,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
-- **CLI table pagination**: `switchly status`, `switchly log`, `switchly rl list`, and `switchly rl hits` now support `--page` and `--per-page` (default 20) instead of a flat `--limit`; a footer shows the current slice and the next/prev page flag to run. The `switchly log` status column now combines old and new state into a single `old > new` cell and shows a coloured label for rate limit audit actions. The `switchly rl hits` table drops the `Key` and `Method` columns in favour of a single `Path` column showing `METHOD /route`.
+- **CLI table pagination**: `waygate status`, `waygate log`, `waygate rl list`, and `waygate rl hits` now support `--page` and `--per-page` (default 20) instead of a flat `--limit`; a footer shows the current slice and the next/prev page flag to run. The `waygate log` status column now combines old and new state into a single `old > new` cell and shows a coloured label for rate limit audit actions. The `waygate rl hits` table drops the `Key` and `Method` columns in favour of a single `Path` column showing `METHOD /route`.
 - **`@env_only` now returns 403 with JSON**: env-gated routes blocked by the wrong environment return `403 ENV_GATED` with `current_env`, `allowed_envs`, and `path` instead of a silent empty 404.
 - **Tailwind CSS v3 → v4**: replaced `tailwind.config.js` with a CSS-first config in `input.css` (`@import "tailwindcss"`, `@source`, `@theme`). Dashboard CSS is pre-built and committed; no Node.js required at install time.
-- **No CDN dependency**: `switchly.min.css` is now served as a local static file instead of the Tailwind CDN script, eliminating the production warning and removing the runtime network dependency.
+- **No CDN dependency**: `waygate.min.css` is now served as a local static file instead of the Tailwind CDN script, eliminating the production warning and removing the runtime network dependency.
 
 ---
 
@@ -102,20 +94,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-- **Rate limiting** (`@rate_limit`): per-IP, per-user, per-API-key, and global counters with fixed/sliding/moving window and token bucket algorithms. Supports burst allowance, tiered limits (`{"free": "10/min", "pro": "100/min"}`), exempt IPs/roles, and custom `on_missing_key` behaviour. Works as both a decorator and a `Depends()` dependency. Responses include `X-RateLimit-Limit/Remaining/Reset` and `Retry-After` headers. Requires `switchly[rate-limit]`.
-- **Rate limit custom responses**: `response=` on `@rate_limit` and `responses["rate_limited"]` on `SwitchlyMiddleware` for replacing the default 429 JSON body with any Starlette `Response`.
-- **Rate limit dashboard**: `/switchly/rate-limits` tab showing registered policies with reset/edit/delete actions; `/switchly/blocked` page for the blocked requests log. Policies can also be managed via the `switchly rl` CLI commands (`list`, `set`, `reset`, `delete`, `hits`).
+- **Rate limiting** (`@rate_limit`): per-IP, per-user, per-API-key, and global counters with fixed/sliding/moving window and token bucket algorithms. Supports burst allowance, tiered limits (`{"free": "10/min", "pro": "100/min"}`), exempt IPs/roles, and custom `on_missing_key` behaviour. Works as both a decorator and a `Depends()` dependency. Responses include `X-RateLimit-Limit/Remaining/Reset` and `Retry-After` headers. Requires `waygate[rate-limit]`.
+- **Rate limit custom responses**: `response=` on `@rate_limit` and `responses["rate_limited"]` on `WaygateMiddleware` for replacing the default 429 JSON body with any Starlette `Response`.
+- **Rate limit dashboard**: `/waygate/rate-limits` tab showing registered policies with reset/edit/delete actions; `/waygate/blocked` page for the blocked requests log. Policies can also be managed via the `waygate rl` CLI commands (`list`, `set`, `reset`, `delete`, `hits`).
 - **Rate limit audit log**: policy changes (`set`, `update`, `reset`, `delete`) are recorded in the audit log alongside route state changes, with coloured action badges in the dashboard.
 - **Rate limit storage**: `MemoryRateLimitStorage`, `FileRateLimitStorage` (in-memory counters with periodic disk snapshot), and `RedisRateLimitStorage` (atomic Redis counters, multi-worker safe). Storage is auto-selected based on the main backend.
-- **Custom responses** for lifecycle decorators: `response=` on `@maintenance`, `@disabled`, and `@env_only`; `responses=` dict on `SwitchlyMiddleware` for `"maintenance"`, `"disabled"`, and `"env_gated"` states.
+- **Custom responses** for lifecycle decorators: `response=` on `@maintenance`, `@disabled`, and `@env_only`; `responses=` dict on `WaygateMiddleware` for `"maintenance"`, `"disabled"`, and `"env_gated"` states.
 - **`@deprecated` as `Depends()`**: injects `Deprecation`, `Sunset`, and `Link` headers directly without requiring middleware.
 - **Webhook deduplication**: `RedisBackend` uses `SET NX EX` to ensure only one instance fires webhooks per event in multi-instance deployments. Fails open on Redis error.
-- **Distributed global maintenance**: `RedisBackend` publishes to `switchly:global_invalidate` on every `set_global_config()` call so all instances drop their cached config immediately.
+- **Distributed global maintenance**: `RedisBackend` publishes to `waygate:global_invalidate` on every `set_global_config()` call so all instances drop their cached config immediately.
 - **Distributed Deployments guide** (`docs/guides/distributed.md`): backend capability matrix, global maintenance cache invalidation, scheduler behaviour, webhook dedup, and production checklist.
 
 ### Changed
 
-- Default `SWITCHLY_ENV` changed from `"production"` to `"dev"`. Set `SWITCHLY_ENV=production` explicitly in production deployments.
+- Default `WAYGATE_ENV` changed from `"production"` to `"dev"`. Set `WAYGATE_ENV=production` explicitly in production deployments.
 - `@deprecated` and all blocking decorators now support `Depends()` in addition to the decorator form.
 
 ---
@@ -125,30 +117,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 
 #### Admin & Dashboard
-- `SwitchlyAdmin`: unified admin interface combining the HTMX dashboard UI and the REST API under a single mount point
+- `WaygateAdmin`: unified admin interface combining the HTMX dashboard UI and the REST API under a single mount point
 - REST API under `/api/` for programmatic route management (enable, disable, maintenance, schedule, audit, global maintenance)
 - Token-based authentication with HMAC-SHA256 signing
-- Support for single user, multiple users, and custom `SwitchlyAuthBackend` auth backends
+- Support for single user, multiple users, and custom `WaygateAuthBackend` auth backends
 - Automatic token invalidation when credentials change (auth fingerprint mixed into signing key)
 - `HttpOnly` session cookies for dashboard browser sessions
 - HTMX dashboard with SSE live updates, audit log table, and login page
 - Platform field in audit log entries (`"cli"` / `"dashboard"`)
 
 #### CLI
-- `switchly` CLI redesigned as a thin HTTP client over the `SwitchlyAdmin` REST API
-- `switchly login` / `switchly logout`, `switchly status`, `switchly enable`, `switchly disable`, `switchly maintenance`, `switchly schedule`, `switchly log`
-- `switchly global` subcommands: enable, disable, status, exempt-add, exempt-remove
-- `switchly config set-url` and `switchly config show`
-- Cross-platform config file at `~/.switchly/config.json`
-- Server URL auto-discovery via `SWITCHLY_SERVER_URL` env var, `.switchly` file, or config file
+- `waygate` CLI redesigned as a thin HTTP client over the `WaygateAdmin` REST API
+- `waygate login` / `waygate logout`, `waygate status`, `waygate enable`, `waygate disable`, `waygate maintenance`, `waygate schedule`, `waygate log`
+- `waygate global` subcommands: enable, disable, status, exempt-add, exempt-remove
+- `waygate config set-url` and `waygate config show`
+- Cross-platform config file at `~/.waygate/config.json`
+- Server URL auto-discovery via `WAYGATE_SERVER_URL` env var, `.waygate` file, or config file
 
 #### Documentation
 - MkDocs Material documentation site with full tutorial, reference, guides, and adapter sections
 
 ### Changed
 - CLI no longer accesses the backend directly; all operations go through the REST API
-- Custom auth header changed from `Authorization: Bearer` to `X-Switchly-Token`
-- `SwitchlyDashboard` retained for backward compatibility; `SwitchlyAdmin` is now the recommended entry point
+- Custom auth header changed from `Authorization: Bearer` to `X-Waygate-Token`
+- `WaygateDashboard` retained for backward compatibility; `WaygateAdmin` is now the recommended entry point
 
 ---
 
@@ -158,38 +150,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 #### Core
 - `RouteStatus`, `MaintenanceWindow`, `RouteState`, `AuditEntry` Pydantic v2 models
-- `SwitchlyException`, `MaintenanceException`, `EnvGatedException`, `RouteDisabledException`
-- `SwitchlyBackend` ABC with full contract
+- `WaygateException`, `MaintenanceException`, `EnvGatedException`, `RouteDisabledException`
+- `WaygateBackend` ABC with full contract
 - `MemoryBackend`: in-process dict with `asyncio.Queue` subscribe
 - `FileBackend`: JSON file via `aiofiles` with `asyncio.Lock`
 - `RedisBackend`: `redis-py` async with pub/sub for live dashboard updates in multi-instance deployments
-- `SwitchlyEngine`: `check`, `register`, `enable`, `disable`, `set_maintenance`, `set_env_only`, `get_state`, `list_states`, `get_audit_log`
+- `WaygateEngine`: `check`, `register`, `enable`, `disable`, `set_maintenance`, `set_env_only`, `get_state`, `list_states`, `get_audit_log`
 - Fail-open guarantee: backend errors are logged; requests pass through
 - `MaintenanceScheduler`: `asyncio.Task`-based scheduler that auto-activates and auto-deactivates maintenance windows
 - Webhook support: `add_webhook()` and `SlackWebhookFormatter`
 
 #### FastAPI adapter
 - `@maintenance`, `@disabled`, `@env_only`, `@force_active`, `@deprecated` decorators
-- `SwitchlyRouter`: drop-in `APIRouter` replacement with startup registration hook
-- `SwitchlyMiddleware`: ASGI middleware with structured JSON error responses and `Retry-After` header
+- `WaygateRouter`: drop-in `APIRouter` replacement with startup registration hook
+- `WaygateMiddleware`: ASGI middleware with structured JSON error responses and `Retry-After` header
 - `@deprecated`: injects `Deprecation`, `Sunset`, and `Link` response headers
-- `apply_switchly_to_openapi`: runtime OpenAPI schema filtering
-- `setup_switchly_docs`: enhanced `/docs` and `/redoc` with maintenance banners
+- `apply_waygate_to_openapi`: runtime OpenAPI schema filtering
+- `setup_waygate_docs`: enhanced `/docs` and `/redoc` with maintenance banners
 - Global maintenance mode: `enable_global_maintenance`, `disable_global_maintenance`, `get_global_maintenance`
 
 #### Dashboard (original)
-- HTMX dashboard with SSE live updates and HTTP basic auth via `SwitchlyDashboard`
+- HTMX dashboard with SSE live updates and HTTP basic auth via `WaygateDashboard`
 - Route list with status badges, enable/maintenance/disable actions per route
 - Audit log table
 
 #### CLI (original)
-- `switchly` CLI with direct backend access
-- `switchly status`, `switchly enable`, `switchly disable`, `switchly maintenance`, `switchly schedule`, `switchly log`
+- `waygate` CLI with direct backend access
+- `waygate status`, `waygate enable`, `waygate disable`, `waygate maintenance`, `waygate schedule`, `waygate log`
 
-[0.7.0]: https://github.com/Attakay78/switchly/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/Attakay78/switchly/compare/v0.5.0...v0.6.0
-[0.5.0]: https://github.com/Attakay78/switchly/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/Attakay78/switchly/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/Attakay78/switchly/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/Attakay78/switchly/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/Attakay78/switchly/releases/tag/v0.1.0
+[0.7.0]: https://github.com/Attakay78/waygate/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/Attakay78/waygate/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/Attakay78/waygate/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/Attakay78/waygate/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/Attakay78/waygate/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/Attakay78/waygate/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/Attakay78/waygate/releases/tag/v0.1.0

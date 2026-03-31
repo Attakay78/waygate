@@ -1,12 +1,12 @@
-"""Tests for switchly.admin.auth — TokenManager and auth backends."""
+"""Tests for waygate.admin.auth — TokenManager and auth backends."""
 
 from __future__ import annotations
 
 import time
 
-from switchly.admin.auth import (
-    SwitchlyAuthBackend,
+from waygate.admin.auth import (
     TokenManager,
+    WaygateAuthBackend,
     _MultiUserAuth,
     _SingleUserAuth,
     auth_fingerprint,
@@ -38,7 +38,7 @@ def test_make_auth_backend_list_of_tuples() -> None:
 
 
 def test_make_auth_backend_custom_class() -> None:
-    class MyAuth(SwitchlyAuthBackend):
+    class MyAuth(WaygateAuthBackend):
         def authenticate_user(self, username: str, password: str) -> bool:
             return username == "su" and password == "root"
 
@@ -49,7 +49,7 @@ def test_make_auth_backend_custom_class() -> None:
 
 
 def test_custom_backend_default_fingerprint_uses_class_name() -> None:
-    class MyAuth(SwitchlyAuthBackend):
+    class MyAuth(WaygateAuthBackend):
         def authenticate_user(self, username: str, password: str) -> bool:
             return True
 
@@ -62,7 +62,7 @@ def test_custom_backend_default_fingerprint_uses_class_name() -> None:
 def test_custom_backend_overridden_fingerprint_changes_with_credentials() -> None:
     """Custom backend that overrides fingerprint() invalidates tokens on cred change."""
 
-    class MyAuth(SwitchlyAuthBackend):
+    class MyAuth(WaygateAuthBackend):
         def __init__(self, users: dict) -> None:
             self._users = users
 
@@ -97,7 +97,7 @@ def test_custom_backend_overridden_fingerprint_changes_with_credentials() -> Non
 def test_custom_backend_stable_fingerprint_survives_restart() -> None:
     """Custom backend with unchanged fingerprint keeps tokens valid across restarts."""
 
-    class MyAuth(SwitchlyAuthBackend):
+    class MyAuth(WaygateAuthBackend):
         def __init__(self, users: dict) -> None:
             self._users = users
 
@@ -214,7 +214,7 @@ def test_extract_token_from_header() -> None:
 
 def test_extract_cookie() -> None:
     tm = TokenManager()
-    assert tm.extract_cookie({"switchly_session": "tok123"}) == "tok123"
+    assert tm.extract_cookie({"waygate_session": "tok123"}) == "tok123"
     assert tm.extract_cookie({}) is None
     assert tm.extract_cookie({"other": "val"}) is None
 

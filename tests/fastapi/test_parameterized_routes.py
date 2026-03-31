@@ -1,4 +1,4 @@
-"""Tests for switchly on parameterised routes and prefixed routers.
+"""Tests for waygate on parameterised routes and prefixed routers.
 
 Covers the two bugs fixed in this session:
 
@@ -8,9 +8,9 @@ Covers the two bugs fixed in this session:
    (``GET:/items/{item_id}``).  The middleware now resolves the route
    template and uses that for engine lookups.
 
-2. ``SwitchlyRouter`` with a ``prefix`` — routes were registered without the
+2. ``WaygateRouter`` with a ``prefix`` — routes were registered without the
    prefix (``GET:/payments``) but the app's route table contained the full
-   path (``GET:/api/payments``).  ``SwitchlyRouter.add_api_route()`` now
+   path (``GET:/api/payments``).  ``WaygateRouter.add_api_route()`` now
    prepends ``self.prefix`` to produce the correct key.
 """
 
@@ -20,19 +20,19 @@ import pytest
 from fastapi import APIRouter, FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import RouteStatus
-from switchly.fastapi.decorators import disabled, env_only, force_active, maintenance
-from switchly.fastapi.middleware import SwitchlyMiddleware
-from switchly.fastapi.router import SwitchlyRouter
 from tests.fastapi._helpers import _trigger_startup
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import RouteStatus
+from waygate.fastapi.decorators import disabled, env_only, force_active, maintenance
+from waygate.fastapi.middleware import WaygateMiddleware
+from waygate.fastapi.router import WaygateRouter
 
 
-def _make_app(env: str = "dev") -> tuple[FastAPI, SwitchlyEngine]:
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env=env)
+def _make_app(env: str = "dev") -> tuple[FastAPI, WaygateEngine]:
+    engine = WaygateEngine(backend=MemoryBackend(), current_env=env)
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
     return app, engine
 
 
@@ -116,7 +116,7 @@ async def test_parameterised_route_force_active_always_passes():
     await engine.backend.set_state(
         "GET:/health/{service}",
         (await engine.backend.get_state("GET:/health/{service}") if False else None)
-        or __import__("switchly.core.models", fromlist=["RouteState"]).RouteState(
+        or __import__("waygate.core.models", fromlist=["RouteState"]).RouteState(
             path="GET:/health/{service}",
             status=RouteStatus.MAINTENANCE,
             reason="Should be bypassed",
@@ -130,22 +130,22 @@ async def test_parameterised_route_force_active_always_passes():
 
 
 # ---------------------------------------------------------------------------
-# Bug 2: SwitchlyRouter with a prefix
+# Bug 2: WaygateRouter with a prefix
 # ---------------------------------------------------------------------------
 
 
-async def test_switchly_router_with_prefix_registers_full_path(engine=None):
-    """SwitchlyRouter(prefix='/api') must register 'GET:/api/payments', not
+async def test_waygate_router_with_prefix_registers_full_path(engine=None):
+    """WaygateRouter(prefix='/api') must register 'GET:/api/payments', not
     'GET:/payments'."""
-    engine = SwitchlyEngine(backend=MemoryBackend())
-    router = SwitchlyRouter(engine=engine, prefix="/api")
+    engine = WaygateEngine(backend=MemoryBackend())
+    router = WaygateRouter(engine=engine, prefix="/api")
 
     @router.get("/payments")
     @maintenance(reason="API migration")
     async def payments():
         return {}
 
-    await router.register_switchly_routes()
+    await router.register_waygate_routes()
 
     # Full path key must exist.
     state = await engine.backend.get_state("GET:/api/payments")
@@ -157,13 +157,13 @@ async def test_switchly_router_with_prefix_registers_full_path(engine=None):
         await engine.backend.get_state("GET:/payments")
 
 
-async def test_switchly_router_with_prefix_middleware_enforces_state():
-    """Middleware must honour the decorator state on a prefixed SwitchlyRouter."""
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env="production")
+async def test_waygate_router_with_prefix_middleware_enforces_state():
+    """Middleware must honour the decorator state on a prefixed WaygateRouter."""
+    engine = WaygateEngine(backend=MemoryBackend(), current_env="production")
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
-    router = SwitchlyRouter(engine=engine, prefix="/api")
+    router = WaygateRouter(engine=engine, prefix="/api")
 
     @router.get("/invoices")
     @disabled(reason="Billing API offline")
@@ -180,13 +180,13 @@ async def test_switchly_router_with_prefix_middleware_enforces_state():
     assert resp.json()["error"]["code"] == "ROUTE_DISABLED"
 
 
-async def test_switchly_router_with_prefix_active_route_passes():
-    """Undecorated routes on a prefixed SwitchlyRouter still pass through."""
-    engine = SwitchlyEngine(backend=MemoryBackend())
+async def test_waygate_router_with_prefix_active_route_passes():
+    """Undecorated routes on a prefixed WaygateRouter still pass through."""
+    engine = WaygateEngine(backend=MemoryBackend())
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
-    router = SwitchlyRouter(engine=engine, prefix="/v2")
+    router = WaygateRouter(engine=engine, prefix="/v2")
 
     @router.get("/users")
     async def users():
@@ -202,16 +202,16 @@ async def test_switchly_router_with_prefix_active_route_passes():
 
 
 # ---------------------------------------------------------------------------
-# Combined: parameterised route on prefixed SwitchlyRouter
+# Combined: parameterised route on prefixed WaygateRouter
 # ---------------------------------------------------------------------------
 
 
-async def test_prefixed_switchly_router_parameterised_route():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+async def test_prefixed_waygate_router_parameterised_route():
+    engine = WaygateEngine(backend=MemoryBackend())
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
-    router = SwitchlyRouter(engine=engine, prefix="/api")
+    router = WaygateRouter(engine=engine, prefix="/api")
 
     @router.get("/items/{item_id}")
     @maintenance(reason="Index rebuild")

@@ -1,0 +1,61 @@
+{% for p in policies %}
+{% set composite = p.method + ":" + p.path %}
+{% set row_slug = path_slug(composite) %}
+{% set path_key = composite | encode_path %}
+<tr id="rl-row-{{ row_slug }}" class="hover:bg-slate-50/70 transition-colors border-t border-slate-100">
+    <td class="px-5 py-3.5">
+        <div class="flex items-center gap-2">
+            <span class="px-1.5 py-0.5 text-[10px] font-mono font-semibold bg-slate-100 text-slate-600 rounded shrink-0">{{ p.method }}</span>
+            <code class="text-sm font-mono text-slate-800">{{ p.path }}</code>
+        </div>
+    </td>
+    <td class="px-4 py-3.5" data-label="Limit">
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-600/20">
+            {{ p.limit }}
+        </span>
+        {% if p.tiers %}
+        <span class="ml-1 text-[10px] text-slate-400">+{{ p.tiers | length }} tiers</span>
+        {% endif %}
+    </td>
+    <td class="px-4 py-3.5 hidden md:table-cell" data-label="Algorithm">
+        <span class="text-xs text-slate-500">{{ p.algorithm }}</span>
+    </td>
+    <td class="px-4 py-3.5 hidden lg:table-cell" data-label="Key">
+        <span class="text-xs text-slate-500">{{ p.key_strategy }}</span>
+    </td>
+    <td class="px-4 py-3.5" data-label="Actions">
+        <div class="flex items-center justify-end gap-1">
+            {# Reset counters #}
+            <button hx-get="{{ prefix }}/modal/rl/reset/{{ path_key }}"
+                    hx-target="#waygate-modal"
+                    hx-swap="innerHTML"
+                    title="Reset counters"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+                </svg>
+            </button>
+            {# Edit policy #}
+            <button hx-get="{{ prefix }}/modal/rl/edit/{{ path_key }}"
+                    hx-target="#waygate-modal"
+                    hx-swap="innerHTML"
+                    title="Edit policy"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/>
+                </svg>
+            </button>
+            {# Delete policy #}
+            <button hx-get="{{ prefix }}/modal/rl/delete/{{ path_key }}"
+                    hx-target="#waygate-modal"
+                    hx-swap="innerHTML"
+                    title="Delete policy"
+                    class="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                </svg>
+            </button>
+        </div>
+    </td>
+</tr>
+{% endfor %}

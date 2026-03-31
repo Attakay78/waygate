@@ -7,10 +7,10 @@ Full API reference for `@rate_limit`, rate limit models, engine methods, and CLI
 ## `@rate_limit` decorator
 
 ```python
-from switchly.fastapi import rate_limit
+from waygate.fastapi import rate_limit
 ```
 
-Declares a rate limit policy on a route. The policy is registered by `SwitchlyRouter` at startup and enforced by `SwitchlyMiddleware` on every matching request.
+Declares a rate limit policy on a route. The policy is registered by `WaygateRouter` at startup and enforced by `WaygateMiddleware` on every matching request.
 
 ```python
 @router.get("/public/posts")
@@ -58,7 +58,7 @@ Replace the default 429 JSON body with any Starlette `Response`.
 ```python
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from switchly import RateLimitExceededException
+from waygate import RateLimitExceededException
 
 def my_429(request: Request, exc: RateLimitExceededException) -> JSONResponse:
     return JSONResponse(
@@ -72,11 +72,11 @@ def my_429(request: Request, exc: RateLimitExceededException) -> JSONResponse:
 async def list_posts(): ...
 ```
 
-**Global default** — `responses["rate_limited"]` on `SwitchlyMiddleware`:
+**Global default** — `responses["rate_limited"]` on `WaygateMiddleware`:
 
 ```python
 app.add_middleware(
-    SwitchlyMiddleware,
+    WaygateMiddleware,
     engine=engine,
     responses={"rate_limited": my_429},
 )
@@ -96,11 +96,11 @@ Useful `exc` attributes: `limit`, `retry_after_seconds`, `reset_at`, `remaining`
 
 ### Dependency injection
 
-`@rate_limit` works as a `Depends()` dependency. The engine is resolved from `request.app.state.switchly_engine` (set automatically by `SwitchlyMiddleware`).
+`@rate_limit` works as a `Depends()` dependency. The engine is resolved from `request.app.state.waygate_engine` (set automatically by `WaygateMiddleware`).
 
 ```python
 from fastapi import Depends
-from switchly.fastapi import rate_limit
+from waygate.fastapi import rate_limit
 
 @router.get("/export", dependencies=[Depends(rate_limit("5/hour", key="user"))])
 async def export(): ...
@@ -113,7 +113,7 @@ Both the decorator path and the `Depends()` path use the same counter — they a
 ## `RateLimitAlgorithm`
 
 ```python
-from switchly import RateLimitAlgorithm
+from waygate import RateLimitAlgorithm
 ```
 
 Controls how requests are counted within a window.
@@ -130,7 +130,7 @@ Controls how requests are counted within a window.
 ## `RateLimitKeyStrategy`
 
 ```python
-from switchly import RateLimitKeyStrategy
+from waygate import RateLimitKeyStrategy
 ```
 
 Controls what value is used as the bucket key for each request.
@@ -148,7 +148,7 @@ Controls what value is used as the bucket key for each request.
 ## `OnMissingKey`
 
 ```python
-from switchly import OnMissingKey
+from waygate import OnMissingKey
 ```
 
 Controls what happens when the configured key strategy cannot extract a key from the request.
@@ -166,10 +166,10 @@ The default per strategy is documented in `RateLimitKeyStrategy` above. Override
 ## `RateLimitPolicy`
 
 ```python
-from switchly import RateLimitPolicy
+from waygate import RateLimitPolicy
 ```
 
-Full rate limiting policy for a single route + method combination. Registered by `SwitchlyRouter` and stored in the backend.
+Full rate limiting policy for a single route + method combination. Registered by `WaygateRouter` and stored in the backend.
 
 ```python
 class RateLimitPolicy(BaseModel):
@@ -191,7 +191,7 @@ class RateLimitPolicy(BaseModel):
 ## `RateLimitTier`
 
 ```python
-from switchly import RateLimitTier
+from waygate import RateLimitTier
 ```
 
 A named tier for tiered rate limiting.
@@ -207,7 +207,7 @@ class RateLimitTier(BaseModel):
 ## `RateLimitResult`
 
 ```python
-from switchly import RateLimitResult
+from waygate import RateLimitResult
 ```
 
 Result of a single rate limit check. Read by the middleware to build the response.
@@ -230,7 +230,7 @@ class RateLimitResult(BaseModel):
 ## `RateLimitHit`
 
 ```python
-from switchly import RateLimitHit
+from waygate import RateLimitHit
 ```
 
 Record of a single blocked request. Written to the backend on every `429` response.
@@ -356,7 +356,7 @@ A global rate limit applies a single policy across **all routes** with higher pr
 ### `GlobalRateLimitPolicy`
 
 ```python
-from switchly import GlobalRateLimitPolicy
+from waygate import GlobalRateLimitPolicy
 ```
 
 | Field | Type | Default | Description |
@@ -556,7 +556,7 @@ Pause the service rate limit without removing it. Per-route policies are unaffec
 
 ### Dashboard
 
-When a service filter is active on the **Rate Limits** page (`/switchly/rate-limits?service=<name>`), a **Service Rate Limit** card appears between the global RL card and the policies table.
+When a service filter is active on the **Rate Limits** page (`/waygate/rate-limits?service=<name>`), a **Service Rate Limit** card appears between the global RL card and the policies table.
 
 - **Not configured** — compact bar with a "Set Service Limit" button.
 - **Active** — info card showing limit, algorithm, key strategy, burst, and exempt routes. Action buttons: Pause, Edit, Reset, Remove.
@@ -566,19 +566,19 @@ When a service filter is active on the **Rate Limits** page (`/switchly/rate-lim
 
 ## CLI commands
 
-`switchly rl` and `switchly rate-limits` are aliases for the same command group — use whichever you prefer.
+`waygate rl` and `waygate rate-limits` are aliases for the same command group — use whichever you prefer.
 
 ```bash
-switchly rl list          # short form
-switchly rate-limits list # identical
+waygate rl list          # short form
+waygate rate-limits list # identical
 ```
 
-### `switchly rl list`
+### `waygate rl list`
 
 Show all registered rate limit policies.
 
 ```bash
-switchly rl list
+waygate rl list
 ```
 
 Output:
@@ -591,18 +591,18 @@ Output:
 
 ---
 
-### `switchly rl set`
+### `waygate rl set`
 
 Register or update a policy at runtime. Changes take effect on the next request.
 
 ```bash
-switchly rl set <route> <limit>
+waygate rl set <route> <limit>
 ```
 
 ```bash
-switchly rl set GET:/public/posts 20/minute
-switchly rl set GET:/public/posts 5/second --algorithm fixed_window
-switchly rl set GET:/search 10/minute --key global
+waygate rl set GET:/public/posts 20/minute
+waygate rl set GET:/public/posts 5/second --algorithm fixed_window
+waygate rl set GET:/search 10/minute --key global
 ```
 
 | Option | Description |
@@ -612,33 +612,33 @@ switchly rl set GET:/search 10/minute --key global
 
 ---
 
-### `switchly rl reset`
+### `waygate rl reset`
 
 Clear all rate limit counters for a route immediately. Clients get their full quota back on the next request.
 
 ```bash
-switchly rl reset GET:/public/posts
+waygate rl reset GET:/public/posts
 ```
 
 ---
 
-### `switchly rl delete`
+### `waygate rl delete`
 
 Remove a persisted policy override from the backend.
 
 ```bash
-switchly rl delete GET:/public/posts
+waygate rl delete GET:/public/posts
 ```
 
 ---
 
-### `switchly rl hits`
+### `waygate rl hits`
 
 Show the blocked requests log.
 
 ```bash
-switchly rl hits                    # last 20 entries
-switchly rl hits --limit 50         # show more
+waygate rl hits                    # last 20 entries
+waygate rl hits --limit 50         # show more
 ```
 
 | Option | Description |
@@ -647,37 +647,37 @@ switchly rl hits --limit 50         # show more
 
 ---
 
-### `switchly grl` / `switchly global-rate-limit`
+### `waygate grl` / `waygate global-rate-limit`
 
-`switchly grl` and `switchly global-rate-limit` are aliases for the global rate limit command group.
+`waygate grl` and `waygate global-rate-limit` are aliases for the global rate limit command group.
 
 ```bash
-switchly grl get           # show current policy
-switchly global-rate-limit get  # identical
+waygate grl get           # show current policy
+waygate global-rate-limit get  # identical
 ```
 
-#### `switchly grl get`
+#### `waygate grl get`
 
 Show the current global rate limit policy (limit, algorithm, key strategy, burst, exempt routes, enabled state).
 
 ```bash
-switchly grl get
+waygate grl get
 ```
 
 ---
 
-#### `switchly grl set`
+#### `waygate grl set`
 
 Configure the global rate limit. Creates a new policy or replaces the existing one.
 
 ```bash
-switchly grl set <limit>
+waygate grl set <limit>
 ```
 
 ```bash
-switchly grl set 1000/minute
-switchly grl set 500/minute --algorithm sliding_window --key ip
-switchly grl set 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
+waygate grl set 1000/minute
+waygate grl set 500/minute --algorithm sliding_window --key ip
+waygate grl set 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
 ```
 
 | Option | Description |
@@ -689,81 +689,81 @@ switchly grl set 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
 
 ---
 
-#### `switchly grl delete`
+#### `waygate grl delete`
 
 Remove the global rate limit policy entirely.
 
 ```bash
-switchly grl delete
+waygate grl delete
 ```
 
 ---
 
-#### `switchly grl reset`
+#### `waygate grl reset`
 
 Clear all global rate limit counters. The policy is kept; clients get their full quota back on the next request.
 
 ```bash
-switchly grl reset
+waygate grl reset
 ```
 
 ---
 
-#### `switchly grl enable`
+#### `waygate grl enable`
 
 Resume a paused global rate limit policy.
 
 ```bash
-switchly grl enable
+waygate grl enable
 ```
 
 ---
 
-#### `switchly grl disable`
+#### `waygate grl disable`
 
 Pause the global rate limit without removing it. Per-route policies continue to enforce normally.
 
 ```bash
-switchly grl disable
+waygate grl disable
 ```
 
 ---
 
-## `switchly srl` / `switchly service-rate-limit`
+## `waygate srl` / `waygate service-rate-limit`
 
-`switchly srl` and `switchly service-rate-limit` are aliases for the per-service rate limit command group. Requires `switchly[rate-limit]` on the server.
+`waygate srl` and `waygate service-rate-limit` are aliases for the per-service rate limit command group. Requires `waygate[rate-limit]` on the server.
 
 ```bash
-switchly srl get payments-service
-switchly service-rate-limit get payments-service   # identical
+waygate srl get payments-service
+waygate service-rate-limit get payments-service   # identical
 ```
 
-### `switchly srl get`
+### `waygate srl get`
 
 Show the current rate limit policy for a service.
 
 ```bash
-switchly srl get <service>
+waygate srl get <service>
 ```
 
 ```bash
-switchly srl get payments-service
+waygate srl get payments-service
 ```
 
 ---
 
-### `switchly srl set`
+### `waygate srl set`
 
 Configure the rate limit for a service. Creates a new policy or replaces the existing one.
 
 ```bash
-switchly srl set <service> <limit>
+waygate srl set <service> <limit>
 ```
 
 ```bash
-switchly srl set payments-service 1000/minute
-switchly srl set payments-service 500/minute --algorithm sliding_window --key ip
-switchly srl set payments-service 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
+waygate srl set payments-service 1000/minute
+waygate srl set payments-service 500/minute --algorithm sliding_window --key ip
+waygate srl set payments-service 2000/hour --burst 50 --exempt /health --exempt GET:/metrics
 ```
 
 | Option | Description |
@@ -775,50 +775,50 @@ switchly srl set payments-service 2000/hour --burst 50 --exempt /health --exempt
 
 ---
 
-### `switchly srl delete`
+### `waygate srl delete`
 
 Remove the service rate limit policy entirely.
 
 ```bash
-switchly srl delete <service>
+waygate srl delete <service>
 ```
 
 ```bash
-switchly srl delete payments-service
+waygate srl delete payments-service
 ```
 
 ---
 
-### `switchly srl reset`
+### `waygate srl reset`
 
 Clear all counters for the service. The policy is kept; clients get their full quota back on the next request.
 
 ```bash
-switchly srl reset <service>
+waygate srl reset <service>
 ```
 
 ```bash
-switchly srl reset payments-service
+waygate srl reset payments-service
 ```
 
 ---
 
-### `switchly srl enable`
+### `waygate srl enable`
 
 Resume a paused service rate limit policy.
 
 ```bash
-switchly srl enable <service>
+waygate srl enable <service>
 ```
 
 ---
 
-### `switchly srl disable`
+### `waygate srl disable`
 
 Pause the service rate limit without removing it. Per-route policies continue to enforce normally.
 
 ```bash
-switchly srl disable <service>
+waygate srl disable <service>
 ```
 
 ---
@@ -860,7 +860,7 @@ Rate limit policy changes are recorded in the same audit log as route state chan
 
 The `Path` column for service rate limit entries displays as `[{service} Rate Limit]` (e.g. `[payments-service Rate Limit]`).
 
-View in the dashboard at `/switchly/audit` or via `switchly log`.
+View in the dashboard at `/waygate/audit` or via `waygate log`.
 
 ---
 

@@ -6,10 +6,10 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.rate_limit.storage import HAS_LIMITS
-from switchly.fastapi import SwitchlyMiddleware, SwitchlyRouter
-from switchly.fastapi.decorators import rate_limit
+from waygate.core.engine import WaygateEngine
+from waygate.core.rate_limit.storage import HAS_LIMITS
+from waygate.fastapi import WaygateMiddleware, WaygateRouter
+from waygate.fastapi.decorators import rate_limit
 
 pytestmark = pytest.mark.skipif(not HAS_LIMITS, reason="limits library not installed")
 
@@ -19,10 +19,10 @@ pytestmark = pytest.mark.skipif(not HAS_LIMITS, reason="limits library not insta
 # ---------------------------------------------------------------------------
 
 
-def _make_app(limit_str: str, key: str = "ip") -> tuple[FastAPI, SwitchlyEngine]:
+def _make_app(limit_str: str, key: str = "ip") -> tuple[FastAPI, WaygateEngine]:
     """Create a minimal FastAPI app with a rate-limited route."""
-    engine = SwitchlyEngine()
-    router = SwitchlyRouter(engine=engine)
+    engine = WaygateEngine()
+    router = WaygateRouter(engine=engine)
 
     @router.get("/items")
     @rate_limit(limit_str, key=key)
@@ -30,7 +30,7 @@ def _make_app(limit_str: str, key: str = "ip") -> tuple[FastAPI, SwitchlyEngine]
         return {"items": []}
 
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
     app.include_router(router)
     return app, engine
 
@@ -147,7 +147,7 @@ async def test_global_key_strategy_shares_counter():
 async def test_rate_limit_policy_is_registered_on_engine():
     app, engine = _make_app("10/minute")
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        # Making a request triggers the ASGI startup event (SwitchlyRouter.register_switchly_routes)
+        # Making a request triggers the ASGI startup event (WaygateRouter.register_waygate_routes)
         await c.get("/items")
     assert len(engine._rate_limit_policies) >= 1
 
@@ -185,15 +185,15 @@ async def test_allowed_requests_are_not_recorded_as_hits():
 
 
 async def test_undecorated_route_is_never_rate_limited():
-    engine = SwitchlyEngine()
-    router = SwitchlyRouter(engine=engine)
+    engine = WaygateEngine()
+    router = WaygateRouter(engine=engine)
 
     @router.get("/free")
     async def free_route():
         return {"ok": True}
 
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
     app.include_router(router)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
@@ -208,8 +208,8 @@ async def test_undecorated_route_is_never_rate_limited():
 
 
 async def test_maintenance_mode_does_not_consume_quota():
-    engine = SwitchlyEngine()
-    router = SwitchlyRouter(engine=engine)
+    engine = WaygateEngine()
+    router = WaygateRouter(engine=engine)
 
     @router.get("/maint-route")
     @rate_limit("2/minute")
@@ -217,7 +217,7 @@ async def test_maintenance_mode_does_not_consume_quota():
         return {"ok": True}
 
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
     app.include_router(router)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
@@ -266,8 +266,8 @@ async def test_reset_rate_limit_clears_counters():
 
 
 async def test_fixed_window_algorithm():
-    engine = SwitchlyEngine()
-    router = SwitchlyRouter(engine=engine)
+    engine = WaygateEngine()
+    router = WaygateRouter(engine=engine)
 
     @router.get("/fw")
     @rate_limit("3/minute", algorithm="fixed_window")
@@ -275,7 +275,7 @@ async def test_fixed_window_algorithm():
         return {"ok": True}
 
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
     app.include_router(router)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:

@@ -5,8 +5,8 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime, timedelta
 
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.feature_flags.models import (
+from waygate.core.engine import WaygateEngine
+from waygate.core.feature_flags.models import (
     FeatureFlag,
     FlagType,
     FlagVariation,
@@ -16,7 +16,7 @@ from switchly.core.feature_flags.models import (
     ScheduledChangeAction,
     TargetingRule,
 )
-from switchly.core.feature_flags.scheduler import FlagScheduler
+from waygate.core.feature_flags.scheduler import FlagScheduler
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -65,23 +65,23 @@ def _past_change(action: ScheduledChangeAction, payload: dict | None = None) -> 
 
 class TestFlagSchedulerLifecycle:
     async def test_start_with_no_flags(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         scheduler = FlagScheduler(engine)
         await scheduler.start()  # should not raise
         await scheduler.stop()
 
     async def test_stop_with_no_tasks(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         scheduler = FlagScheduler(engine)
         await scheduler.stop()  # idempotent
 
     async def test_list_pending_empty(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         scheduler = FlagScheduler(engine)
         assert scheduler.list_pending() == []
 
     async def test_list_pending_after_schedule(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         flag = _bool_flag("pending-flag")
         await engine.save_flag(flag)
         scheduler = FlagScheduler(engine)
@@ -94,7 +94,7 @@ class TestFlagSchedulerLifecycle:
         await scheduler.stop()
 
     async def test_cancel_removes_task(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         flag = _bool_flag("cancel-flag")
         await engine.save_flag(flag)
         scheduler = FlagScheduler(engine)
@@ -105,12 +105,12 @@ class TestFlagSchedulerLifecycle:
         assert scheduler.list_pending() == []
 
     async def test_cancel_nonexistent_is_noop(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         scheduler = FlagScheduler(engine)
         await scheduler.cancel("ghost-flag", "ghost-id")  # should not raise
 
     async def test_cancel_all_for_flag(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         flag = _bool_flag("multi-change-flag")
         await engine.save_flag(flag)
         scheduler = FlagScheduler(engine)
@@ -123,7 +123,7 @@ class TestFlagSchedulerLifecycle:
         assert scheduler.list_pending() == []
 
     async def test_stop_cancels_all(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         flag = _bool_flag("stop-all-flag")
         await engine.save_flag(flag)
         scheduler = FlagScheduler(engine)
@@ -142,7 +142,7 @@ class TestFlagSchedulerLifecycle:
 
 class TestScheduledEnable:
     async def test_enable_action_fires(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         flag = _bool_flag("enable-me", enabled=False)
         await engine.save_flag(flag)
         scheduler = FlagScheduler(engine)
@@ -153,7 +153,7 @@ class TestScheduledEnable:
         assert updated.enabled is True
 
     async def test_enable_removes_change_from_flag(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         flag = _bool_flag("rm-change-enable", enabled=False)
         change = _change(ScheduledChangeAction.ENABLE, delta_seconds=0.05)
         flag = flag.model_copy(update={"scheduled_changes": [change]})
@@ -172,7 +172,7 @@ class TestScheduledEnable:
 
 class TestScheduledDisable:
     async def test_disable_action_fires(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         flag = _bool_flag("disable-me", enabled=True)
         await engine.save_flag(flag)
         scheduler = FlagScheduler(engine)
@@ -190,7 +190,7 @@ class TestScheduledDisable:
 
 class TestScheduledUpdateRollout:
     async def test_update_rollout_changes_fallthrough(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         flag = _bool_flag("rollout-flag")
         await engine.save_flag(flag)
         scheduler = FlagScheduler(engine)
@@ -205,7 +205,7 @@ class TestScheduledUpdateRollout:
         assert updated.fallthrough == "off"
 
     async def test_update_rollout_missing_payload_does_not_crash(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         flag = _bool_flag("rollout-flag2")
         await engine.save_flag(flag)
         scheduler = FlagScheduler(engine)
@@ -225,7 +225,7 @@ class TestScheduledUpdateRollout:
 
 class TestScheduledRuleMutations:
     async def test_add_rule_appends(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         flag = _bool_flag("add-rule-flag")
         await engine.save_flag(flag)
         scheduler = FlagScheduler(engine)
@@ -245,7 +245,7 @@ class TestScheduledRuleMutations:
         assert any(r.id == "r-new" for r in updated.rules)
 
     async def test_delete_rule_removes(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         rule = TargetingRule(
             id="r-del",
             clauses=[RuleClause(attribute="role", operator=Operator.IN, values=["admin"])],
@@ -273,7 +273,7 @@ class TestScheduledRuleMutations:
 
 class TestSchedulerStartRecovery:
     async def test_start_schedules_future_changes(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         change = _change(ScheduledChangeAction.ENABLE, delta_seconds=0.1)
         flag = _bool_flag("recovery-flag", enabled=False)
         flag = flag.model_copy(update={"scheduled_changes": [change]})
@@ -288,7 +288,7 @@ class TestSchedulerStartRecovery:
         await scheduler.stop()
 
     async def test_start_skips_past_changes(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         change = _past_change(ScheduledChangeAction.ENABLE)
         flag = _bool_flag("past-change-flag", enabled=False)
         flag = flag.model_copy(update={"scheduled_changes": [change]})
@@ -302,7 +302,7 @@ class TestSchedulerStartRecovery:
 
     async def test_start_ignores_missing_flag(self) -> None:
         """start() should not crash if a flag disappears between load and task run."""
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         scheduler = FlagScheduler(engine)
         await scheduler.start()  # no flags
         await scheduler.stop()
@@ -315,13 +315,13 @@ class TestSchedulerStartRecovery:
 
 class TestEngineIntegration:
     async def test_engine_flag_scheduler_property(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         assert engine.flag_scheduler is None
         engine.use_openfeature()
         assert engine.flag_scheduler is not None
 
     async def test_engine_start_starts_scheduler(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         engine.use_openfeature()
         change = _change(ScheduledChangeAction.DISABLE, delta_seconds=0.1)
         flag = _bool_flag("eng-sched-flag", enabled=True)
@@ -335,7 +335,7 @@ class TestEngineIntegration:
         await engine.stop()
 
     async def test_engine_stop_stops_scheduler(self) -> None:
-        engine = SwitchlyEngine()
+        engine = WaygateEngine()
         engine.use_openfeature()
         await engine.start()
         # Add a long-running task

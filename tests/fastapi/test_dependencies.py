@@ -1,7 +1,7 @@
 """Integration tests for FastAPI dependency injection helpers.
 
 Covers:
-- ``SwitchlyGuard`` (engine-backed class-based dep)
+- ``WaygateGuard`` (engine-backed class-based dep)
 - Decorator factories (``maintenance``, ``disabled``, ``env_only``) used as
   ``Depends()`` arguments in two modes:
   - Inline / stateless (no engine=) — always raises the declared error
@@ -15,28 +15,28 @@ from datetime import UTC, datetime
 from fastapi import Depends, FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import MaintenanceWindow
-from switchly.fastapi.decorators import disabled, env_only, maintenance
-from switchly.fastapi.dependencies import SwitchlyGuard, configure_switchly
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import MaintenanceWindow
+from waygate.fastapi.decorators import disabled, env_only, maintenance
+from waygate.fastapi.dependencies import WaygateGuard, configure_waygate
 
 
-def _engine(env: str = "dev") -> SwitchlyEngine:
-    return SwitchlyEngine(backend=MemoryBackend(), current_env=env)
+def _engine(env: str = "dev") -> WaygateEngine:
+    return WaygateEngine(backend=MemoryBackend(), current_env=env)
 
 
 # ---------------------------------------------------------------------------
-# SwitchlyGuard — engine-backed dependency
+# WaygateGuard — engine-backed dependency
 # ---------------------------------------------------------------------------
 
 
-class TestSwitchlyGuard:
+class TestWaygateGuard:
     async def test_active_route_passes_through(self):
         engine = _engine()
         app = FastAPI()
 
-        @app.get("/orders", dependencies=[Depends(SwitchlyGuard(engine))])
+        @app.get("/orders", dependencies=[Depends(WaygateGuard(engine))])
         async def orders():
             return {"orders": []}
 
@@ -51,7 +51,7 @@ class TestSwitchlyGuard:
         await engine.set_maintenance("/orders", reason="Reindex")
         app = FastAPI()
 
-        @app.get("/orders", dependencies=[Depends(SwitchlyGuard(engine))])
+        @app.get("/orders", dependencies=[Depends(WaygateGuard(engine))])
         async def orders():
             return {"orders": []}
 
@@ -75,7 +75,7 @@ class TestSwitchlyGuard:
         )
         app = FastAPI()
 
-        @app.get("/orders", dependencies=[Depends(SwitchlyGuard(engine))])
+        @app.get("/orders", dependencies=[Depends(WaygateGuard(engine))])
         async def orders():
             return {"orders": []}
 
@@ -91,7 +91,7 @@ class TestSwitchlyGuard:
         await engine.disable("/orders", reason="Deprecated endpoint")
         app = FastAPI()
 
-        @app.get("/orders", dependencies=[Depends(SwitchlyGuard(engine))])
+        @app.get("/orders", dependencies=[Depends(WaygateGuard(engine))])
         async def orders():
             return {"orders": []}
 
@@ -107,7 +107,7 @@ class TestSwitchlyGuard:
         await engine.set_env_only("/debug", envs=["dev", "staging"])
         app = FastAPI()
 
-        @app.get("/debug", dependencies=[Depends(SwitchlyGuard(engine))])
+        @app.get("/debug", dependencies=[Depends(WaygateGuard(engine))])
         async def debug():
             return {"debug": True}
 
@@ -123,7 +123,7 @@ class TestSwitchlyGuard:
         await engine.set_env_only("/debug", envs=["dev"])
         app = FastAPI()
 
-        @app.get("/debug", dependencies=[Depends(SwitchlyGuard(engine))])
+        @app.get("/debug", dependencies=[Depends(WaygateGuard(engine))])
         async def debug():
             return {"debug": True}
 
@@ -136,7 +136,7 @@ class TestSwitchlyGuard:
         engine = _engine()
         app = FastAPI()
 
-        @app.get("/orders", dependencies=[Depends(SwitchlyGuard(engine))])
+        @app.get("/orders", dependencies=[Depends(WaygateGuard(engine))])
         async def orders():
             return {"orders": []}
 
@@ -166,7 +166,7 @@ class TestSwitchlyGuard:
 
         app = FastAPI()
 
-        @app.get("/admin", dependencies=[Depends(require_key), Depends(SwitchlyGuard(engine))])
+        @app.get("/admin", dependencies=[Depends(require_key), Depends(WaygateGuard(engine))])
         async def admin():
             return {"admin": True}
 
@@ -174,8 +174,8 @@ class TestSwitchlyGuard:
             no_key = await c.get("/admin")
             with_key = await c.get("/admin", headers={"X-Api-Key": "secret"})
 
-        assert no_key.status_code == 401  # auth fires before switchly
-        assert with_key.status_code == 503  # auth passes, switchly blocks
+        assert no_key.status_code == 401  # auth fires before waygate
+        assert with_key.status_code == 503  # auth passes, waygate blocks
 
 
 # ---------------------------------------------------------------------------
@@ -249,15 +249,15 @@ class TestMaintenanceAsDep:
         assert resp.status_code == 200
 
     async def test_same_object_works_as_decorator(self):
-        """The same maintenance() call stamps __switchly_meta__ when used as a decorator."""
+        """The same maintenance() call stamps __waygate_meta__ when used as a decorator."""
         guard = maintenance(reason="Migration")
 
         @guard
         async def endpoint():
             return {"ok": True}
 
-        assert endpoint.__switchly_meta__["status"] == "maintenance"
-        assert endpoint.__switchly_meta__["reason"] == "Migration"
+        assert endpoint.__waygate_meta__["status"] == "maintenance"
+        assert endpoint.__waygate_meta__["reason"] == "Migration"
         assert await endpoint() == {"ok": True}
 
 
@@ -302,8 +302,8 @@ class TestEnvOnlyAsDep:
         async def endpoint():
             return {"ok": True}
 
-        assert endpoint.__switchly_meta__["status"] == "env_gated"
-        assert endpoint.__switchly_meta__["allowed_envs"] == ["dev", "staging"]
+        assert endpoint.__waygate_meta__["status"] == "env_gated"
+        assert endpoint.__waygate_meta__["allowed_envs"] == ["dev", "staging"]
 
 
 # ---------------------------------------------------------------------------
@@ -348,8 +348,8 @@ class TestDisabledAsDep:
         async def endpoint():
             return {"ok": True}
 
-        assert endpoint.__switchly_meta__["status"] == "disabled"
-        assert endpoint.__switchly_meta__["reason"] == "Use /v2"
+        assert endpoint.__waygate_meta__["status"] == "disabled"
+        assert endpoint.__waygate_meta__["reason"] == "Use /v2"
 
 
 # ---------------------------------------------------------------------------
@@ -434,7 +434,7 @@ class TestEngineBackedDeps:
         assert second.status_code == 503
         assert third.status_code == 200
 
-    async def test_engine_backed_stamps_meta_for_switchlyrouter(self):
+    async def test_engine_backed_stamps_meta_for_waygaterouter(self):
         engine = _engine()
         guard = maintenance(reason="Migration", engine=engine)
 
@@ -442,26 +442,26 @@ class TestEngineBackedDeps:
         async def endpoint():
             return {"ok": True}
 
-        assert endpoint.__switchly_meta__["status"] == "maintenance"
-        assert endpoint.__switchly_meta__["reason"] == "Migration"
+        assert endpoint.__waygate_meta__["status"] == "maintenance"
+        assert endpoint.__waygate_meta__["reason"] == "Migration"
         assert await endpoint() == {"ok": True}
 
 
 # ---------------------------------------------------------------------------
-# configure_switchly — zero-config: no engine= per route
+# configure_waygate — zero-config: no engine= per route
 # ---------------------------------------------------------------------------
 
 
-class TestConfigureSwitchly:
-    """With configure_switchly(app, engine) called once, all decorator deps find
-    the engine automatically via request.app.state.switchly_engine."""
+class TestConfigureWaygate:
+    """With configure_waygate(app, engine) called once, all decorator deps find
+    the engine automatically via request.app.state.waygate_engine."""
 
     async def test_maintenance_resolves_engine_from_app_state(self):
         engine = _engine()
         await engine.register("/payments", {"status": "active"})
         await engine.set_maintenance("/payments", reason="Migration")
         app = FastAPI()
-        configure_switchly(app, engine)  # once — no engine= on the dep
+        configure_waygate(app, engine)  # once — no engine= on the dep
 
         @app.get("/payments", dependencies=[Depends(maintenance(reason="Migration"))])
         async def payments():
@@ -480,7 +480,7 @@ class TestConfigureSwitchly:
         await engine.register("/old", {"status": "active"})
         await engine.disable("/old", reason="Gone")
         app = FastAPI()
-        configure_switchly(app, engine)
+        configure_waygate(app, engine)
 
         @app.get("/old", dependencies=[Depends(disabled(reason="Gone"))])
         async def old():
@@ -497,7 +497,7 @@ class TestConfigureSwitchly:
     async def test_env_only_resolves_engine_from_app_state(self):
         engine = _engine(env="production")
         app = FastAPI()
-        configure_switchly(app, engine)
+        configure_waygate(app, engine)
 
         @app.get("/debug", dependencies=[Depends(env_only("dev", "staging"))])
         async def debug():
@@ -512,7 +512,7 @@ class TestConfigureSwitchly:
     async def test_env_only_passes_in_allowed_env(self):
         engine = _engine(env="dev")
         app = FastAPI()
-        configure_switchly(app, engine)
+        configure_waygate(app, engine)
 
         @app.get("/debug", dependencies=[Depends(env_only("dev", "staging"))])
         async def debug():
@@ -523,8 +523,8 @@ class TestConfigureSwitchly:
 
         assert resp.status_code == 200
 
-    async def test_without_configure_switchly_falls_back_to_inline(self):
-        """No configure_switchly and no engine= → inline always-block behavior."""
+    async def test_without_configure_waygate_falls_back_to_inline(self):
+        """No configure_waygate and no engine= → inline always-block behavior."""
         app = FastAPI()
 
         @app.get("/payments", dependencies=[Depends(maintenance(reason="Always blocked"))])
@@ -537,14 +537,14 @@ class TestConfigureSwitchly:
         assert resp.status_code == 503  # inline always-block, no engine
 
     async def test_explicit_engine_takes_priority_over_app_state(self):
-        """Explicit engine= overrides app.state.switchly_engine."""
+        """Explicit engine= overrides app.state.waygate_engine."""
         app_engine = _engine()  # engine on app state — route is ACTIVE here
         explicit_engine = _engine()
         await explicit_engine.register("/payments", {"status": "active"})
         await explicit_engine.set_maintenance("/payments", reason="Explicit")
 
         app = FastAPI()
-        configure_switchly(app, app_engine)  # ACTIVE for /payments
+        configure_waygate(app, app_engine)  # ACTIVE for /payments
 
         @app.get(
             "/payments",
@@ -560,7 +560,7 @@ class TestConfigureSwitchly:
         assert resp.status_code == 503  # explicit engine wins
 
     async def test_multiple_routes_same_app_all_registered(self):
-        """configure_switchly enables engine-backed deps for ALL routes on the app.
+        """configure_waygate enables engine-backed deps for ALL routes on the app.
         Both routes must be registered in the engine for enforcement to take effect."""
         engine = _engine()
         await engine.register("/payments", {"status": "active"})
@@ -569,7 +569,7 @@ class TestConfigureSwitchly:
         await engine.disable("/users", reason="Gone")  # must register for dep to enforce
 
         app = FastAPI()
-        configure_switchly(app, engine)
+        configure_waygate(app, engine)
 
         @app.get("/payments", dependencies=[Depends(maintenance(reason="Migration"))])
         async def payments():
@@ -588,12 +588,12 @@ class TestConfigureSwitchly:
 
     async def test_unregistered_route_is_fail_open_with_engine(self):
         """If a route is NOT registered in the engine, engine.check() returns ACTIVE.
-        Use the decorator + SwitchlyRouter to register initial state at startup."""
+        Use the decorator + WaygateRouter to register initial state at startup."""
         engine = _engine()
         # /orders NOT registered in engine — engine.check returns ACTIVE
 
         app = FastAPI()
-        configure_switchly(app, engine)
+        configure_waygate(app, engine)
 
         @app.get("/orders", dependencies=[Depends(maintenance(reason="Ignored"))])
         async def orders():

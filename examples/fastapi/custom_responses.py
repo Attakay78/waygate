@@ -3,7 +3,7 @@
 Demonstrates two ways to override the default JSON error response:
 
 1. Per-route  — pass ``response=`` directly to the decorator
-2. Global     — pass ``responses=`` to ``SwitchlyMiddleware`` as the app-wide default
+2. Global     — pass ``responses=`` to ``WaygateMiddleware`` as the app-wide default
 
 Resolution order: per-route ``response=`` → global default → built-in JSON.
 
@@ -12,7 +12,7 @@ Run:
 
 Then visit:
     http://localhost:8000/docs           — Swagger UI
-    http://localhost:8000/switchly/        — admin dashboard (login: admin / secret)
+    http://localhost:8000/waygate/        — admin dashboard (login: admin / secret)
 
 Try each blocked route to see its custom response:
     GET /payments    → HTML maintenance page (per-route, 503)
@@ -34,12 +34,12 @@ from starlette.responses import (
     RedirectResponse,
 )
 
-from switchly import make_engine
-from switchly.fastapi import (
-    SwitchlyAdmin,
-    SwitchlyMiddleware,
-    SwitchlyRouter,
-    apply_switchly_to_openapi,
+from waygate import make_engine
+from waygate.fastapi import (
+    WaygateAdmin,
+    WaygateMiddleware,
+    WaygateRouter,
+    apply_waygate_to_openapi,
     disabled,
     force_active,
     maintenance,
@@ -47,7 +47,7 @@ from switchly.fastapi import (
 
 CURRENT_ENV = os.getenv("APP_ENV", "dev")
 engine = make_engine(current_env=CURRENT_ENV)
-router = SwitchlyRouter(engine=engine)
+router = WaygateRouter(engine=engine)
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +114,7 @@ async def async_maintenance_html(request: Request, exc: Exception) -> HTMLRespon
 @router.get("/health")
 @force_active
 async def health() -> dict:
-    """Always 200 — bypasses every switchly check."""
+    """Always 200 — bypasses every waygate check."""
     return {"status": "ok"}
 
 
@@ -177,11 +177,11 @@ async def get_reports() -> dict:
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="switchly — Custom Responses",
+    title="waygate — Custom Responses",
     description=(
         "Shows two ways to customise blocked-route responses:\n\n"
         "**Per-route**: `@maintenance(response=my_factory)` — overrides for one route.\n\n"
-        "**Global default**: `SwitchlyMiddleware(responses={...})` — applies to all routes "
+        "**Global default**: `WaygateMiddleware(responses={...})` — applies to all routes "
         "that have no per-route factory.\n\n"
         "Resolution order: per-route → global default → built-in JSON."
     ),
@@ -190,7 +190,7 @@ app = FastAPI(
 # Global defaults — apply to any route that does NOT have response= on its decorator.
 # Per-route factories always win.
 app.add_middleware(
-    SwitchlyMiddleware,
+    WaygateMiddleware,
     engine=engine,
     responses={
         "maintenance": async_maintenance_html,  # async factory works here too
@@ -202,9 +202,9 @@ app.add_middleware(
 )
 
 app.include_router(router)
-apply_switchly_to_openapi(app, engine)
+apply_waygate_to_openapi(app, engine)
 
 app.mount(
-    "/switchly",
-    SwitchlyAdmin(engine=engine, auth=("admin", "secret"), prefix="/switchly"),
+    "/waygate",
+    WaygateAdmin(engine=engine, auth=("admin", "secret"), prefix="/waygate"),
 )

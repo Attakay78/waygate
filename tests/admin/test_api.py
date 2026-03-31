@@ -1,4 +1,4 @@
-"""Tests for the SwitchlyAdmin REST API (CLI back-end).
+"""Tests for the WaygateAdmin REST API (CLI back-end).
 
 All tests use an in-process ASGI transport so no real server is needed.
 Auth is tested both with and without credentials configured.
@@ -10,10 +10,10 @@ import pytest
 import pytest as _pytest
 from httpx import ASGITransport, AsyncClient
 
-from switchly.admin.app import SwitchlyAdmin
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import RouteState, RouteStatus
-from switchly.core.rate_limit.storage import HAS_LIMITS
+from waygate.admin.app import WaygateAdmin
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import RouteState, RouteStatus
+from waygate.core.rate_limit.storage import HAS_LIMITS
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -21,24 +21,24 @@ from switchly.core.rate_limit.storage import HAS_LIMITS
 
 
 @pytest.fixture
-async def engine() -> SwitchlyEngine:
+async def engine() -> WaygateEngine:
     """Engine pre-seeded with two routes."""
-    e = SwitchlyEngine()
+    e = WaygateEngine()
     await e.backend.set_state("/payments", RouteState(path="/payments", status=RouteStatus.ACTIVE))
     await e.backend.set_state("/health", RouteState(path="/health", status=RouteStatus.ACTIVE))
     return e
 
 
 @pytest.fixture
-def admin_no_auth(engine: SwitchlyEngine) -> object:
-    """SwitchlyAdmin without auth — open access."""
-    return SwitchlyAdmin(engine=engine)
+def admin_no_auth(engine: WaygateEngine) -> object:
+    """WaygateAdmin without auth — open access."""
+    return WaygateAdmin(engine=engine)
 
 
 @pytest.fixture
-def admin_with_auth(engine: SwitchlyEngine) -> object:
-    """SwitchlyAdmin with single-user auth."""
-    return SwitchlyAdmin(engine=engine, auth=("admin", "secret"))
+def admin_with_auth(engine: WaygateEngine) -> object:
+    """WaygateAdmin with single-user auth."""
+    return WaygateAdmin(engine=engine, auth=("admin", "secret"))
 
 
 @pytest.fixture
@@ -57,13 +57,13 @@ async def auth_client(admin_with_auth: object) -> AsyncClient:
     async with AsyncClient(
         transport=ASGITransport(app=admin_with_auth),  # type: ignore[arg-type]
         base_url="http://testserver",
-        headers={"X-Switchly-Platform": "cli"},
+        headers={"X-Waygate-Platform": "cli"},
     ) as c:
         # Log in and inject token for subsequent requests.
         resp = await c.post("/api/auth/login", json={"username": "admin", "password": "secret"})
         assert resp.status_code == 200
         token = resp.json()["token"]
-        c.headers.update({"X-Switchly-Token": token})
+        c.headers.update({"X-Waygate-Token": token})
         yield c
 
 
@@ -76,7 +76,7 @@ async def test_login_success(admin_with_auth: object) -> None:
     async with AsyncClient(
         transport=ASGITransport(app=admin_with_auth),  # type: ignore[arg-type]
         base_url="http://testserver",
-        headers={"X-Switchly-Platform": "cli"},
+        headers={"X-Waygate-Platform": "cli"},
     ) as c:
         resp = await c.post("/api/auth/login", json={"username": "admin", "password": "secret"})
     assert resp.status_code == 200
@@ -90,7 +90,7 @@ async def test_login_wrong_password(admin_with_auth: object) -> None:
     async with AsyncClient(
         transport=ASGITransport(app=admin_with_auth),  # type: ignore[arg-type]
         base_url="http://testserver",
-        headers={"X-Switchly-Platform": "cli"},
+        headers={"X-Waygate-Platform": "cli"},
     ) as c:
         resp = await c.post("/api/auth/login", json={"username": "admin", "password": "wrong"})
     assert resp.status_code == 401
@@ -100,7 +100,7 @@ async def test_login_missing_fields(admin_with_auth: object) -> None:
     async with AsyncClient(
         transport=ASGITransport(app=admin_with_auth),  # type: ignore[arg-type]
         base_url="http://testserver",
-        headers={"X-Switchly-Platform": "cli"},
+        headers={"X-Waygate-Platform": "cli"},
     ) as c:
         resp = await c.post("/api/auth/login", json={"username": "admin"})
     assert resp.status_code == 400
@@ -134,12 +134,12 @@ async def test_logout_revokes_token(admin_with_auth: object) -> None:
     async with AsyncClient(
         transport=ASGITransport(app=admin_with_auth),  # type: ignore[arg-type]
         base_url="http://testserver",
-        headers={"X-Switchly-Platform": "cli"},
+        headers={"X-Waygate-Platform": "cli"},
     ) as c:
         # Login.
         resp = await c.post("/api/auth/login", json={"username": "admin", "password": "secret"})
         token = resp.json()["token"]
-        c.headers.update({"X-Switchly-Token": token})
+        c.headers.update({"X-Waygate-Token": token})
 
         # Verify it works.
         resp = await c.get("/api/auth/me")
@@ -163,7 +163,7 @@ async def test_api_routes_without_token_returns_401(admin_with_auth: object) -> 
     async with AsyncClient(
         transport=ASGITransport(app=admin_with_auth),  # type: ignore[arg-type]
         base_url="http://testserver",
-        headers={"X-Switchly-Platform": "cli"},
+        headers={"X-Waygate-Platform": "cli"},
     ) as c:
         resp = await c.get("/api/routes")
     assert resp.status_code == 401
@@ -196,7 +196,7 @@ async def test_get_route(open_client: AsyncClient) -> None:
     assert resp.json()["path"] == "/payments"
 
 
-async def test_disable_route(open_client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_disable_route(open_client: AsyncClient, engine: WaygateEngine) -> None:
     import base64
 
     key = base64.urlsafe_b64encode(b"/payments").decode().rstrip("=")
@@ -208,7 +208,7 @@ async def test_disable_route(open_client: AsyncClient, engine: SwitchlyEngine) -
     assert state.status == RouteStatus.DISABLED
 
 
-async def test_enable_route(open_client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_enable_route(open_client: AsyncClient, engine: WaygateEngine) -> None:
     import base64
 
     await engine.disable("/payments", reason="setup")
@@ -218,7 +218,7 @@ async def test_enable_route(open_client: AsyncClient, engine: SwitchlyEngine) ->
     assert resp.json()["status"] == "active"
 
 
-async def test_maintenance_route(open_client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_maintenance_route(open_client: AsyncClient, engine: WaygateEngine) -> None:
     import base64
 
     key = base64.urlsafe_b64encode(b"/payments").decode().rstrip("=")
@@ -231,7 +231,7 @@ async def test_maintenance_route(open_client: AsyncClient, engine: SwitchlyEngin
 
 
 async def test_maintenance_route_with_window(
-    open_client: AsyncClient, engine: SwitchlyEngine
+    open_client: AsyncClient, engine: WaygateEngine
 ) -> None:
     import base64
     from datetime import UTC, datetime, timedelta
@@ -260,11 +260,11 @@ async def test_schedule_route(open_client: AsyncClient) -> None:
     assert resp.status_code == 200
 
 
-async def test_cancel_schedule_route(open_client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_cancel_schedule_route(open_client: AsyncClient, engine: WaygateEngine) -> None:
     import base64
     from datetime import UTC, datetime, timedelta
 
-    from switchly.core.models import MaintenanceWindow
+    from waygate.core.models import MaintenanceWindow
 
     window = MaintenanceWindow(
         start=datetime.now(UTC) + timedelta(hours=1),
@@ -283,7 +283,7 @@ async def test_cancel_schedule_route(open_client: AsyncClient, engine: SwitchlyE
 # ---------------------------------------------------------------------------
 
 
-async def test_list_audit(open_client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_list_audit(open_client: AsyncClient, engine: WaygateEngine) -> None:
     await engine.disable("/payments", reason="audit-test", actor="tester")
     resp = await open_client.get("/api/audit")
     assert resp.status_code == 200
@@ -292,7 +292,7 @@ async def test_list_audit(open_client: AsyncClient, engine: SwitchlyEngine) -> N
     assert len(entries) > 0
 
 
-async def test_list_audit_filter_by_route(open_client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_list_audit_filter_by_route(open_client: AsyncClient, engine: WaygateEngine) -> None:
     await engine.disable("/payments", reason="audit-route-filter", actor="tester")
     resp = await open_client.get("/api/audit?route=/payments&limit=5")
     assert resp.status_code == 200
@@ -312,7 +312,7 @@ async def test_get_global(open_client: AsyncClient) -> None:
 
 
 async def test_global_enable_disable_round_trip(
-    open_client: AsyncClient, engine: SwitchlyEngine
+    open_client: AsyncClient, engine: WaygateEngine
 ) -> None:
     resp = await open_client.post(
         "/api/global/enable", json={"reason": "all down", "exempt_paths": ["/health"]}
@@ -331,7 +331,7 @@ async def test_global_enable_disable_round_trip(
 
 
 async def test_actor_recorded_in_audit_no_auth(
-    open_client: AsyncClient, engine: SwitchlyEngine
+    open_client: AsyncClient, engine: WaygateEngine
 ) -> None:
     """With no auth, actor header is used."""
     import base64
@@ -340,7 +340,7 @@ async def test_actor_recorded_in_audit_no_auth(
     resp = await open_client.post(
         f"/api/routes/{key}/disable",
         json={"reason": "actor-test"},
-        headers={"X-Switchly-Actor": "ops-bot"},
+        headers={"X-Waygate-Actor": "ops-bot"},
     )
     assert resp.status_code == 200
     entries = await engine.get_audit_log(path="/health", limit=1)
@@ -348,7 +348,7 @@ async def test_actor_recorded_in_audit_no_auth(
 
 
 async def test_actor_recorded_in_audit_with_auth(
-    auth_client: AsyncClient, engine: SwitchlyEngine
+    auth_client: AsyncClient, engine: WaygateEngine
 ) -> None:
     """With auth, actor is the authenticated username."""
     import base64
@@ -367,7 +367,7 @@ _rl_mark = _pytest.mark.skipif(not HAS_LIMITS, reason="limits library not instal
 
 
 @_rl_mark
-async def test_set_rate_limit_policy(open_client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_set_rate_limit_policy(open_client: AsyncClient, engine: WaygateEngine) -> None:
     """POST /api/rate-limits creates a policy and returns 201."""
     resp = await open_client.post(
         "/api/rate-limits",
@@ -381,7 +381,7 @@ async def test_set_rate_limit_policy(open_client: AsyncClient, engine: SwitchlyE
 
 @_rl_mark
 async def test_set_rate_limit_policy_persists(
-    open_client: AsyncClient, engine: SwitchlyEngine
+    open_client: AsyncClient, engine: WaygateEngine
 ) -> None:
     """After POST, the policy is in engine._rate_limit_policies."""
     await open_client.post(
@@ -399,7 +399,7 @@ async def test_set_rate_limit_policy_missing_fields(open_client: AsyncClient) ->
 
 
 @_rl_mark
-async def test_list_rate_limit_policies(open_client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_list_rate_limit_policies(open_client: AsyncClient, engine: WaygateEngine) -> None:
     """GET /api/rate-limits returns all registered policies."""
     await open_client.post(
         "/api/rate-limits",
@@ -413,7 +413,7 @@ async def test_list_rate_limit_policies(open_client: AsyncClient, engine: Switch
 
 
 @_rl_mark
-async def test_delete_rate_limit_policy(open_client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_delete_rate_limit_policy(open_client: AsyncClient, engine: WaygateEngine) -> None:
     """DELETE /api/rate-limits/{key} removes the policy."""
     await open_client.post(
         "/api/rate-limits",
@@ -431,7 +431,7 @@ async def test_delete_rate_limit_policy(open_client: AsyncClient, engine: Switch
 
 @_rl_mark
 async def test_set_rate_limit_with_algorithm(
-    open_client: AsyncClient, engine: SwitchlyEngine
+    open_client: AsyncClient, engine: WaygateEngine
 ) -> None:
     """POST /api/rate-limits with algorithm kwarg stores correct algorithm."""
     resp = await open_client.post(
@@ -461,7 +461,7 @@ async def test_set_rate_limit_unknown_route_returns_404(
 
 @_rl_mark
 async def test_set_rate_limit_registered_route_returns_201(
-    open_client: AsyncClient, engine: SwitchlyEngine
+    open_client: AsyncClient, engine: WaygateEngine
 ) -> None:
     """POST /api/rate-limits with a path that is registered returns 201."""
     resp = await open_client.post(
@@ -476,12 +476,12 @@ async def test_set_rate_limit_registered_route_returns_201(
 
 @_rl_mark
 async def test_set_rate_limit_for_ambiguous_route_succeeds(
-    open_client: AsyncClient, engine: SwitchlyEngine
+    open_client: AsyncClient, engine: WaygateEngine
 ) -> None:
     """POST /api/rate-limits for a bare path that is registered under multiple
     HTTP methods (ambiguous) still succeeds with 201."""
     # Seed the same path under two methods so the engine sees an ambiguous route.
-    from switchly.core.models import RouteState, RouteStatus
+    from waygate.core.models import RouteState, RouteStatus
 
     await engine.backend.set_state(
         "GET:/api/items",

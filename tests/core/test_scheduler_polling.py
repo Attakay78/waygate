@@ -1,7 +1,7 @@
 """Tests for the scheduler polling loop that picks up windows written by the CLI.
 
 Root cause being tested:
-    ``switchly schedule`` runs in a short-lived CLI process.  That process writes
+    ``waygate schedule`` runs in a short-lived CLI process.  That process writes
     the window to the backend and creates an asyncio task — but the task is
     destroyed when the CLI exits.  The long-running server must pick up the
     window via the polling loop in ``MaintenanceScheduler``.
@@ -15,13 +15,13 @@ from typing import Any
 
 import anyio
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import MaintenanceWindow, RouteState, RouteStatus
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import MaintenanceWindow, RouteState, RouteStatus
 
 
-def _engine() -> SwitchlyEngine:
-    return SwitchlyEngine(backend=MemoryBackend())
+def _engine() -> WaygateEngine:
+    return WaygateEngine(backend=MemoryBackend())
 
 
 # ---------------------------------------------------------------------------
@@ -183,7 +183,7 @@ async def test_polling_discovers_externally_written_window():
 
 
 # ---------------------------------------------------------------------------
-# SwitchlyMiddleware lifespan wires up polling automatically
+# WaygateMiddleware lifespan wires up polling automatically
 # ---------------------------------------------------------------------------
 
 
@@ -215,14 +215,14 @@ async def _lifespan_startup(app: Any) -> asyncio.Task[Any]:
 
 
 async def test_lifespan_starts_polling():
-    """SwitchlyMiddleware must start the polling loop on lifespan.startup.complete."""
+    """WaygateMiddleware must start the polling loop on lifespan.startup.complete."""
     from fastapi import FastAPI
 
-    from switchly.fastapi.middleware import SwitchlyMiddleware
+    from waygate.fastapi.middleware import WaygateMiddleware
 
     engine = _engine()
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
     task = await _lifespan_startup(app)
 
@@ -241,14 +241,14 @@ async def test_lifespan_starts_polling():
 
 
 async def test_lifespan_stops_polling_on_shutdown():
-    """SwitchlyMiddleware must call stop_polling on lifespan.shutdown.complete."""
+    """WaygateMiddleware must call stop_polling on lifespan.shutdown.complete."""
     from fastapi import FastAPI
 
-    from switchly.fastapi.middleware import SwitchlyMiddleware
+    from waygate.fastapi.middleware import WaygateMiddleware
 
     engine = _engine()
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
 
     startup_done: asyncio.Event = asyncio.Event()
     # Separate gate — the test sets this AFTER checking the poll task so that

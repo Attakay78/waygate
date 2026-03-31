@@ -1,0 +1,51 @@
+<div class="p-6 sm:p-7">
+
+    {# ── Header ───────────────────────────────────────────────── #}
+    <div class="flex gap-4 mb-6">
+        <div class="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center bg-emerald-100">
+            <svg class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        <div class="pt-0.5">
+            <h2 class="text-base font-semibold text-slate-900">Restore Service</h2>
+            <p class="text-sm text-slate-500 mt-0.5 leading-relaxed">
+                Disable global maintenance mode. All routes will immediately resume their individual lifecycle states.
+            </p>
+        </div>
+    </div>
+
+    {# ── Info box ─────────────────────────────────────────────── #}
+    <div class="flex gap-2.5 p-3 mb-6 rounded-lg bg-emerald-50 border border-emerald-200">
+        <svg class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
+        </svg>
+        <p class="text-xs text-emerald-800 leading-relaxed">
+            Routes that were individually set to maintenance, disabled, or env-gated
+            <strong class="font-semibold">will keep those states</strong> — only the global override is lifted.
+        </p>
+    </div>
+
+    {# ── Action buttons ───────────────────────────────────────── #}
+    <div class="flex items-center justify-end gap-2.5">
+        <button type="button"
+                onclick="document.getElementById('waygate-modal').close()"
+                class="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200
+                       rounded-lg hover:bg-slate-50 hover:border-slate-300
+                       focus:outline-none focus:ring-2 focus:ring-slate-400
+                       transition-all active:scale-95 shadow-sm">
+            Cancel
+        </button>
+        <button
+            hx-post="{{ prefix }}/global-maintenance/disable"
+            hx-target="#global-maintenance-widget"
+            hx-swap="outerHTML"
+            hx-on::after-request="document.getElementById('waygate-modal').close()"
+            class="px-4 py-2 text-sm font-semibold text-white rounded-lg
+                   bg-emerald-600 hover:bg-emerald-700
+                   focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2
+                   transition-all active:scale-95 shadow-sm">
+            Restore Service
+        </button>
+    </div>
+</div>

@@ -5,8 +5,8 @@ Feature flags (also called feature toggles) let you change your application's be
 !!! note "Optional dependency"
     Feature flags require the `flags` extra:
     ```bash
-    uv add "switchly[flags]"
-    # or: pip install "switchly[flags]"
+    uv add "waygate[flags]"
+    # or: pip install "waygate[flags]"
     ```
 
 ---
@@ -35,13 +35,13 @@ Evaluation always follows this order:
 ## Installation and setup
 
 ```bash
-uv add "switchly[flags]"
+uv add "waygate[flags]"
 ```
 
 Call `engine.use_openfeature()` once before your first evaluation, then access the flag client through `engine.flag_client`:
 
 ```python
-from switchly import make_engine
+from waygate import make_engine
 
 engine = make_engine()
 engine.use_openfeature()   # activates the feature flag subsystem
@@ -54,7 +54,7 @@ The flag client is a standard OpenFeature client — any OpenFeature-aware code 
 ## Your first flag
 
 ```python
-from switchly import (
+from waygate import (
     FeatureFlag, FlagType, FlagVariation, RolloutVariation,
     EvaluationContext,
 )
@@ -154,7 +154,7 @@ Targeting rules serve a specific variation to users who match certain conditions
 ### Attribute-based rule
 
 ```python
-from switchly import TargetingRule, RuleClause, Operator
+from waygate import TargetingRule, RuleClause, Operator
 
 FeatureFlag(
     key="ui-theme",
@@ -237,7 +237,7 @@ A segment is a named, reusable group of users. Define it once and reference it i
 ### Creating a segment
 
 ```python
-from switchly import Segment, SegmentRule, RuleClause, Operator
+from waygate import Segment, SegmentRule, RuleClause, Operator
 
 # Explicit include list
 await engine.save_segment(Segment(
@@ -302,7 +302,7 @@ TargetingRule(
 
 ### Managing segments from the dashboard
 
-Open the **Segments** page (`/switchly/segments`) and click a segment key or **Edit** to:
+Open the **Segments** page (`/waygate/segments`) and click a segment key or **Edit** to:
 
 - Add or remove users from the **Included** and **Excluded** lists
 - Add **targeting rules** — attribute-based conditions evaluated when a user isn't in the explicit lists
@@ -311,29 +311,29 @@ Open the **Segments** page (`/switchly/segments`) and click a segment key or **E
 
 ```bash
 # List all segments
-switchly segments list
+waygate segments list
 
 # Inspect a segment
-switchly segments get beta-users
+waygate segments get beta-users
 
 # Create a segment
-switchly segments create beta_users --name "Beta Users"
+waygate segments create beta_users --name "Beta Users"
 
 # Add users to the included list
-switchly segments include beta_users --context-key user_123,user_456
+waygate segments include beta_users --context-key user_123,user_456
 
 # Remove users via the excluded list
-switchly segments exclude beta_users --context-key opted_out_user
+waygate segments exclude beta_users --context-key opted_out_user
 
 # Add an attribute-based targeting rule
-switchly segments add-rule beta_users --attribute plan --operator in --values pro,enterprise
-switchly segments add-rule beta_users --attribute country --operator is --values GB --description "UK users"
+waygate segments add-rule beta_users --attribute plan --operator in --values pro,enterprise
+waygate segments add-rule beta_users --attribute country --operator is --values GB --description "UK users"
 
-# Remove a rule (use 'switchly segments get' to find rule IDs)
-switchly segments remove-rule beta_users --rule-id <uuid>
+# Remove a rule (use 'waygate segments get' to find rule IDs)
+waygate segments remove-rule beta_users --rule-id <uuid>
 
 # Delete a segment
-switchly segments delete beta_users
+waygate segments delete beta_users
 ```
 
 ---
@@ -343,7 +343,7 @@ switchly segments delete beta_users
 Prerequisites let a flag depend on another flag. The dependent flag only proceeds to its rules if the prerequisite flag evaluates to a specific variation.
 
 ```python
-from switchly import Prerequisite
+from waygate import Prerequisite
 
 FeatureFlag(
     key="advanced-dashboard",
@@ -376,7 +376,7 @@ def dashboard(request: Request, user_id: str = "anonymous"):
 
 ## Admin dashboard
 
-### Flags page (`/switchly/flags`)
+### Flags page (`/waygate/flags`)
 
 Lists all flags with key, type, status, variations, and fallthrough. Use the search box and type/status filters to narrow the list. Click a flag key to open the detail page.
 
@@ -389,7 +389,7 @@ Lists all flags with key, type, status, variations, and fallthrough. Use the sea
 | **Variations** | Add, rename, or remove variations; change the fallthrough and off-variation |
 | **Settings** | Edit name, description, tags, maintainer, temporary flag flag, and scheduled changes |
 
-### Segments page (`/switchly/segments`)
+### Segments page (`/waygate/segments`)
 
 Lists all segments with included/excluded/rules counts. Click a segment to open its detail modal, or use the **Edit** button to manage included, excluded, and targeting rules.
 
@@ -397,55 +397,55 @@ Lists all segments with included/excluded/rules counts. Click a segment to open 
 
 ## CLI reference
 
-### `switchly flags`
+### `waygate flags`
 
 ```bash
-switchly flags list                              # all flags
-switchly flags get new-checkout                  # flag detail
-switchly flags create new-checkout boolean       # create (interactive prompts follow)
-switchly flags enable new-checkout               # enable (kill-switch off)
-switchly flags disable new-checkout              # disable (kill-switch on)
-switchly flags delete new-checkout               # permanently delete
+waygate flags list                              # all flags
+waygate flags get new-checkout                  # flag detail
+waygate flags create new-checkout boolean       # create (interactive prompts follow)
+waygate flags enable new-checkout               # enable (kill-switch off)
+waygate flags disable new-checkout              # disable (kill-switch on)
+waygate flags delete new-checkout               # permanently delete
 
-switchly flags eval new-checkout --user user_123  # evaluate for a user
+waygate flags eval new-checkout --user user_123  # evaluate for a user
 
-switchly flags targeting new-checkout            # show targeting rules
-switchly flags add-rule new-checkout \
+waygate flags targeting new-checkout            # show targeting rules
+waygate flags add-rule new-checkout \
     --variation on \
     --segment beta-users                       # add segment-based rule
-switchly flags add-rule new-checkout \
+waygate flags add-rule new-checkout \
     --variation on \
     --attribute plan --operator in --values pro,enterprise
-switchly flags remove-rule new-checkout --rule-id <uuid>
+waygate flags remove-rule new-checkout --rule-id <uuid>
 
-switchly flags add-prereq new-checkout --flag auth-v2 --variation enabled
-switchly flags remove-prereq new-checkout --flag auth-v2
+waygate flags add-prereq new-checkout --flag auth-v2 --variation enabled
+waygate flags remove-prereq new-checkout --flag auth-v2
 
-switchly flags target new-checkout --variation on --context-key user_123
-switchly flags untarget new-checkout --context-key user_123
+waygate flags target new-checkout --variation on --context-key user_123
+waygate flags untarget new-checkout --context-key user_123
 
-switchly flags variations new-checkout          # list variations
-switchly flags edit new-checkout                # open interactive editor
+waygate flags variations new-checkout          # list variations
+waygate flags edit new-checkout                # open interactive editor
 ```
 
-### `switchly segments`
+### `waygate segments`
 
 ```bash
-switchly segments list
-switchly segments get beta-users
-switchly segments create beta_users --name "Beta Users"
-switchly segments include beta_users --context-key user_123,user_456
-switchly segments exclude beta_users --context-key opted_out
-switchly segments add-rule beta_users --attribute plan --operator in --values pro,enterprise
-switchly segments remove-rule beta_users --rule-id <uuid>
-switchly segments delete beta_users
+waygate segments list
+waygate segments get beta-users
+waygate segments create beta_users --name "Beta Users"
+waygate segments include beta_users --context-key user_123,user_456
+waygate segments exclude beta_users --context-key opted_out
+waygate segments add-rule beta_users --attribute plan --operator in --values pro,enterprise
+waygate segments remove-rule beta_users --rule-id <uuid>
+waygate segments delete beta_users
 ```
 
 ---
 
 ## Full example
 
-Full example at [`examples/fastapi/feature_flags.py`](https://github.com/Attakay78/switchly/blob/main/examples/fastapi/feature_flags.py), covering all five flag types, individual targeting, attribute-based rules, percentage rollouts, and sync and async evaluation.
+Full example at [`examples/fastapi/feature_flags.py`](https://github.com/Attakay78/waygate/blob/main/examples/fastapi/feature_flags.py), covering all five flag types, individual targeting, attribute-based rules, percentage rollouts, and sync and async evaluation.
 
 Run it with:
 
@@ -456,7 +456,7 @@ uv run uvicorn examples.fastapi.feature_flags:app --reload
 Then visit:
 
 - `http://localhost:8000/docs` — Swagger UI
-- `http://localhost:8000/switchly/flags` — flag management dashboard
+- `http://localhost:8000/waygate/flags` — flag management dashboard
 - `http://localhost:8000/checkout?user_id=beta_tester_1` — targeted user (always `"on"`)
 - `http://localhost:8000/checkout?user_id=anyone_else` — 20% rollout
 

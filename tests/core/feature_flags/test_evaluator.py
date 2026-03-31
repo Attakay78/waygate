@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import pytest
 
-from switchly.core.feature_flags.evaluator import FlagEvaluator
-from switchly.core.feature_flags.models import (
+from waygate.core.feature_flags.evaluator import FlagEvaluator
+from waygate.core.feature_flags.models import (
     EvaluationContext,
     EvaluationReason,
     FeatureFlag,

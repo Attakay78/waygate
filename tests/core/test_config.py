@@ -1,14 +1,14 @@
-"""Tests for switchly.core.config — the shared engine/backend factory."""
+"""Tests for waygate.core.config — the shared engine/backend factory."""
 
 from __future__ import annotations
 
 import pytest
 
-from switchly.core.backends.file import FileBackend
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.config import make_backend, make_engine
+from waygate.core.backends.file import FileBackend
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.config import make_backend, make_engine
 
-# Pass config_file="" to all tests that should ignore the project .switchly file.
+# Pass config_file="" to all tests that should ignore the project .waygate file.
 _NO_CFG = ""
 
 
@@ -19,7 +19,7 @@ def test_make_backend_memory_explicit():
 
 def test_make_backend_memory_default(monkeypatch):
     """Without env vars or a config file the default is memory."""
-    monkeypatch.delenv("SWITCHLY_BACKEND", raising=False)
+    monkeypatch.delenv("WAYGATE_BACKEND", raising=False)
     backend = make_backend(config_file=_NO_CFG)
     assert isinstance(backend, MemoryBackend)
 
@@ -30,44 +30,44 @@ def test_make_backend_file_explicit(tmp_path):
 
 
 def test_make_backend_file_from_env(monkeypatch, tmp_path):
-    monkeypatch.setenv("SWITCHLY_BACKEND", "file")
-    monkeypatch.setenv("SWITCHLY_FILE_PATH", str(tmp_path / "s.json"))
+    monkeypatch.setenv("WAYGATE_BACKEND", "file")
+    monkeypatch.setenv("WAYGATE_FILE_PATH", str(tmp_path / "s.json"))
     backend = make_backend()
     assert isinstance(backend, FileBackend)
 
 
-def test_make_backend_from_dot_switchly_file(tmp_path):
-    """Values in a .switchly file are respected."""
-    cfg_file = tmp_path / ".switchly"
+def test_make_backend_from_dot_waygate_file(tmp_path):
+    """Values in a .waygate file are respected."""
+    cfg_file = tmp_path / ".waygate"
     state_file = tmp_path / "state.json"
-    cfg_file.write_text(f"SWITCHLY_BACKEND=file\nSWITCHLY_FILE_PATH={state_file}\n")
+    cfg_file.write_text(f"WAYGATE_BACKEND=file\nWAYGATE_FILE_PATH={state_file}\n")
     backend = make_backend(config_file=str(cfg_file))
     assert isinstance(backend, FileBackend)
 
 
-def test_dot_switchly_file_env_var_takes_priority(tmp_path, monkeypatch):
-    """`os.environ` wins over the .switchly file."""
-    cfg_file = tmp_path / ".switchly"
-    cfg_file.write_text("SWITCHLY_BACKEND=file\n")
-    monkeypatch.setenv("SWITCHLY_BACKEND", "memory")
+def test_dot_waygate_file_env_var_takes_priority(tmp_path, monkeypatch):
+    """`os.environ` wins over the .waygate file."""
+    cfg_file = tmp_path / ".waygate"
+    cfg_file.write_text("WAYGATE_BACKEND=file\n")
+    monkeypatch.setenv("WAYGATE_BACKEND", "memory")
     backend = make_backend(config_file=str(cfg_file))
     assert isinstance(backend, MemoryBackend)
 
 
-def test_dot_switchly_ignores_comments(tmp_path):
-    cfg_file = tmp_path / ".switchly"
-    cfg_file.write_text("# this is a comment\nSWITCHLY_BACKEND=memory\n")
+def test_dot_waygate_ignores_comments(tmp_path):
+    cfg_file = tmp_path / ".waygate"
+    cfg_file.write_text("# this is a comment\nWAYGATE_BACKEND=memory\n")
     backend = make_backend(config_file=str(cfg_file))
     assert isinstance(backend, MemoryBackend)
 
 
 def test_make_backend_unknown_raises():
-    with pytest.raises(ValueError, match="Unknown SWITCHLY_BACKEND"):
+    with pytest.raises(ValueError, match="Unknown WAYGATE_BACKEND"):
         make_backend(backend_type="postgres")
 
 
 def test_make_engine_default_env(monkeypatch):
-    monkeypatch.delenv("SWITCHLY_ENV", raising=False)
+    monkeypatch.delenv("WAYGATE_ENV", raising=False)
     engine = make_engine(backend_type="memory")
     assert engine.current_env == "dev"
 
@@ -78,16 +78,16 @@ def test_make_engine_env_from_arg():
 
 
 def test_make_engine_env_from_envvar(monkeypatch):
-    monkeypatch.setenv("SWITCHLY_ENV", "dev")
+    monkeypatch.setenv("WAYGATE_ENV", "dev")
     engine = make_engine(backend_type="memory")
     assert engine.current_env == "dev"
 
 
-def test_make_engine_returns_switchly_engine():
-    from switchly.core.engine import SwitchlyEngine
+def test_make_engine_returns_waygate_engine():
+    from waygate.core.engine import WaygateEngine
 
     engine = make_engine(backend_type="memory")
-    assert isinstance(engine, SwitchlyEngine)
+    assert isinstance(engine, WaygateEngine)
 
 
 def test_cli_and_app_use_same_file_backend(tmp_path, monkeypatch):
@@ -95,8 +95,8 @@ def test_cli_and_app_use_same_file_backend(tmp_path, monkeypatch):
     import anyio
 
     file_path = str(tmp_path / "shared.json")
-    monkeypatch.setenv("SWITCHLY_BACKEND", "file")
-    monkeypatch.setenv("SWITCHLY_FILE_PATH", file_path)
+    monkeypatch.setenv("WAYGATE_BACKEND", "file")
+    monkeypatch.setenv("WAYGATE_FILE_PATH", file_path)
 
     async def _run():
         # Simulate app registering and then disabling a route.

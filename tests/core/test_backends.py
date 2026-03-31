@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 
-from switchly.core.backends.file import FileBackend
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.backends.redis import RedisBackend
-from switchly.core.models import AuditEntry, RouteState, RouteStatus
+from waygate.core.backends.file import FileBackend
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.backends.redis import RedisBackend
+from waygate.core.models import AuditEntry, RouteState, RouteStatus
 
 # ---------------------------------------------------------------------------
 # Redis availability check
@@ -45,7 +45,7 @@ def memory_backend() -> MemoryBackend:
 
 @pytest.fixture
 def file_backend(tmp_path: Path) -> FileBackend:
-    return FileBackend(str(tmp_path / "switchly.json"))
+    return FileBackend(str(tmp_path / "waygate.json"))
 
 
 @pytest.fixture
@@ -216,7 +216,7 @@ async def test_file_subscribe_raises(tmp_path):
 
 async def test_file_backend_persists_between_instances(tmp_path):
     """Data written by one FileBackend instance is readable by another."""
-    file_path = str(tmp_path / "switchly.json")
+    file_path = str(tmp_path / "waygate.json")
     b1 = FileBackend(file_path)
     await b1.set_state("/api/test", _make_state())
 

@@ -1,4 +1,4 @@
-"""Tests for the Switchly dashboard route handlers (v0.3)."""
+"""Tests for the Waygate dashboard route handlers (v0.3)."""
 
 from __future__ import annotations
 
@@ -10,9 +10,9 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import MaintenanceWindow, RouteState, RouteStatus
-from switchly.dashboard.app import SwitchlyDashboard
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import MaintenanceWindow, RouteState, RouteStatus
+from waygate.dashboard.app import WaygateDashboard
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -30,18 +30,18 @@ def _encode_path(path: str) -> str:
 
 
 @pytest.fixture
-async def engine() -> SwitchlyEngine:
-    """Provide a SwitchlyEngine pre-loaded with a couple of test routes."""
-    e = SwitchlyEngine()
+async def engine() -> WaygateEngine:
+    """Provide a WaygateEngine pre-loaded with a couple of test routes."""
+    e = WaygateEngine()
     await e.backend.set_state("/payments", RouteState(path="/payments", status=RouteStatus.ACTIVE))
     await e.backend.set_state("/health", RouteState(path="/health", status=RouteStatus.ACTIVE))
     return e
 
 
 @pytest.fixture
-def dashboard(engine: SwitchlyEngine) -> object:
-    """Return a SwitchlyDashboard ASGI app (no auth)."""
-    return SwitchlyDashboard(engine=engine)
+def dashboard(engine: WaygateEngine) -> object:
+    """Return a WaygateDashboard ASGI app (no auth)."""
+    return WaygateDashboard(engine=engine)
 
 
 @pytest.fixture
@@ -65,10 +65,10 @@ async def test_index_returns_200(client: AsyncClient) -> None:
     assert resp.status_code == 200
 
 
-async def test_index_contains_switchly_brand(client: AsyncClient) -> None:
-    """Index page contains the Switchly brand name."""
+async def test_index_contains_waygate_brand(client: AsyncClient) -> None:
+    """Index page contains the Waygate brand name."""
     resp = await client.get("/")
-    assert "Switchly" in resp.text
+    assert "Waygate" in resp.text
 
 
 async def test_index_shows_registered_routes(client: AsyncClient) -> None:
@@ -101,7 +101,7 @@ async def test_routes_partial_returns_200(client: AsyncClient) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_toggle_active_to_maintenance(client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_toggle_active_to_maintenance(client: AsyncClient, engine: WaygateEngine) -> None:
     """POST /toggle/{key} puts an active route into maintenance."""
     resp = await client.post(f"/toggle/{_encode_path('/payments')}")
     assert resp.status_code == 200
@@ -113,7 +113,7 @@ async def test_toggle_active_to_maintenance(client: AsyncClient, engine: Switchl
     assert state.status == RouteStatus.MAINTENANCE
 
 
-async def test_toggle_maintenance_to_active(client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_toggle_maintenance_to_active(client: AsyncClient, engine: WaygateEngine) -> None:
     """POST /toggle/{key} re-enables a route that is in maintenance."""
     await engine.set_maintenance("/payments", reason="test")
     resp = await client.post(f"/toggle/{_encode_path('/payments')}")
@@ -129,7 +129,7 @@ async def test_toggle_maintenance_to_active(client: AsyncClient, engine: Switchl
 # ---------------------------------------------------------------------------
 
 
-async def test_disable_route(client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_disable_route(client: AsyncClient, engine: WaygateEngine) -> None:
     """POST /disable/{key} disables a route and returns the updated partial."""
     resp = await client.post(f"/disable/{_encode_path('/payments')}")
     assert resp.status_code == 200
@@ -144,7 +144,7 @@ async def test_disable_route(client: AsyncClient, engine: SwitchlyEngine) -> Non
 # ---------------------------------------------------------------------------
 
 
-async def test_enable_route(client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_enable_route(client: AsyncClient, engine: WaygateEngine) -> None:
     """POST /enable/{key} re-enables a disabled route."""
     await engine.disable("/payments", reason="test")
     resp = await client.post(f"/enable/{_encode_path('/payments')}")
@@ -160,7 +160,7 @@ async def test_enable_route(client: AsyncClient, engine: SwitchlyEngine) -> None
 # ---------------------------------------------------------------------------
 
 
-async def test_schedule_maintenance_window(client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_schedule_maintenance_window(client: AsyncClient, engine: WaygateEngine) -> None:
     """POST /schedule sets a future maintenance window via form data."""
     start = (datetime.now(UTC) + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")
     end = (datetime.now(UTC) + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M")
@@ -183,7 +183,7 @@ async def test_schedule_maintenance_window(client: AsyncClient, engine: Switchly
 # ---------------------------------------------------------------------------
 
 
-async def test_cancel_schedule(client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_cancel_schedule(client: AsyncClient, engine: WaygateEngine) -> None:
     """DELETE /schedule/{key} cancels a pending scheduled window."""
     window = MaintenanceWindow(
         start=datetime.now(UTC) + timedelta(hours=1),
@@ -202,21 +202,21 @@ async def test_cancel_schedule(client: AsyncClient, engine: SwitchlyEngine) -> N
 # ---------------------------------------------------------------------------
 
 
-async def test_audit_page_returns_200(client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_audit_page_returns_200(client: AsyncClient, engine: WaygateEngine) -> None:
     """GET /audit renders the audit log page."""
     await engine.disable("/payments", reason="audit-test", actor="tester")
     resp = await client.get("/audit")
     assert resp.status_code == 200
 
 
-async def test_audit_page_contains_entries(client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_audit_page_contains_entries(client: AsyncClient, engine: WaygateEngine) -> None:
     """Audit page lists recent state changes."""
     await engine.disable("/payments", reason="for-audit", actor="tester")
     resp = await client.get("/audit")
     assert "disable" in resp.text
 
 
-async def test_audit_rows_partial(client: AsyncClient, engine: SwitchlyEngine) -> None:
+async def test_audit_rows_partial(client: AsyncClient, engine: WaygateEngine) -> None:
     """GET /audit/rows returns only the rows partial (for HTMX auto-refresh)."""
     await engine.enable("/payments", actor="auto-refresh-test")
     resp = await client.get("/audit/rows")
@@ -228,15 +228,15 @@ async def test_audit_rows_partial(client: AsyncClient, engine: SwitchlyEngine) -
 # ---------------------------------------------------------------------------
 
 
-async def test_sse_handler_returns_streaming_response(engine: SwitchlyEngine) -> None:
+async def test_sse_handler_returns_streaming_response(engine: WaygateEngine) -> None:
     """events() handler returns a StreamingResponse with text/event-stream media type."""
 
     from starlette.requests import Request
     from starlette.responses import StreamingResponse
 
-    from switchly.dashboard import routes as r
+    from waygate.dashboard import routes as r
 
-    app = SwitchlyDashboard(engine=engine)
+    app = WaygateDashboard(engine=engine)
     scope: dict = {
         "type": "http",
         "method": "GET",
@@ -253,15 +253,15 @@ async def test_sse_handler_returns_streaming_response(engine: SwitchlyEngine) ->
     assert "no-cache" in response.headers.get("cache-control", "")
 
 
-async def test_sse_generator_emits_on_state_change(engine: SwitchlyEngine) -> None:
-    """SSE generator yields ``switchly:update:*`` event when a route state changes."""
+async def test_sse_generator_emits_on_state_change(engine: WaygateEngine) -> None:
+    """SSE generator yields ``waygate:update:*`` event when a route state changes."""
     import asyncio
 
     from starlette.requests import Request
 
-    from switchly.dashboard import routes as r
+    from waygate.dashboard import routes as r
 
-    app = SwitchlyDashboard(engine=engine)
+    app = WaygateDashboard(engine=engine)
     scope: dict = {
         "type": "http",
         "method": "GET",
@@ -288,7 +288,7 @@ async def test_sse_generator_emits_on_state_change(engine: SwitchlyEngine) -> No
         pass
 
     text = first_chunk.decode() if isinstance(first_chunk, bytes) else str(first_chunk)
-    assert "switchly:update:" in text
+    assert "waygate:update:" in text
 
 
 async def test_sse_keepalive_when_subscribe_unsupported() -> None:
@@ -298,17 +298,17 @@ async def test_sse_keepalive_when_subscribe_unsupported() -> None:
 
     from starlette.requests import Request
 
-    from switchly.dashboard import routes as r
+    from waygate.dashboard import routes as r
 
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w") as f:
         f.write('{"states": {}, "audit": [], "global": null}')
         fname = f.name
 
     try:
-        from switchly.core.backends.file import FileBackend
+        from waygate.core.backends.file import FileBackend
 
-        file_engine = SwitchlyEngine(backend=FileBackend(fname))
-        app = SwitchlyDashboard(engine=file_engine)
+        file_engine = WaygateEngine(backend=FileBackend(fname))
+        app = WaygateDashboard(engine=file_engine)
         scope: dict = {
             "type": "http",
             "method": "GET",
@@ -322,7 +322,7 @@ async def test_sse_keepalive_when_subscribe_unsupported() -> None:
 
         # Patch anyio.sleep to return immediately and simulate connected client.
         with (
-            unittest.mock.patch("switchly.dashboard.routes.anyio.sleep", return_value=None),
+            unittest.mock.patch("waygate.dashboard.routes.anyio.sleep", return_value=None),
             unittest.mock.patch.object(request, "is_disconnected", return_value=False),
         ):
             gen = response.body_iterator  # type: ignore[union-attr]
@@ -341,8 +341,8 @@ async def test_sse_keepalive_when_subscribe_unsupported() -> None:
 
 async def test_basic_auth_blocks_unauthenticated() -> None:
     """Dashboard with auth configured returns 401 for unauthenticated requests."""
-    e = SwitchlyEngine()
-    app = SwitchlyDashboard(engine=e, auth=("admin", "s3cr3t"))
+    e = WaygateEngine()
+    app = WaygateDashboard(engine=e, auth=("admin", "s3cr3t"))
 
     async with AsyncClient(
         transport=ASGITransport(app=app),  # type: ignore[arg-type]
@@ -351,13 +351,13 @@ async def test_basic_auth_blocks_unauthenticated() -> None:
         resp = await c.get("/")
     assert resp.status_code == 401
     assert "WWW-Authenticate" in resp.headers
-    assert 'Basic realm="Switchly Dashboard"' in resp.headers["WWW-Authenticate"]
+    assert 'Basic realm="Waygate Dashboard"' in resp.headers["WWW-Authenticate"]
 
 
 async def test_basic_auth_allows_valid_credentials() -> None:
     """Dashboard with auth passes requests that carry correct credentials."""
-    e = SwitchlyEngine()
-    app = SwitchlyDashboard(engine=e, auth=("admin", "s3cr3t"))
+    e = WaygateEngine()
+    app = WaygateDashboard(engine=e, auth=("admin", "s3cr3t"))
 
     async with AsyncClient(
         transport=ASGITransport(app=app),  # type: ignore[arg-type]
@@ -370,8 +370,8 @@ async def test_basic_auth_allows_valid_credentials() -> None:
 
 async def test_basic_auth_rejects_wrong_password() -> None:
     """Dashboard with auth rejects requests with an incorrect password."""
-    e = SwitchlyEngine()
-    app = SwitchlyDashboard(engine=e, auth=("admin", "s3cr3t"))
+    e = WaygateEngine()
+    app = WaygateDashboard(engine=e, auth=("admin", "s3cr3t"))
 
     async with AsyncClient(
         transport=ASGITransport(app=app),  # type: ignore[arg-type]
@@ -384,8 +384,8 @@ async def test_basic_auth_rejects_wrong_password() -> None:
 
 async def test_basic_auth_rejects_missing_header() -> None:
     """Dashboard returns 401 when Authorization header is absent."""
-    e = SwitchlyEngine()
-    app = SwitchlyDashboard(engine=e, auth=("admin", "s3cr3t"))
+    e = WaygateEngine()
+    app = WaygateDashboard(engine=e, auth=("admin", "s3cr3t"))
 
     async with AsyncClient(
         transport=ASGITransport(app=app),  # type: ignore[arg-type]
@@ -404,9 +404,9 @@ async def test_dashboard_does_not_pollute_parent_openapi() -> None:
     """Mounting the dashboard does not add routes to the parent FastAPI schema."""
     from fastapi import FastAPI
 
-    e = SwitchlyEngine()
+    e = WaygateEngine()
     fastapi_app = FastAPI()
-    fastapi_app.mount("/switchly", SwitchlyDashboard(engine=e))
+    fastapi_app.mount("/waygate", WaygateDashboard(engine=e))
 
     async with AsyncClient(
         transport=ASGITransport(app=fastapi_app),
@@ -415,9 +415,9 @@ async def test_dashboard_does_not_pollute_parent_openapi() -> None:
         resp = await c.get("/openapi.json")
     schema = resp.json()
     paths = schema.get("paths", {})
-    assert not any(p.startswith("/switchly") for p in paths), (
+    assert not any(p.startswith("/waygate") for p in paths), (
         f"Dashboard paths leaked into OpenAPI schema: "
-        f"{[p for p in paths if p.startswith('/switchly')]}"
+        f"{[p for p in paths if p.startswith('/waygate')]}"
     )
 
 
@@ -425,15 +425,15 @@ async def test_dashboard_accessible_when_mounted_on_fastapi() -> None:
     """Dashboard routes are reachable when mounted on a FastAPI parent app."""
     from fastapi import FastAPI
 
-    e = SwitchlyEngine()
+    e = WaygateEngine()
     fastapi_app = FastAPI()
-    fastapi_app.mount("/switchly", SwitchlyDashboard(engine=e))
+    fastapi_app.mount("/waygate", WaygateDashboard(engine=e))
 
     async with AsyncClient(
         transport=ASGITransport(app=fastapi_app),
         base_url="http://testserver",
     ) as c:
-        resp = await c.get("/switchly/")
+        resp = await c.get("/waygate/")
     assert resp.status_code == 200
 
 
@@ -442,12 +442,12 @@ async def test_dashboard_accessible_when_mounted_on_fastapi() -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_toggle_method_prefixed_route(engine: SwitchlyEngine) -> None:
+async def test_toggle_method_prefixed_route(engine: WaygateEngine) -> None:
     """Dashboard handles method-prefixed route keys like ``GET:/payments``."""
     key = "GET:/payments"
     await engine.backend.set_state(key, RouteState(path=key, status=RouteStatus.ACTIVE))
 
-    app = SwitchlyDashboard(engine=engine)
+    app = WaygateDashboard(engine=engine)
     async with AsyncClient(
         transport=ASGITransport(app=app),  # type: ignore[arg-type]
         base_url="http://testserver",

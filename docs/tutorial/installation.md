@@ -11,28 +11,28 @@
 
 ```bash
 # Minimal — core library only (no framework adapter, no CLI, no dashboard)
-uv add switchly
+uv add waygate
 
 # FastAPI adapter
-uv add "switchly[fastapi]"
+uv add "waygate[fastapi]"
 
 # FastAPI + CLI
-uv add "switchly[fastapi,cli]"
+uv add "waygate[fastapi,cli]"
 
 # FastAPI + rate limiting
-uv add "switchly[fastapi,rate-limit]"
+uv add "waygate[fastapi,rate-limit]"
 
 # FastAPI + feature flags
-uv add "switchly[fastapi,flags]"
+uv add "waygate[fastapi,flags]"
 
 # Everything (FastAPI adapter, Redis, dashboard, CLI, admin, rate limiting)
-uv add "switchly[all]"
+uv add "waygate[all]"
 ```
 
 ## Install with pip
 
 ```bash
-pip install "switchly[all]"
+pip install "waygate[all]"
 ```
 
 ---
@@ -44,8 +44,8 @@ pip install "switchly[all]"
 | `fastapi` | FastAPI adapter (middleware, decorators, router, OpenAPI integration) | FastAPI apps |
 | `redis` | `RedisBackend` for multi-instance deployments | Production with multiple replicas |
 | `dashboard` | Jinja2 + aiofiles for the HTMX dashboard | When mounting the admin UI |
-| `admin` | Unified `SwitchlyAdmin` (dashboard + REST API) | Recommended for CLI support |
-| `cli` | `switchly` command-line tool + httpx client | Operators managing routes from the terminal |
+| `admin` | Unified `WaygateAdmin` (dashboard + REST API) | Recommended for CLI support |
+| `cli` | `waygate` command-line tool + httpx client | Operators managing routes from the terminal |
 | `rate-limit` | `limits` library for `@rate_limit` enforcement | Any app using rate limiting |
 | `flags` | `openfeature-sdk` + `packaging` for the feature flag system | Any app using feature flags |
 | `all` | All of the above | Easiest option for most projects |
@@ -56,33 +56,33 @@ pip install "switchly[all]"
 
 ```bash
 # Check the library is importable
-python -c "import switchly; print(switchly.__version__)"
+python -c "import waygate; print(waygate.__version__)"
 
 # Check the CLI is available
-switchly --help
+waygate --help
 ```
 
 ---
 
 ## Environment variables
 
-switchly can be configured through environment variables so no code changes are needed between environments:
+waygate can be configured through environment variables so no code changes are needed between environments:
 
 | Variable | Default | Description |
 |---|---|---|
-| `SWITCHLY_BACKEND` | `memory` | Backend type: `memory`, `file`, or `redis` |
-| `SWITCHLY_ENV` | `dev` | Current environment name (used by `@env_only`) |
-| `SWITCHLY_FILE_PATH` | `switchly-state.json` | Path for `FileBackend` |
-| `SWITCHLY_REDIS_URL` | `redis://localhost:6379/0` | URL for `RedisBackend` |
+| `WAYGATE_BACKEND` | `memory` | Backend type: `memory`, `file`, or `redis` |
+| `WAYGATE_ENV` | `dev` | Current environment name (used by `@env_only`) |
+| `WAYGATE_FILE_PATH` | `waygate-state.json` | Path for `FileBackend` |
+| `WAYGATE_REDIS_URL` | `redis://localhost:6379/0` | URL for `RedisBackend` |
 
-Or commit a `.switchly` file in your project root; both the app and the CLI discover it automatically:
+Or commit a `.waygate` file in your project root; both the app and the CLI discover it automatically:
 
 ```ini
-# .switchly
-SWITCHLY_BACKEND=file
-SWITCHLY_FILE_PATH=switchly-state.json
-SWITCHLY_ENV=dev
-SWITCHLY_SERVER_URL=http://localhost:8000/switchly
+# .waygate
+WAYGATE_BACKEND=file
+WAYGATE_FILE_PATH=waygate-state.json
+WAYGATE_ENV=dev
+WAYGATE_SERVER_URL=http://localhost:8000/waygate
 ```
 
 ---

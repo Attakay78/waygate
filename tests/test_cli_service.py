@@ -1,6 +1,6 @@
-"""Tests for SWITCHLY_SERVICE env var fallback and switchly current-service command.
+"""Tests for WAYGATE_SERVICE env var fallback and waygate current-service command.
 
-The CLI is a thin HTTP client; tests create an in-process SwitchlyAdmin ASGI
+The CLI is a thin HTTP client; tests create an in-process WaygateAdmin ASGI
 app and inject it into the CLI via the ``make_client`` monkeypatch, so no
 real server is needed.
 
@@ -17,11 +17,11 @@ import anyio
 import httpx
 from typer.testing import CliRunner
 
-from switchly.admin.app import SwitchlyAdmin
-from switchly.cli.client import SwitchlyClient
-from switchly.cli.main import cli as app
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import RouteState, RouteStatus
+from waygate.admin.app import WaygateAdmin
+from waygate.cli.client import WaygateClient
+from waygate.cli.main import cli as app
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import RouteState, RouteStatus
 
 runner = CliRunner()
 
@@ -31,9 +31,9 @@ runner = CliRunner()
 # ---------------------------------------------------------------------------
 
 
-def _seed_engine(*paths: str) -> SwitchlyEngine:
-    """Create a SwitchlyEngine and seed *paths* as ACTIVE routes (synchronously)."""
-    e = SwitchlyEngine()
+def _seed_engine(*paths: str) -> WaygateEngine:
+    """Create a WaygateEngine and seed *paths* as ACTIVE routes (synchronously)."""
+    e = WaygateEngine()
 
     async def _run() -> None:
         for path in paths:
@@ -54,18 +54,18 @@ def _run_sync(coro_fn):
     return results[0] if results else None
 
 
-def _open_client(engine: SwitchlyEngine) -> SwitchlyClient:
-    """Return a SwitchlyClient backed by an in-process SwitchlyAdmin (no auth)."""
-    admin = SwitchlyAdmin(engine=engine)
-    return SwitchlyClient(
+def _open_client(engine: WaygateEngine) -> WaygateClient:
+    """Return a WaygateClient backed by an in-process WaygateAdmin (no auth)."""
+    admin = WaygateAdmin(engine=engine)
+    return WaygateClient(
         base_url="http://testserver",
         transport=httpx.ASGITransport(app=admin),  # type: ignore[arg-type]
     )
 
 
-def invoke_with_client(client: SwitchlyClient, *args: str) -> object:
+def invoke_with_client(client: WaygateClient, *args: str) -> object:
     """Invoke a CLI command with *client* injected via ``make_client``."""
-    with patch("switchly.cli.main.make_client", return_value=client):
+    with patch("waygate.cli.main.make_client", return_value=client):
         return runner.invoke(app, list(args), catch_exceptions=False)
 
 
@@ -75,16 +75,16 @@ def invoke_with_client(client: SwitchlyClient, *args: str) -> object:
 
 
 def test_current_service_no_env(monkeypatch) -> None:
-    """switchly current-service with no SWITCHLY_SERVICE set shows 'No active service'."""
-    monkeypatch.delenv("SWITCHLY_SERVICE", raising=False)
+    """waygate current-service with no WAYGATE_SERVICE set shows 'No active service'."""
+    monkeypatch.delenv("WAYGATE_SERVICE", raising=False)
     result = runner.invoke(app, ["current-service"], catch_exceptions=False)
     assert result.exit_code == 0
     assert "No active service" in result.output
 
 
 def test_current_service_with_env(monkeypatch) -> None:
-    """switchly current-service with SWITCHLY_SERVICE set shows the service name."""
-    monkeypatch.setenv("SWITCHLY_SERVICE", "payments-service")
+    """waygate current-service with WAYGATE_SERVICE set shows the service name."""
+    monkeypatch.setenv("WAYGATE_SERVICE", "payments-service")
     result = runner.invoke(app, ["current-service"], catch_exceptions=False)
     assert result.exit_code == 0
     assert "payments-service" in result.output
@@ -95,11 +95,11 @@ def test_current_service_with_env(monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_status_uses_switchly_service_env(monkeypatch) -> None:
-    """SWITCHLY_SERVICE env var causes status to filter routes to that service."""
-    monkeypatch.setenv("SWITCHLY_SERVICE", "payments-service")
+def test_status_uses_waygate_service_env(monkeypatch) -> None:
+    """WAYGATE_SERVICE env var causes status to filter routes to that service."""
+    monkeypatch.setenv("WAYGATE_SERVICE", "payments-service")
 
-    e = SwitchlyEngine()
+    e = WaygateEngine()
 
     async def _seed() -> None:
         state = RouteState(
@@ -121,15 +121,15 @@ def test_status_uses_switchly_service_env(monkeypatch) -> None:
 
 
 # ---------------------------------------------------------------------------
-# enable — SWITCHLY_SERVICE env var builds composite key
+# enable — WAYGATE_SERVICE env var builds composite key
 # ---------------------------------------------------------------------------
 
 
-def test_enable_uses_switchly_service_env(monkeypatch) -> None:
-    """switchly enable /api/pay uses SWITCHLY_SERVICE to form composite key."""
-    monkeypatch.setenv("SWITCHLY_SERVICE", "payments-service")
+def test_enable_uses_waygate_service_env(monkeypatch) -> None:
+    """waygate enable /api/pay uses WAYGATE_SERVICE to form composite key."""
+    monkeypatch.setenv("WAYGATE_SERVICE", "payments-service")
 
-    e = SwitchlyEngine()
+    e = WaygateEngine()
 
     async def _seed() -> None:
         # Seed as DISABLED so enable has something to act on.
@@ -150,15 +150,15 @@ def test_enable_uses_switchly_service_env(monkeypatch) -> None:
 
 
 # ---------------------------------------------------------------------------
-# disable — SWITCHLY_SERVICE env var builds composite key
+# disable — WAYGATE_SERVICE env var builds composite key
 # ---------------------------------------------------------------------------
 
 
-def test_disable_uses_switchly_service_env(monkeypatch) -> None:
-    """switchly disable /api/pay uses SWITCHLY_SERVICE to form composite key."""
-    monkeypatch.setenv("SWITCHLY_SERVICE", "payments-service")
+def test_disable_uses_waygate_service_env(monkeypatch) -> None:
+    """waygate disable /api/pay uses WAYGATE_SERVICE to form composite key."""
+    monkeypatch.setenv("WAYGATE_SERVICE", "payments-service")
 
-    e = SwitchlyEngine()
+    e = WaygateEngine()
 
     async def _seed() -> None:
         state = RouteState(
@@ -177,15 +177,15 @@ def test_disable_uses_switchly_service_env(monkeypatch) -> None:
 
 
 # ---------------------------------------------------------------------------
-# maintenance — SWITCHLY_SERVICE env var builds composite key
+# maintenance — WAYGATE_SERVICE env var builds composite key
 # ---------------------------------------------------------------------------
 
 
-def test_maintenance_uses_switchly_service_env(monkeypatch) -> None:
-    """switchly maintenance /api/pay uses SWITCHLY_SERVICE to form composite key."""
-    monkeypatch.setenv("SWITCHLY_SERVICE", "payments-service")
+def test_maintenance_uses_waygate_service_env(monkeypatch) -> None:
+    """waygate maintenance /api/pay uses WAYGATE_SERVICE to form composite key."""
+    monkeypatch.setenv("WAYGATE_SERVICE", "payments-service")
 
-    e = SwitchlyEngine()
+    e = WaygateEngine()
 
     async def _seed() -> None:
         state = RouteState(
@@ -204,15 +204,15 @@ def test_maintenance_uses_switchly_service_env(monkeypatch) -> None:
 
 
 # ---------------------------------------------------------------------------
-# --service flag overrides SWITCHLY_SERVICE env var
+# --service flag overrides WAYGATE_SERVICE env var
 # ---------------------------------------------------------------------------
 
 
 def test_service_flag_overrides_env_var(monkeypatch) -> None:
-    """Explicit --service=orders-service takes priority over SWITCHLY_SERVICE=payments-service."""
-    monkeypatch.setenv("SWITCHLY_SERVICE", "payments-service")
+    """Explicit --service=orders-service takes priority over WAYGATE_SERVICE=payments-service."""
+    monkeypatch.setenv("WAYGATE_SERVICE", "payments-service")
 
-    e = SwitchlyEngine()
+    e = WaygateEngine()
 
     async def _seed() -> None:
         # Seed the orders-service route as DISABLED so enable works.

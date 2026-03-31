@@ -1,17 +1,17 @@
 """FastAPI — Dependency Injection Example.
 
-Shows how to use switchly decorators as FastAPI ``Depends()`` dependencies
+Shows how to use waygate decorators as FastAPI ``Depends()`` dependencies
 instead of (or alongside) the middleware model — but not both on the
-same route. Pick one: decorator (with SwitchlyMiddleware) or Depends()
+same route. Pick one: decorator (with WaygateMiddleware) or Depends()
 (without middleware).
 
-Call ``configure_switchly(app, engine)`` once and all decorator deps find the
-engine automatically via ``request.app.state.switchly_engine`` — no ``engine=``
-argument per route. ``SwitchlyMiddleware`` calls ``configure_switchly``
+Call ``configure_waygate(app, engine)`` once and all decorator deps find the
+engine automatically via ``request.app.state.waygate_engine`` — no ``engine=``
+argument per route. ``WaygateMiddleware`` calls ``configure_waygate``
 automatically at ASGI startup, so if you use middleware you don't need to
 call it manually.
 
-Use either the decorator (with SwitchlyMiddleware) or ``Depends()`` (without
+Use either the decorator (with WaygateMiddleware) or ``Depends()`` (without
 middleware) — not both on the same route.
 
 Decorator support as ``Depends()``:
@@ -20,7 +20,7 @@ Decorator support as ``Depends()``:
   ✅ disabled     — raises 503 when route is disabled
   ✅ env_only     — raises 404 when accessed from the wrong environment
   ✅ deprecated   — injects Deprecation / Sunset / Link headers on the response
-  ❌ force_active — decorator-only; switchly checks run in the middleware, which
+  ❌ force_active — decorator-only; waygate checks run in the middleware, which
                     completes before any dependency is resolved. A dependency
                     has no mechanism to retroactively bypass that check.
 
@@ -28,18 +28,18 @@ Run:
     uv run uvicorn examples.fastapi.dependency_injection:app --reload
 
 Admin dashboard:
-    http://localhost:8000/switchly/        — login: admin / secret
+    http://localhost:8000/waygate/        — login: admin / secret
 
 CLI quick-start:
-    switchly login admin          # password: secret
-    switchly status               # see all route states
-    switchly enable /payments     # toggle off maintenance without redeploy
-    switchly disable /payments --reason "emergency patch"
+    waygate login admin          # password: secret
+    waygate status               # see all route states
+    waygate enable /payments     # toggle off maintenance without redeploy
+    waygate disable /payments --reason "emergency patch"
 
 Try these requests:
 
     curl -i http://localhost:8000/payments     # → 503 MAINTENANCE_MODE
-    switchly enable /payments                    # toggle off without redeploy
+    waygate enable /payments                    # toggle off without redeploy
     curl -i http://localhost:8000/payments     # → 200
 
     curl -i http://localhost:8000/old-endpoint # → 503 ROUTE_DISABLED
@@ -52,12 +52,12 @@ import os
 
 from fastapi import Depends, FastAPI
 
-from switchly import make_engine
-from switchly.fastapi import (
-    SwitchlyAdmin,
-    SwitchlyMiddleware,
-    SwitchlyRouter,
-    apply_switchly_to_openapi,
+from waygate import make_engine
+from waygate.fastapi import (
+    WaygateAdmin,
+    WaygateMiddleware,
+    WaygateRouter,
+    apply_waygate_to_openapi,
     deprecated,
     disabled,
     env_only,
@@ -67,24 +67,24 @@ from switchly.fastapi import (
 
 CURRENT_ENV = os.getenv("APP_ENV", "dev")
 engine = make_engine(current_env=CURRENT_ENV)
-router = SwitchlyRouter(engine=engine)
+router = WaygateRouter(engine=engine)
 
 # ---------------------------------------------------------------------------
-# App assembly — configure_switchly is called automatically by SwitchlyMiddleware
+# App assembly — configure_waygate is called automatically by WaygateMiddleware
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="switchly — Dependency Injection Example",
+    title="waygate — Dependency Injection Example",
     description=(
-        "``configure_switchly(app, engine)`` called once — no ``engine=`` per route.\n\n"
+        "``configure_waygate(app, engine)`` called once — no ``engine=`` per route.\n\n"
         f"Current environment: **{CURRENT_ENV}**"
     ),
 )
 
-# SwitchlyMiddleware auto-calls configure_switchly(app, engine) at ASGI startup.
-# Without middleware: from switchly.fastapi import configure_switchly
-#                     configure_switchly(app, engine)
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+# WaygateMiddleware auto-calls configure_waygate(app, engine) at ASGI startup.
+# Without middleware: from waygate.fastapi import configure_waygate
+#                     configure_waygate(app, engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 
 # ---------------------------------------------------------------------------
 # Routes — engine resolved from app.state; no engine= needed per route
@@ -103,13 +103,13 @@ async def list_users():
     return {"users": [{"id": 1, "name": "Alice"}]}
 
 
-# Depends() — enforces at the handler level without requiring SwitchlyMiddleware.
+# Depends() — enforces at the handler level without requiring WaygateMiddleware.
 @router.get(
     "/payments",
     dependencies=[Depends(maintenance(reason="Scheduled DB migration"))],
 )
 async def get_payments():
-    """503 on startup; toggle off with: switchly enable /payments"""
+    """503 on startup; toggle off with: waygate enable /payments"""
     return {"payments": []}
 
 
@@ -118,7 +118,7 @@ async def get_payments():
     dependencies=[Depends(disabled(reason="Use /v2/endpoint instead"))],
 )
 async def old_endpoint():
-    """503 on startup; re-enable with: switchly enable /old-endpoint"""
+    """503 on startup; re-enable with: waygate enable /old-endpoint"""
     return {}
 
 
@@ -160,18 +160,18 @@ async def v2_users():
 
 
 app.include_router(router)
-apply_switchly_to_openapi(app, engine)
+apply_waygate_to_openapi(app, engine)
 
 # ---------------------------------------------------------------------------
 # Admin interface — dashboard UI + REST API (used by the CLI)
 # ---------------------------------------------------------------------------
 
 app.mount(
-    "/switchly",
-    SwitchlyAdmin(
+    "/waygate",
+    WaygateAdmin(
         engine=engine,
         auth=("admin", "secret"),
-        prefix="/switchly",
+        prefix="/waygate",
         # secret_key="change-me-in-production",
     ),
 )

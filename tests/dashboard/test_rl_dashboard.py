@@ -14,11 +14,11 @@ import base64
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from switchly.admin.app import SwitchlyAdmin
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import RouteState, RouteStatus
-from switchly.core.rate_limit.storage import HAS_LIMITS
-from switchly.dashboard.routes import _get_unrated_routes
+from waygate.admin.app import WaygateAdmin
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import RouteState, RouteStatus
+from waygate.core.rate_limit.storage import HAS_LIMITS
+from waygate.dashboard.routes import _get_unrated_routes
 
 # ---------------------------------------------------------------------------
 # Skip marker — skip every rate-limit test when the limits library is absent
@@ -48,9 +48,9 @@ def _make_state(path: str, service: str = "") -> RouteState:
 
 
 @pytest.fixture
-async def engine() -> SwitchlyEngine:
-    """Provide a SwitchlyEngine pre-loaded with two test routes."""
-    e = SwitchlyEngine()
+async def engine() -> WaygateEngine:
+    """Provide a WaygateEngine pre-loaded with two test routes."""
+    e = WaygateEngine()
     await e.backend.set_state(
         "/api/items", RouteState(path="/api/items", status=RouteStatus.ACTIVE)
     )
@@ -61,14 +61,14 @@ async def engine() -> SwitchlyEngine:
 
 
 @pytest.fixture
-def admin(engine: SwitchlyEngine) -> object:
-    """Return a SwitchlyAdmin ASGI app (no auth)."""
-    return SwitchlyAdmin(engine=engine)
+def admin(engine: WaygateEngine) -> object:
+    """Return a WaygateAdmin ASGI app (no auth)."""
+    return WaygateAdmin(engine=engine)
 
 
 @pytest.fixture
 async def client(admin: object) -> AsyncClient:
-    """Return an httpx AsyncClient pointing at the SwitchlyAdmin app."""
+    """Return an httpx AsyncClient pointing at the WaygateAdmin app."""
     async with AsyncClient(
         transport=ASGITransport(app=admin),  # type: ignore[arg-type]
         base_url="http://testserver",
@@ -136,7 +136,7 @@ def test_get_unrated_routes_service_filter() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Integration tests — SwitchlyAdmin /rate-limits page
+# Integration tests — WaygateAdmin /rate-limits page
 # ---------------------------------------------------------------------------
 
 
@@ -151,7 +151,7 @@ async def test_rate_limits_page_includes_unprotected_section(
 
 
 async def test_rate_limits_page_no_unprotected_when_all_rated(
-    engine: SwitchlyEngine, admin: object
+    engine: WaygateEngine, admin: object
 ) -> None:
     """When every route has a policy, 'Unprotected Routes' should not appear."""
     # Add policies for both registered routes.
@@ -190,7 +190,7 @@ async def test_modal_rl_add_returns_200(client: AsyncClient) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_rl_add_creates_policy_and_redirects(engine: SwitchlyEngine, admin: object) -> None:
+async def test_rl_add_creates_policy_and_redirects(engine: WaygateEngine, admin: object) -> None:
     """POST /rl/add with a registered path creates the policy and returns 204
     with an HX-Redirect header pointing at /rate-limits."""
     async with AsyncClient(
@@ -218,7 +218,7 @@ async def test_rl_add_unknown_route_returns_error(admin: object) -> None:
     """POST /rl/add for a path that is not registered in the engine rejects
     the request — the handler raises RouteNotFoundException (propagates as a
     server error since rl_add does not catch it)."""
-    from switchly.core.exceptions import RouteNotFoundException
+    from waygate.core.exceptions import RouteNotFoundException
 
     async with AsyncClient(
         transport=ASGITransport(app=admin),  # type: ignore[arg-type]

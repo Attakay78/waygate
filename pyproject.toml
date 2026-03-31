@@ -1,14 +1,14 @@
 [project]
-name = "switchly"
-version = "0.1.1"
-description = "Switchly gives you runtime control of your APIs to toggle features, schedule maintenance, enforce rate limits, and perform rollouts without redeploying."
+name = "waygate"
+version = "0.1.0"
+description = "Waygate gives you runtime control of your APIs to toggle features, schedule maintenance, enforce rate limits, and perform rollouts without redeploying."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
 authors = [
     { name = "Richard Quaicoe" },
 ]
-keywords = ["fastapi", "api", "maintenance", "middleware", "route", "lifecycle"]
+keywords = ["feature-flags", "fastapi", "api", "maintenance", "middleware", "route", "lifecycle", "rate limiting", "backend", "framework"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -28,9 +28,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Attakay78/switchly"
-Repository = "https://github.com/Attakay78/switchly"
-Issues = "https://github.com/Attakay78/switchly/issues"
+Homepage = "https://github.com/Attakay78/waygate"
+Repository = "https://github.com/Attakay78/waygate"
+Issues = "https://github.com/Attakay78/waygate/issues"
 
 [project.optional-dependencies]
 fastapi   = ["fastapi>=0.115"]
@@ -94,14 +94,14 @@ dev = [
 ]
 
 [project.scripts]
-switchly = "switchly.cli.main:cli"
+waygate = "waygate.cli.main:cli"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["switchly"]
+packages = ["waygate"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -115,12 +115,12 @@ target-version = "py311"
 select = ["E", "F", "I", "UP"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["switchly"]
+known-first-party = ["waygate"]
 
 [tool.ruff.lint.per-file-ignores]
-"switchly/core/feature_flags/__init__.py" = ["E402"]
-"switchly/core/feature_flags/hooks.py" = ["E402"]
-"switchly/core/feature_flags/provider.py" = ["E402"]
+"waygate/core/feature_flags/__init__.py" = ["E402"]
+"waygate/core/feature_flags/hooks.py" = ["E402"]
+"waygate/core/feature_flags/provider.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.11"

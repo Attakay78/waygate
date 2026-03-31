@@ -11,19 +11,19 @@ from __future__ import annotations
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.fastapi.decorators import disabled, force_active
-from switchly.fastapi.middleware import SwitchlyMiddleware
-from switchly.fastapi.router import SwitchlyRouter
 from tests.fastapi._helpers import _trigger_startup
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.fastapi.decorators import disabled, force_active
+from waygate.fastapi.middleware import WaygateMiddleware
+from waygate.fastapi.router import WaygateRouter
 
 
-def _app_with_routes() -> tuple[FastAPI, SwitchlyEngine]:
-    engine = SwitchlyEngine(backend=MemoryBackend())
+def _app_with_routes() -> tuple[FastAPI, WaygateEngine]:
+    engine = WaygateEngine(backend=MemoryBackend())
     app = FastAPI()
-    app.add_middleware(SwitchlyMiddleware, engine=engine)
-    router = SwitchlyRouter(engine=engine)
+    app.add_middleware(WaygateMiddleware, engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/payments")
     async def payments():
@@ -49,27 +49,27 @@ def _app_with_routes() -> tuple[FastAPI, SwitchlyEngine]:
 
 
 async def test_enable_global_maintenance_sets_config():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     cfg = await engine.enable_global_maintenance(reason="Planned downtime")
     assert cfg.enabled is True
     assert cfg.reason == "Planned downtime"
 
 
 async def test_disable_global_maintenance_clears_config():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     await engine.enable_global_maintenance(reason="Downtime")
     cfg = await engine.disable_global_maintenance()
     assert cfg.enabled is False
 
 
 async def test_get_global_maintenance_returns_disabled_by_default():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     cfg = await engine.get_global_maintenance()
     assert cfg.enabled is False
 
 
 async def test_global_maintenance_persists_in_backend():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     await engine.enable_global_maintenance(reason="Persist test", exempt_paths=["/health"])
     cfg = await engine.get_global_maintenance()
     assert cfg.enabled is True
@@ -78,15 +78,15 @@ async def test_global_maintenance_persists_in_backend():
 
 async def test_global_maintenance_hidden_from_list_states():
     """The internal sentinel key must not appear in engine.list_states()."""
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     await engine.enable_global_maintenance()
     states = await engine.list_states()
     paths = [s.path for s in states]
-    assert not any(p.startswith("__switchly:") for p in paths)
+    assert not any(p.startswith("__waygate:") for p in paths)
 
 
 async def test_global_maintenance_written_to_audit_log():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     await engine.enable_global_maintenance(reason="Audit test", actor="alice")
     log = await engine.get_audit_log()
     assert any(e.action == "global_maintenance_on" and e.actor == "alice" for e in log)
@@ -189,7 +189,7 @@ async def test_global_maintenance_also_applies_on_top_of_per_route_state():
 
 
 async def test_set_global_exempt_paths_replaces_list():
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
     await engine.enable_global_maintenance(exempt_paths=["/a", "/b"])
     updated = await engine.set_global_exempt_paths(["/c"])
     assert updated.exempt_paths == ["/c"]

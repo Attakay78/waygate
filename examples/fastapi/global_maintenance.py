@@ -25,11 +25,11 @@ Quick demo:
 
 from fastapi import FastAPI
 
-from switchly import MemoryBackend, SwitchlyEngine
-from switchly.fastapi import SwitchlyMiddleware, SwitchlyRouter, force_active
+from waygate import MemoryBackend, WaygateEngine
+from waygate.fastapi import WaygateMiddleware, WaygateRouter, force_active
 
-engine = SwitchlyEngine(backend=MemoryBackend())
-router = SwitchlyRouter(engine=engine)
+engine = WaygateEngine(backend=MemoryBackend())
+router = WaygateRouter(engine=engine)
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +98,7 @@ async def admin_status():
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="switchly — Global Maintenance Example",
+    title="waygate — Global Maintenance Example",
     description=(
         "Hit `/admin/on` to enable global maintenance mode. "
         "All routes return 503 except `@force_active` ones. "
@@ -106,5 +106,5 @@ app = FastAPI(
     ),
 )
 
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 app.include_router(router)

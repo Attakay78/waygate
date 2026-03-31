@@ -1,26 +1,26 @@
-"""Tests for SwitchlyRouter."""
+"""Tests for WaygateRouter."""
 
 from __future__ import annotations
 
 import pytest
 from fastapi import FastAPI
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.models import RouteStatus
-from switchly.fastapi.decorators import disabled, env_only, maintenance
-from switchly.fastapi.router import SwitchlyRouter
 from tests.fastapi._helpers import _trigger_startup
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.core.models import RouteStatus
+from waygate.fastapi.decorators import disabled, env_only, maintenance
+from waygate.fastapi.router import WaygateRouter
 
 
 @pytest.fixture
-def engine() -> SwitchlyEngine:
-    return SwitchlyEngine(backend=MemoryBackend(), current_env="production")
+def engine() -> WaygateEngine:
+    return WaygateEngine(backend=MemoryBackend(), current_env="production")
 
 
 @pytest.fixture
-def router(engine) -> SwitchlyRouter:
-    return SwitchlyRouter(engine=engine)
+def router(engine) -> WaygateRouter:
+    return WaygateRouter(engine=engine)
 
 
 # ---------------------------------------------------------------------------
@@ -34,7 +34,7 @@ async def test_router_registers_maintenance_route(engine, router):
     async def get_payments():
         return {"ok": True}
 
-    await router.register_switchly_routes()
+    await router.register_waygate_routes()
 
     # @router.get() → method-specific key "GET:/payments"
     state = await engine.backend.get_state("GET:/payments")
@@ -48,7 +48,7 @@ async def test_router_registers_env_gated_route(engine, router):
     async def debug():
         return {"env": "dev"}
 
-    await router.register_switchly_routes()
+    await router.register_waygate_routes()
 
     state = await engine.backend.get_state("GET:/debug")
     assert state.status == RouteStatus.ENV_GATED
@@ -61,7 +61,7 @@ async def test_router_registers_disabled_route(engine, router):
     async def old():
         return {}
 
-    await router.register_switchly_routes()
+    await router.register_waygate_routes()
 
     state = await engine.backend.get_state("GET:/old")
     assert state.status == RouteStatus.DISABLED
@@ -72,7 +72,7 @@ async def test_router_registers_undecorated_routes_as_active(engine, router):
     async def health():
         return {"status": "ok"}
 
-    await router.register_switchly_routes()
+    await router.register_waygate_routes()
 
     # Undecorated routes are registered as ACTIVE so the CLI can
     # validate that a path actually exists in the application.
@@ -81,8 +81,8 @@ async def test_router_registers_undecorated_routes_as_active(engine, router):
 
 
 async def test_from_engine_factory(engine):
-    router = SwitchlyRouter.from_engine(engine)
-    assert router._switchly_engine is engine
+    router = WaygateRouter.from_engine(engine)
+    assert router._waygate_engine is engine
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ async def test_from_engine_factory(engine):
 
 async def test_startup_registers_routes_via_app_lifespan(engine):
     """include_router forwards on_startup; triggering app startup registers routes."""
-    router = SwitchlyRouter(engine=engine)
+    router = WaygateRouter(engine=engine)
 
     @router.get("/pay")
     @maintenance(reason="test maint")

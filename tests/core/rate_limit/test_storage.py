@@ -1,4 +1,4 @@
-"""Tests for switchly.core.rate_limit.storage."""
+"""Tests for waygate.core.rate_limit.storage."""
 
 from __future__ import annotations
 
@@ -6,9 +6,9 @@ import warnings
 
 import pytest
 
-from switchly.core.exceptions import SwitchlyProductionWarning
-from switchly.core.rate_limit.models import RateLimitAlgorithm
-from switchly.core.rate_limit.storage import (
+from waygate.core.exceptions import WaygateProductionWarning
+from waygate.core.rate_limit.models import RateLimitAlgorithm
+from waygate.core.rate_limit.storage import (
     HAS_LIMITS,
     FileRateLimitStorage,
     MemoryRateLimitStorage,
@@ -96,7 +96,7 @@ class TestMemoryRateLimitStorage:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             MemoryRateLimitStorage()
-        assert not any(issubclass(warning.category, SwitchlyProductionWarning) for warning in w)
+        assert not any(issubclass(warning.category, WaygateProductionWarning) for warning in w)
 
     async def test_sliding_window_algorithm(self, memory_storage):
         result = await memory_storage.increment(
@@ -149,7 +149,7 @@ class TestFileRateLimitStorage:
             FileRateLimitStorage(
                 file_path=str(tmp_path / "rl_snapshot.json"), snapshot_interval_seconds=9999
             )
-        assert any(issubclass(warning.category, SwitchlyProductionWarning) for warning in w)
+        assert any(issubclass(warning.category, WaygateProductionWarning) for warning in w)
 
     async def test_increment_and_count(self, tmp_path):
         storage = FileRateLimitStorage(
@@ -239,22 +239,22 @@ class TestFileRateLimitStorage:
 
 class TestCreateRateLimitStorage:
     async def test_memory_backend_returns_memory_storage(self):
-        from switchly.core.backends.memory import MemoryBackend
+        from waygate.core.backends.memory import MemoryBackend
 
         backend = MemoryBackend()
         storage = create_rate_limit_storage(backend)
         assert isinstance(storage, MemoryRateLimitStorage)
 
     async def test_file_backend_returns_file_storage(self, tmp_path):
-        from switchly.core.backends.file import FileBackend
+        from waygate.core.backends.file import FileBackend
 
         backend = FileBackend(path=str(tmp_path / "state.json"))
         storage = create_rate_limit_storage(backend)
         assert isinstance(storage, FileRateLimitStorage)
 
     async def test_explicit_rate_limit_backend_wins(self, tmp_path):
-        from switchly.core.backends.file import FileBackend
-        from switchly.core.backends.memory import MemoryBackend
+        from waygate.core.backends.file import FileBackend
+        from waygate.core.backends.memory import MemoryBackend
 
         main_backend = MemoryBackend()
         rl_backend = FileBackend(path=str(tmp_path / "state.json"))

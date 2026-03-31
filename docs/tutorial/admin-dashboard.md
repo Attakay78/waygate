@@ -1,40 +1,40 @@
 # Admin Dashboard
 
-`SwitchlyAdmin` is the unified admin interface. It mounts the HTMX dashboard UI and the REST API (used by the CLI) under a single path.
+`WaygateAdmin` is the unified admin interface. It mounts the HTMX dashboard UI and the REST API (used by the CLI) under a single path.
 
 ---
 
-## Mounting SwitchlyAdmin
+## Mounting WaygateAdmin
 
 ```python
 from fastapi import FastAPI
-from switchly import SwitchlyEngine
-from switchly.fastapi import SwitchlyMiddleware
-from switchly.fastapi import SwitchlyAdmin
+from waygate import WaygateEngine
+from waygate.fastapi import WaygateMiddleware
+from waygate.fastapi import WaygateAdmin
 
-engine = SwitchlyEngine()
+engine = WaygateEngine()
 
 app = FastAPI()
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 
-# Mount at /switchly — exposes dashboard UI + REST API
+# Mount at /waygate — exposes dashboard UI + REST API
 app.mount(
-    "/switchly",
-    SwitchlyAdmin(
+    "/waygate",
+    WaygateAdmin(
         engine=engine,
         auth=("admin", "secret"),
-        prefix="/switchly",
+        prefix="/waygate",
     ),
 )
 ```
 
 After starting the server:
 
-- **Dashboard UI**: `http://localhost:8000/switchly/`
-- **Audit log**: `http://localhost:8000/switchly/audit`
-- **Rate limits**: `http://localhost:8000/switchly/rate-limits`
-- **Blocked requests**: `http://localhost:8000/switchly/blocked`
-- **REST API**: `http://localhost:8000/switchly/api/`
+- **Dashboard UI**: `http://localhost:8000/waygate/`
+- **Audit log**: `http://localhost:8000/waygate/audit`
+- **Rate limits**: `http://localhost:8000/waygate/rate-limits`
+- **Blocked requests**: `http://localhost:8000/waygate/blocked`
+- **REST API**: `http://localhost:8000/waygate/api/`
 
 ---
 
@@ -45,31 +45,31 @@ After starting the server:
 === "Single user"
 
     ```python
-    SwitchlyAdmin(engine=engine, auth=("admin", "secret"))
+    WaygateAdmin(engine=engine, auth=("admin", "secret"))
     ```
 
 === "Multiple users"
 
     ```python
-    SwitchlyAdmin(engine=engine, auth=[("alice", "pass1"), ("bob", "pass2")])
+    WaygateAdmin(engine=engine, auth=[("alice", "pass1"), ("bob", "pass2")])
     ```
 
 === "Custom auth backend"
 
     ```python
-    from switchly.fastapi import SwitchlyAuthBackend
+    from waygate.fastapi import WaygateAuthBackend
 
-    class MyDBAuth(SwitchlyAuthBackend):
+    class MyDBAuth(WaygateAuthBackend):
         def authenticate_user(self, username: str, password: str) -> bool:
             return db.check(username, password)
 
-    SwitchlyAdmin(engine=engine, auth=MyDBAuth())
+    WaygateAdmin(engine=engine, auth=MyDBAuth())
     ```
 
 === "No auth (open access)"
 
     ```python
-    SwitchlyAdmin(engine=engine)
+    WaygateAdmin(engine=engine)
     ```
 
 !!! tip "Token invalidation"
@@ -80,7 +80,7 @@ After starting the server:
 ## Dashboard UI
 
 <figure class="screenshot" markdown>
-  ![Switchly Admin Dashboard](../assets/dashboard.png)
+  ![Waygate Admin Dashboard](../assets/dashboard.png)
   <figcaption>The admin dashboard showing route states, status badges, and per-route actions.</figcaption>
 </figure>
 
@@ -103,25 +103,25 @@ The dashboard renders all registered routes with live status badges:
 
 ### Live updates (SSE)
 
-The dashboard connects to the `/switchly/events` SSE endpoint. When state changes (from another browser tab, CLI command, or API call), the affected row updates in real time without a page reload.
+The dashboard connects to the `/waygate/events` SSE endpoint. When state changes (from another browser tab, CLI command, or API call), the affected row updates in real time without a page reload.
 
 ### Rate limits
 
-`http://localhost:8000/switchly/rate-limits` shows all registered rate limit policies. Each row has three actions:
+`http://localhost:8000/waygate/rate-limits` shows all registered rate limit policies. Each row has three actions:
 
 - **Reset** — clear counters immediately so clients get their full quota back
 - **Edit** — update the limit, algorithm, or key strategy without redeploying
 - **Delete** — remove a persisted policy override
 
-Requires `switchly[rate-limit]` installed on the server.
+Requires `waygate[rate-limit]` installed on the server.
 
 ### Blocked requests
 
-`http://localhost:8000/switchly/blocked` shows a paginated log of every request that was rejected with a 429. The log is capped at 10,000 entries (configurable via `max_rl_hit_entries` on the engine).
+`http://localhost:8000/waygate/blocked` shows a paginated log of every request that was rejected with a 429. The log is capped at 10,000 entries (configurable via `max_rl_hit_entries` on the engine).
 
 ### Audit log
 
-`http://localhost:8000/switchly/audit` shows a paginated table of all state changes:
+`http://localhost:8000/waygate/audit` shows a paginated table of all state changes:
 
 - Timestamp
 - Route
@@ -135,7 +135,7 @@ Requires `switchly[rate-limit]` installed on the server.
 
 ## REST API
 
-The same mount exposes a JSON API used by the `switchly` CLI:
+The same mount exposes a JSON API used by the `waygate` CLI:
 
 | Method | Path | Description |
 |---|---|---|
@@ -163,10 +163,10 @@ The same mount exposes a JSON API used by the `switchly` CLI:
 ## Advanced options
 
 ```python
-SwitchlyAdmin(
+WaygateAdmin(
     engine=engine,
     auth=("admin", "secret"),
-    prefix="/switchly",             # must match the mount path
+    prefix="/waygate",             # must match the mount path
     secret_key="stable-key",      # omit in dev; set for production to survive restarts
     token_expiry=86400,           # token lifetime in seconds (default: 24 h)
 )
@@ -174,9 +174,9 @@ SwitchlyAdmin(
 
 | Option | Default | Description |
 |---|---|---|
-| `engine` | required | The `SwitchlyEngine` instance |
+| `engine` | required | The `WaygateEngine` instance |
 | `auth` | `None` (open) | Credentials (see forms above) |
-| `prefix` | `"/switchly"` | Mount path prefix (must match `app.mount()`) |
+| `prefix` | `"/waygate"` | Mount path prefix (must match `app.mount()`) |
 | `secret_key` | random | HMAC signing key; set a stable value in production |
 | `token_expiry` | `86400` | Token lifetime in seconds |
 

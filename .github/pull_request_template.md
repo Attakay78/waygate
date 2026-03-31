@@ -16,7 +16,7 @@
 - [ ] `ruff check .` passes with no errors
 - [ ] `ruff format .` applied
 - [ ] `pytest` passes locally
-- [ ] `switchly.core` has no new imports from `switchly.fastapi`, `switchly.dashboard`, or `switchly.cli`
+- [ ] `waygate.core` has no new imports from `waygate.fastapi`, `waygate.dashboard`, or `waygate.cli`
 - [ ] All new public functions and classes have docstrings
 
 ## Related issues

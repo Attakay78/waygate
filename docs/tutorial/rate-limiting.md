@@ -1,6 +1,6 @@
 # Rate Limiting
 
-Rate limiting protects your API from overuse and abuse by capping how many requests a client can make in a given time window. In switchly, rate limiting is declared with a single decorator and enforced by the same middleware that handles maintenance mode and deprecation.
+Rate limiting protects your API from overuse and abuse by capping how many requests a client can make in a given time window. In waygate, rate limiting is declared with a single decorator and enforced by the same middleware that handles maintenance mode and deprecation.
 
 ---
 
@@ -9,8 +9,8 @@ Rate limiting protects your API from overuse and abuse by capping how many reque
 Rate limiting is powered by the [limits](https://limits.readthedocs.io/en/stable/) library, which handles all counter arithmetic, window management, and storage backends. Install it via the `rate-limit` extra:
 
 ```bash
-uv add "switchly[rate-limit]"
-# or: pip install "switchly[rate-limit]"
+uv add "waygate[rate-limit]"
+# or: pip install "waygate[rate-limit]"
 ```
 
 ---
@@ -18,7 +18,7 @@ uv add "switchly[rate-limit]"
 ## Basic usage
 
 ```python
-from switchly.fastapi import rate_limit
+from waygate.fastapi import rate_limit
 
 @router.get("/public/posts")
 @rate_limit("10/minute")
@@ -161,7 +161,7 @@ Return `None` when no key can be extracted; `on_missing_key` controls what happe
 
 ## Algorithms
 
-All algorithms are implemented by the `limits` library. switchly selects which one to use.
+All algorithms are implemented by the `limits` library. waygate selects which one to use.
 
 | Algorithm | Behaviour | Use when |
 |---|---|---|
@@ -270,8 +270,8 @@ By default, blocked requests return a `429` JSON body. You can replace it with a
 ```python
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from switchly.fastapi import rate_limit
-from switchly import RateLimitExceededException
+from waygate.fastapi import rate_limit
+from waygate import RateLimitExceededException
 
 def rate_limit_response(request: Request, exc: RateLimitExceededException) -> JSONResponse:
     return JSONResponse(
@@ -291,11 +291,11 @@ async def list_posts():
     return {"posts": [...]}
 ```
 
-**Global default** — set once on `SwitchlyMiddleware` via the `"rate_limited"` key:
+**Global default** — set once on `WaygateMiddleware` via the `"rate_limited"` key:
 
 ```python
 app.add_middleware(
-    SwitchlyMiddleware,
+    WaygateMiddleware,
     engine=engine,
     responses={
         "rate_limited": rate_limit_response,
@@ -322,11 +322,11 @@ Both sync and async factories are supported.
 
 ## Dependency injection
 
-`@rate_limit` works as a FastAPI `Depends()` dependency as well as a decorator. Use `Depends()` when you want to apply rate limiting to a route that uses a plain `APIRouter` (not `SwitchlyRouter`), or when you need multiple rate limits on a single route.
+`@rate_limit` works as a FastAPI `Depends()` dependency as well as a decorator. Use `Depends()` when you want to apply rate limiting to a route that uses a plain `APIRouter` (not `WaygateRouter`), or when you need multiple rate limits on a single route.
 
 ```python
 from fastapi import Depends
-from switchly.fastapi import rate_limit
+from waygate.fastapi import rate_limit
 
 @router.get(
     "/export",
@@ -336,10 +336,10 @@ async def export():
     return {"data": [...]}
 ```
 
-When used as a dependency, the engine is resolved automatically from `request.app.state.switchly_engine` (set by `SwitchlyMiddleware` at startup). No `engine=` argument is needed.
+When used as a dependency, the engine is resolved automatically from `request.app.state.waygate_engine` (set by `WaygateMiddleware` at startup). No `engine=` argument is needed.
 
 !!! note "Middleware vs Depends"
-    When `@rate_limit` is used as a **decorator** on a `SwitchlyRouter` route, enforcement happens in `SwitchlyMiddleware` (before the route handler runs). When used via `Depends()`, enforcement happens in the FastAPI dependency resolution phase. Both increment the same counter and produce the same 429 response.
+    When `@rate_limit` is used as a **decorator** on a `WaygateRouter` route, enforcement happens in `WaygateMiddleware` (before the route handler runs). When used via `Depends()`, enforcement happens in the FastAPI dependency resolution phase. Both increment the same counter and produce the same 429 response.
 
 ---
 
@@ -364,28 +364,28 @@ When used as a dependency, the engine is resolved automatically from `request.ap
 Rate limit policies can be changed at runtime without redeploying. Use the CLI or admin dashboard — changes take effect on the next request.
 
 ```bash
-switchly rl list                                          # all registered policies
-switchly rl set GET:/public/posts 20/minute               # raise the limit
-switchly rl set GET:/public/posts 5/second --algorithm fixed_window
-switchly rl reset GET:/public/posts                       # clear counters now
-switchly rl hits                                          # blocked requests log
-switchly rl delete GET:/public/posts                      # remove persisted override
+waygate rl list                                          # all registered policies
+waygate rl set GET:/public/posts 20/minute               # raise the limit
+waygate rl set GET:/public/posts 5/second --algorithm fixed_window
+waygate rl reset GET:/public/posts                       # clear counters now
+waygate rl hits                                          # blocked requests log
+waygate rl delete GET:/public/posts                      # remove persisted override
 ```
 
 !!! note "Decorator metadata is the initial state"
     The limit declared in `@rate_limit(...)` is the startup default. If a policy is mutated at runtime and persisted (file or Redis backend), the persisted value takes effect on restart, just like route state.
 
 !!! note "Route must exist"
-    `switchly rl set` (and `engine.set_rate_limit_policy()`) validate that the route is registered before saving the policy. If the route does not exist, the CLI prints an error and no policy is created. This prevents phantom policies for typos or stale routes.
+    `waygate rl set` (and `engine.set_rate_limit_policy()`) validate that the route is registered before saving the policy. If the route does not exist, the CLI prints an error and no policy is created. This prevents phantom policies for typos or stale routes.
 
 !!! tip "SDK clients receive changes in real time"
-    When using Switchly Server + SwitchlySDK, policies set via `switchly rl set` or the dashboard are broadcast over the SSE stream as typed `rl_policy` events and applied to every connected SDK client immediately — no restart required. The propagation delay is the SSE round-trip (typically under 5 ms on a LAN).
+    When using Waygate Server + WaygateSDK, policies set via `waygate rl set` or the dashboard are broadcast over the SSE stream as typed `rl_policy` events and applied to every connected SDK client immediately — no restart required. The propagation delay is the SSE round-trip (typically under 5 ms on a LAN).
 
 ---
 
 ## Setting limits from the dashboard (Unprotected Routes)
 
-The **Rate Limits** tab in the admin dashboard (`/switchly/rate-limits`) includes an **Unprotected Routes** section that lists every registered route that currently has no rate limit policy. This is useful for:
+The **Rate Limits** tab in the admin dashboard (`/waygate/rate-limits`) includes an **Unprotected Routes** section that lists every registered route that currently has no rate limit policy. This is useful for:
 
 - Auditing which routes are exposed without throttling
 - Adding limits to routes that were not annotated with `@rate_limit` at deploy time
@@ -407,38 +407,38 @@ Submitting the form calls `POST /api/rate-limits` under the hood and redirects b
 
 ## Per-service rate limit (multi-service)
 
-When running multiple services with Switchly Server and `SwitchlySDK`, you can set a rate limit that applies to **every route of one service** without decorating individual handlers.
+When running multiple services with Waygate Server and `WaygateSDK`, you can set a rate limit that applies to **every route of one service** without decorating individual handlers.
 
 ```bash
 # Cap all payments-service routes at 1000 per minute per IP
-switchly srl set payments-service 1000/minute
+waygate srl set payments-service 1000/minute
 
 # Shared counter across all callers
-switchly srl set payments-service 5000/hour --key global
+waygate srl set payments-service 5000/hour --key global
 
 # Pause and resume enforcement
-switchly srl disable payments-service
-switchly srl enable  payments-service
+waygate srl disable payments-service
+waygate srl enable  payments-service
 
 # Clear counters (policy stays in place)
-switchly srl reset payments-service
+waygate srl reset payments-service
 ```
 
-The service rate limit sits between the all-services global rate limit (`switchly grl`) and individual per-route limits. A request passes through all three layers in order before reaching the handler. You can configure any combination of the three independently.
+The service rate limit sits between the all-services global rate limit (`waygate grl`) and individual per-route limits. A request passes through all three layers in order before reaching the handler. You can configure any combination of the three independently.
 
 From the dashboard: open the **Rate Limits** tab and filter to a service. A **Service Rate Limit** card appears above the policies table with controls to configure, pause, reset, and remove the policy.
 
-See [Per-service rate limit reference](../reference/rate-limiting.md#per-service-rate-limit) and the [`switchly srl` CLI reference](../reference/cli.md#switchly-srl--switchly-service-rate-limit) for the full API.
+See [Per-service rate limit reference](../reference/rate-limiting.md#per-service-rate-limit) and the [`waygate srl` CLI reference](../reference/cli.md#waygate-srl--waygate-service-rate-limit) for the full API.
 
 ---
 
 ## Blocked requests log
 
-Every blocked request is recorded. View from the dashboard at `/switchly/blocked` or via the CLI:
+Every blocked request is recorded. View from the dashboard at `/waygate/blocked` or via the CLI:
 
 ```bash
-switchly rl hits
-switchly rl hits --limit 50
+waygate rl hits
+waygate rl hits --limit 50
 ```
 
 The log is capped at 10,000 entries by default (configurable via `max_rl_hit_entries` on the engine). Oldest entries are evicted when the cap is reached.
@@ -458,7 +458,7 @@ Rate limit counters are stored separately from route state. The storage is auto-
 For production deployments with multiple workers, use `RedisBackend`:
 
 ```python
-engine = SwitchlyEngine(backend=RedisBackend("redis://localhost:6379/0"))
+engine = WaygateEngine(backend=RedisBackend("redis://localhost:6379/0"))
 ```
 
 `create_rate_limit_storage()` automatically uses `RedisRateLimitStorage` when it detects a `RedisBackend`.

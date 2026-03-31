@@ -1,10 +1,10 @@
 # Exceptions
 
-All switchly exceptions are defined in `switchly.core.exceptions`. The engine raises them from `engine.check()`, and `SwitchlyMiddleware` catches them to produce the appropriate HTTP response.
+All waygate exceptions are defined in `waygate.core.exceptions`. The engine raises them from `engine.check()`, and `WaygateMiddleware` catches them to produce the appropriate HTTP response.
 
 ```python
-from switchly import (
-    SwitchlyException,
+from waygate import (
+    WaygateException,
     MaintenanceException,
     RouteDisabledException,
     EnvGatedException,
@@ -12,14 +12,14 @@ from switchly import (
 ```
 
 !!! note "You usually don't import these directly"
-    In a standard FastAPI setup, `SwitchlyMiddleware` handles all exceptions automatically. You only need to import them if you are building a custom adapter, custom response factory, or writing tests that inspect the raised exception.
+    In a standard FastAPI setup, `WaygateMiddleware` handles all exceptions automatically. You only need to import them if you are building a custom adapter, custom response factory, or writing tests that inspect the raised exception.
 
 ---
 
 ## Exception hierarchy
 
 ```
-SwitchlyException
+WaygateException
 ├── MaintenanceException
 ├── RouteDisabledException
 └── EnvGatedException
@@ -27,12 +27,12 @@ SwitchlyException
 
 ---
 
-## SwitchlyException
+## WaygateException
 
-Base class for all switchly exceptions. Catch this if you want a single handler for any switchly-raised error.
+Base class for all waygate exceptions. Catch this if you want a single handler for any waygate-raised error.
 
 ```python
-from switchly import SwitchlyException
+from waygate import WaygateException
 ```
 
 ---
@@ -42,7 +42,7 @@ from switchly import SwitchlyException
 Raised by `engine.check()` when a route (or the entire system via global maintenance) is in maintenance mode.
 
 ```python
-from switchly import MaintenanceException
+from waygate import MaintenanceException
 ```
 
 ### Attributes
@@ -58,7 +58,7 @@ from switchly import MaintenanceException
 ```python title="accessing exception attributes"
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from switchly import MaintenanceException
+from waygate import MaintenanceException
 
 def maintenance_page(request: Request, exc: MaintenanceException) -> HTMLResponse:
     retry_msg = ""
@@ -78,7 +78,7 @@ def maintenance_page(request: Request, exc: MaintenanceException) -> HTMLRespons
 Raised by `engine.check()` when a route has been permanently disabled.
 
 ```python
-from switchly import RouteDisabledException
+from waygate import RouteDisabledException
 ```
 
 ### Attributes
@@ -95,7 +95,7 @@ from switchly import RouteDisabledException
 Raised by `engine.check()` when a route is restricted to specific environments and the current environment is not in the allowed list.
 
 ```python
-from switchly import EnvGatedException
+from waygate import EnvGatedException
 ```
 
 ### Attributes
@@ -103,11 +103,11 @@ from switchly import EnvGatedException
 | Attribute | Type | Description |
 |---|---|---|
 | `path` | `str` | The route key |
-| `current_env` | `str` | The active environment name (the value `SwitchlyEngine` was constructed with) |
+| `current_env` | `str` | The active environment name (the value `WaygateEngine` was constructed with) |
 | `allowed_envs` | `list[str]` | The environments where the route is accessible |
 
-!!! note "SwitchlyMiddleware returns 403 with JSON"
-    When `SwitchlyMiddleware` catches an `EnvGatedException`, it returns a 403 with a structured JSON body containing `code: "ENV_GATED"`, `current_env`, `allowed_envs`, and `path`.
+!!! note "WaygateMiddleware returns 403 with JSON"
+    When `WaygateMiddleware` catches an `EnvGatedException`, it returns a 403 with a structured JSON body containing `code: "ENV_GATED"`, `current_env`, `allowed_envs`, and `path`.
 
 ---
 
@@ -118,7 +118,7 @@ If you are building an adapter for a framework other than FastAPI, catch these e
 ??? example "Custom adapter middleware pattern"
 
     ```python
-    from switchly import (
+    from waygate import (
         MaintenanceException,
         RouteDisabledException,
         EnvGatedException,

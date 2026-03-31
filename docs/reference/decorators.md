@@ -1,16 +1,16 @@
 # Decorators
 
-Decorators are the primary way to declare the lifecycle state of a route. Each one stamps a `__switchly_meta__` dictionary onto the endpoint function without modifying it. `SwitchlyRouter` reads this metadata at startup and registers the initial state with the engine.
+Decorators are the primary way to declare the lifecycle state of a route. Each one stamps a `__waygate_meta__` dictionary onto the endpoint function without modifying it. `WaygateRouter` reads this metadata at startup and registers the initial state with the engine.
 
-All decorators are importable from `switchly.fastapi` or directly from `switchly.fastapi.decorators`.
+All decorators are importable from `waygate.fastapi` or directly from `waygate.fastapi.decorators`.
 
 ```python
-from switchly.fastapi import maintenance, disabled, env_only, force_active, deprecated
-from switchly.fastapi import rate_limit
+from waygate.fastapi import maintenance, disabled, env_only, force_active, deprecated
+from waygate.fastapi import rate_limit
 ```
 
 !!! tip "Decorator order"
-    Always apply the switchly decorator **directly below** the router decorator, so it wraps the function before the router sees it:
+    Always apply the waygate decorator **directly below** the router decorator, so it wraps the function before the router sees it:
 
     ```python
     @router.get("/payments")   # outermost
@@ -26,7 +26,7 @@ from switchly.fastapi import rate_limit
 Mark a route as temporarily unavailable. Returns **503** with a structured JSON body and an optional `Retry-After` header.
 
 ```python title="basic usage"
-from switchly.fastapi import maintenance
+from waygate.fastapi import maintenance
 
 @router.get("/payments")
 @maintenance(reason="DB migration in progress")
@@ -49,7 +49,7 @@ Pass `start` and `end` to schedule maintenance for a future window. The schedule
 
 ```python title="scheduled maintenance"
 from datetime import datetime, UTC
-from switchly.fastapi import maintenance
+from waygate.fastapi import maintenance
 
 @router.post("/orders")
 @maintenance(
@@ -82,7 +82,7 @@ async def create_order():
 Permanently disable a route. Returns **503**. Use for routes that should never be called again — removed features, deprecated API versions that have passed sunset, or endpoints replaced by a successor path.
 
 ```python title="basic usage"
-from switchly.fastapi import disabled
+from waygate.fastapi import disabled
 
 @router.get("/legacy/report")
 @disabled(reason="Replaced by /v2/reports. Update your client.")
@@ -123,7 +123,7 @@ Restrict a route to specific environment names. In any other environment the rou
 Use this for internal tools, debug endpoints, admin utilities, or staging-only features that should never be accessible in production.
 
 ```python title="basic usage"
-from switchly.fastapi import env_only
+from waygate.fastapi import env_only
 
 @router.get("/internal/metrics")
 @env_only("dev", "staging")
@@ -147,14 +147,14 @@ The engine compares the environment names against the `current_env` value it was
 
 ```python title="setting the environment"
 # Explicit
-engine = SwitchlyEngine(current_env="production")
+engine = WaygateEngine(current_env="production")
 
-# Via config helper (reads SWITCHLY_ENV env var)
+# Via config helper (reads WAYGATE_ENV env var)
 engine = make_engine()
 ```
 
-```ini title=".switchly file"
-SWITCHLY_ENV=staging
+```ini title=".waygate file"
+WAYGATE_ENV=staging
 ```
 
 !!! note "403 with JSON body"
@@ -164,10 +164,10 @@ SWITCHLY_ENV=staging
 
 ## `@force_active`
 
-Bypass all switchly checks — both per-route and global maintenance. Use for health check endpoints, readiness probes, and any path that must remain reachable regardless of system state.
+Bypass all waygate checks — both per-route and global maintenance. Use for health check endpoints, readiness probes, and any path that must remain reachable regardless of system state.
 
 ```python title="basic usage"
-from switchly.fastapi import force_active
+from waygate.fastapi import force_active
 
 @router.get("/health")
 @force_active
@@ -193,7 +193,7 @@ async def health():
 Mark a route as deprecated. Requests still succeed (no blocking), but the middleware injects RFC-compliant headers into every response to warn API consumers and tooling.
 
 ```python title="basic usage"
-from switchly.fastapi import deprecated
+from waygate.fastapi import deprecated
 
 @router.get("/v1/users")
 @deprecated(
@@ -231,7 +231,7 @@ The route is also automatically marked `deprecated: true` in the OpenAPI schema,
 By default, blocked routes return a structured JSON error body. You can replace this with any Starlette `Response` subclass — HTML, plain text, a redirect, or a different JSON shape — in two ways:
 
 - **Per-route**: pass `response=` on the decorator
-- **Global default**: pass `responses=` on `SwitchlyMiddleware`
+- **Global default**: pass `responses=` on `WaygateMiddleware`
 
 **Resolution order per request:** per-route `response=` → global `responses=` default → built-in JSON.
 
@@ -242,7 +242,7 @@ By default, blocked routes return a structured JSON error body. You can replace 
 Every blocking decorator (`@maintenance`, `@disabled`, `@env_only`) accepts an optional `response=` keyword. The value is a sync or async callable:
 
 ```python
-(request: Request, exc: SwitchlyException) -> Response
+(request: Request, exc: WaygateException) -> Response
 ```
 
 ??? example "HTML maintenance page"
@@ -250,7 +250,7 @@ Every blocking decorator (`@maintenance`, `@disabled`, `@env_only`) accepts an o
     ```python
     from starlette.requests import Request
     from starlette.responses import HTMLResponse
-    from switchly.fastapi import maintenance
+    from waygate.fastapi import maintenance
 
     def maintenance_page(request: Request, exc) -> HTMLResponse:
         return HTMLResponse(
@@ -268,7 +268,7 @@ Every blocking decorator (`@maintenance`, `@disabled`, `@env_only`) accepts an o
 
     ```python
     from starlette.responses import RedirectResponse
-    from switchly.fastapi import maintenance
+    from waygate.fastapi import maintenance
 
     @router.get("/payments")
     @maintenance(
@@ -284,7 +284,7 @@ Every blocking decorator (`@maintenance`, `@disabled`, `@env_only`) accepts an o
     ```python
     from starlette.requests import Request
     from starlette.responses import JSONResponse
-    from switchly.fastapi import maintenance
+    from waygate.fastapi import maintenance
 
     def branded_error(request: Request, exc) -> JSONResponse:
         return JSONResponse(
@@ -303,7 +303,7 @@ Every blocking decorator (`@maintenance`, `@disabled`, `@env_only`) accepts an o
     ```python
     from starlette.requests import Request
     from starlette.responses import HTMLResponse
-    from switchly.fastapi import maintenance
+    from waygate.fastapi import maintenance
 
     async def maintenance_page(request: Request, exc) -> HTMLResponse:
         html = await render_template("maintenance.html", reason=exc.reason)
@@ -317,14 +317,14 @@ Every blocking decorator (`@maintenance`, `@disabled`, `@env_only`) accepts an o
 
 ---
 
-### Global default: `responses=` on `SwitchlyMiddleware`
+### Global default: `responses=` on `WaygateMiddleware`
 
 Set app-wide response defaults once on the middleware. Any route without a per-route `response=` will use these.
 
 ```python title="app-wide custom responses"
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from switchly.fastapi import SwitchlyMiddleware
+from waygate.fastapi import WaygateMiddleware
 
 def maintenance_page(request: Request, exc) -> HTMLResponse:
     return HTMLResponse(
@@ -333,7 +333,7 @@ def maintenance_page(request: Request, exc) -> HTMLResponse:
     )
 
 app.add_middleware(
-    SwitchlyMiddleware,
+    WaygateMiddleware,
     engine=engine,
     responses={
         "maintenance": maintenance_page,
@@ -356,15 +356,15 @@ app.add_middleware(
 
 ```python
 # Sync — works fine for most cases
-def my_factory(request: Request, exc: SwitchlyException) -> Response: ...
+def my_factory(request: Request, exc: WaygateException) -> Response: ...
 
 # Async — identical interface, use when you need to await something
-async def my_factory(request: Request, exc: SwitchlyException) -> Response: ...
+async def my_factory(request: Request, exc: WaygateException) -> Response: ...
 ```
 
 The `exc` argument carries useful context for building your response:
 
-| Switchly state | Exception type | Useful attributes |
+| Waygate state | Exception type | Useful attributes |
 |---|---|---|
 | Maintenance | `MaintenanceException` | `exc.reason`, `exc.retry_after`, `exc.path` |
 | Disabled | `RouteDisabledException` | `exc.reason`, `exc.path` |
@@ -380,7 +380,7 @@ Read more in [Exceptions](exceptions.md).
 Cap the number of requests a client can make in a given time window. Returns **429** with `Retry-After` and `X-RateLimit-*` headers when the limit is exceeded.
 
 ```python
-from switchly.fastapi import rate_limit
+from waygate.fastapi import rate_limit
 
 @router.get("/public/posts")
 @rate_limit("10/minute")
@@ -423,7 +423,7 @@ The tier is read from `request.state.plan` by default. Override with `tier_resol
 
 !!! tip "Requires installation"
     ```bash
-    uv add "switchly[rate-limit]"
+    uv add "waygate[rate-limit]"
     ```
 
 See [**Tutorial: Rate Limiting**](../tutorial/rate-limiting.md) and [**Reference: Rate Limiting**](rate-limiting.md) for the full API.
@@ -432,11 +432,11 @@ See [**Tutorial: Rate Limiting**](../tutorial/rate-limiting.md) and [**Reference
 
 ## Using decorators as `Depends()` dependencies
 
-All decorators also work as FastAPI dependencies. This lets you enforce route state without middleware — useful in testing or when you need per-handler enforcement in a router that does not use `SwitchlyRouter`.
+All decorators also work as FastAPI dependencies. This lets you enforce route state without middleware — useful in testing or when you need per-handler enforcement in a router that does not use `WaygateRouter`.
 
 ```python title="dependency injection usage"
 from fastapi import Depends
-from switchly.fastapi import disabled
+from waygate.fastapi import disabled
 
 @router.get("/admin/report", dependencies=[Depends(disabled(reason="Use /v2/report"))])
 async def admin_report():
@@ -449,6 +449,6 @@ See [FastAPI adapter: Dependency injection](../adapters/fastapi.md#dependency-in
 
 ## Composition rules
 
-- A route can carry **at most one** switchly decorator. If multiple are applied, the last one to write `__switchly_meta__` wins. Use `@maintenance` or `@disabled`, not both.
+- A route can carry **at most one** waygate decorator. If multiple are applied, the last one to write `__waygate_meta__` wins. Use `@maintenance` or `@disabled`, not both.
 - All decorators preserve `async` and `sync` function signatures using `@functools.wraps`.
-- Decorators are compatible with both `SwitchlyRouter` and plain `APIRouter`. When using a plain `APIRouter`, the decorator metadata is applied, but initial state registration at startup requires `SwitchlyRouter`. Read more in [SwitchlyRouter](../adapters/fastapi.md#switchlyrouter).
+- Decorators are compatible with both `WaygateRouter` and plain `APIRouter`. When using a plain `APIRouter`, the decorator metadata is applied, but initial state registration at startup requires `WaygateRouter`. Read more in [WaygateRouter](../adapters/fastapi.md#waygaterouter).

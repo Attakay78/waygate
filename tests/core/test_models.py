@@ -1,8 +1,8 @@
-"""Tests for switchly.core.models."""
+"""Tests for waygate.core.models."""
 
 from datetime import UTC, datetime
 
-from switchly.core.models import AuditEntry, MaintenanceWindow, RouteState, RouteStatus
+from waygate.core.models import AuditEntry, MaintenanceWindow, RouteState, RouteStatus
 
 
 def test_route_status_values():

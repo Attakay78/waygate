@@ -63,8 +63,8 @@ jobs:
         run: |
           npm install
           npm run build:css
-          if ! git diff --quiet switchly/dashboard/static/switchly.min.css; then
-            echo "::error::switchly.min.css is out of date."
+          if ! git diff --quiet waygate/dashboard/static/waygate.min.css; then
+            echo "::error::waygate.min.css is out of date."
             exit 1
           fi
 
@@ -182,5 +182,5 @@ jobs:
           TAG="${{ needs.check-version.outputs.tag }}"
           VERSION="${{ needs.check-version.outputs.version }}"
           gh release create "$TAG" dist/* \
-            --title "switchly $VERSION" \
+            --title "waygate $VERSION" \
             --notes-file release_notes.txt

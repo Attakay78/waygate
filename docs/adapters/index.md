@@ -1,10 +1,10 @@
 # Framework Adapters
 
-switchly separates concerns cleanly:
+waygate separates concerns cleanly:
 
-- **`switchly.core`** — the engine, backends, models, and exceptions. Zero framework imports. Works anywhere Python runs.
-- **`switchly.fastapi`** — the FastAPI adapter: ASGI middleware, route decorators, `SwitchlyRouter`, and OpenAPI integration.
-- **`switchly.<framework>`** — future adapters follow the same pattern.
+- **`waygate.core`** — the engine, backends, models, and exceptions. Zero framework imports. Works anywhere Python runs.
+- **`waygate.fastapi`** — the FastAPI adapter: ASGI middleware, route decorators, `WaygateRouter`, and OpenAPI integration.
+- **`waygate.<framework>`** — future adapters follow the same pattern.
 
 ---
 
@@ -14,9 +14,9 @@ We currently support **FastAPI**. More framework adapters are on the way.
 
 | Framework | Status | Adapter |
 |---|---|---|
-| **FastAPI** | ✅ Supported | `switchly.fastapi` |
+| **FastAPI** | ✅ Supported | `waygate.fastapi` |
 | More coming | 🔜 On the way | — |
 
 See [**FastAPI Adapter**](fastapi.md) for the full guide.
 
-> Want your framework supported? [Open an issue](https://github.com/Attakay78/switchly/issues).
+> Want your framework supported? [Open an issue](https://github.com/Attakay78/waygate/issues).

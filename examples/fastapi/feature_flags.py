@@ -13,17 +13,17 @@ Demonstrates the full feature-flag API powered by OpenFeature:
   * Live event stream — watch evaluations in real time
 
 Prerequisites:
-    pip install switchly[flags]
+    pip install waygate[flags]
     # or:
-    uv pip install "switchly[flags]"
+    uv pip install "waygate[flags]"
 
 Run:
     uv run uvicorn examples.fastapi.feature_flags:app --reload
 
 Then visit:
     http://localhost:8000/docs           — Swagger UI
-    http://localhost:8000/switchly/        — admin dashboard (login: admin / secret)
-    http://localhost:8000/switchly/flags   — flag management UI
+    http://localhost:8000/waygate/        — admin dashboard (login: admin / secret)
+    http://localhost:8000/waygate/flags   — flag management UI
 
 Exercise the endpoints:
     # Boolean flag — new checkout flow (async route)
@@ -48,16 +48,16 @@ Exercise the endpoints:
     curl "http://localhost:8000/checkout?user_id=beta_tester_1"
 
     # Live event stream (SSE) — watch evaluations happen in real time
-    curl -N "http://localhost:8000/switchly/api/flags/stream"
+    curl -N "http://localhost:8000/waygate/api/flags/stream"
 
 CLI — manage flags without redeploying:
-    switchly login admin          # password: secret
-    switchly flags list
-    switchly flags get new-checkout
-    switchly flags disable new-checkout   # kill-switch
-    switchly flags enable new-checkout    # restore
-    switchly flags stream                 # tail live evaluations
-    switchly flags stream new-checkout    # filter to one flag
+    waygate login admin          # password: secret
+    waygate flags list
+    waygate flags get new-checkout
+    waygate flags disable new-checkout   # kill-switch
+    waygate flags enable new-checkout    # restore
+    waygate flags stream                 # tail live evaluations
+    waygate flags stream new-checkout    # filter to one flag
 """
 
 from __future__ import annotations
@@ -67,7 +67,7 @@ from typing import Any
 
 from fastapi import FastAPI, Request
 
-from switchly import (
+from waygate import (
     EvaluationContext,
     FeatureFlag,
     FlagType,
@@ -78,11 +78,11 @@ from switchly import (
     TargetingRule,
     make_engine,
 )
-from switchly.fastapi import (
-    SwitchlyAdmin,
-    SwitchlyMiddleware,
-    SwitchlyRouter,
-    apply_switchly_to_openapi,
+from waygate.fastapi import (
+    WaygateAdmin,
+    WaygateMiddleware,
+    WaygateRouter,
+    apply_waygate_to_openapi,
 )
 
 # ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ from switchly.fastapi import (
 engine = make_engine()
 engine.use_openfeature()
 
-router = SwitchlyRouter(engine=engine)
+router = WaygateRouter(engine=engine)
 
 
 # ---------------------------------------------------------------------------
@@ -414,25 +414,25 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="switchly — Feature Flags Example",
+    title="waygate — Feature Flags Example",
     description=(
         "Demonstrates boolean, string, integer, float, and JSON flags with "
         "targeting rules, rollouts, kill-switches, and live event streaming.\n\n"
-        "Requires `switchly[flags]` (`pip install switchly[flags]`)."
+        "Requires `waygate[flags]` (`pip install waygate[flags]`)."
     ),
     lifespan=lifespan,
 )
 
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 app.include_router(router)
-apply_switchly_to_openapi(app, engine)
+apply_waygate_to_openapi(app, engine)
 
 app.mount(
-    "/switchly",
-    SwitchlyAdmin(
+    "/waygate",
+    WaygateAdmin(
         engine=engine,
         auth=("admin", "secret"),
-        prefix="/switchly",
+        prefix="/waygate",
         # enable_flags is auto-detected from engine.use_openfeature() — no
         # need to set it explicitly.  Set to True/False to override.
     ),

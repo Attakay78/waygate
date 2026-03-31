@@ -1,0 +1,95 @@
+<div class="p-6 sm:p-7">
+
+    {# ── Header ───────────────────────────────────────────────── #}
+    <div class="flex gap-4 mb-5">
+        <div class="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center bg-orange-100">
+            <svg class="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+        </div>
+        <div class="pt-0.5">
+            <h2 class="text-base font-semibold text-slate-900">
+                Enable Maintenance — <span class="font-mono text-indigo-700">{{ service }}</span>
+            </h2>
+            <p class="text-sm text-slate-500 mt-0.5 leading-relaxed">
+                All routes for this service return 503. Other services are unaffected.
+            </p>
+        </div>
+    </div>
+
+    {# ── Warning banner ───────────────────────────────────────── #}
+    <div class="flex gap-2.5 p-3 mb-5 rounded-lg bg-amber-50 border border-amber-200">
+        <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+        </svg>
+        <p class="text-xs text-amber-800 leading-relaxed">
+            <strong class="font-semibold">All routes for <code class="font-mono bg-amber-100 px-0.5 rounded">{{ service }}</code> will return 503.</strong>
+            Other services continue operating normally. Add exempt paths below to keep critical routes reachable.
+        </p>
+    </div>
+
+    {# ── Form ─────────────────────────────────────────────────── #}
+    <form hx-post="{{ prefix }}/service-maintenance/enable"
+          hx-target="#service-maintenance-widget"
+          hx-swap="outerHTML"
+          hx-on::after-request="document.getElementById('waygate-modal').close()"
+          class="flex flex-col gap-4">
+
+        <input type="hidden" name="service" value="{{ service }}">
+
+        {# Reason #}
+        <div>
+            <label for="sm-reason"
+                   class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
+                Reason
+                <span class="text-slate-400 font-normal normal-case tracking-normal ml-1">(shown in 503 responses)</span>
+            </label>
+            <input id="sm-reason"
+                   type="text"
+                   name="reason"
+                   autofocus
+                   autocomplete="off"
+                   placeholder="e.g. Deploying new version, database migration…"
+                   class="w-full text-sm border border-slate-300 bg-white rounded-lg px-3 py-2.5 text-slate-800
+                          placeholder:text-slate-400 shadow-sm
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+                          transition-shadow">
+        </div>
+
+        {# Exempt paths #}
+        <div>
+            <label for="sm-exempt"
+                   class="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
+                Exempt paths
+                <span class="text-slate-400 font-normal normal-case tracking-normal ml-1">(optional, one per line)</span>
+            </label>
+            <textarea id="sm-exempt"
+                      name="exempt_paths"
+                      rows="3"
+                      placeholder="/health&#10;GET:/status&#10;/readyz"
+                      class="w-full text-sm font-mono border border-slate-300 bg-white rounded-lg px-3 py-2.5
+                             text-slate-800 placeholder:text-slate-400 placeholder:font-sans shadow-sm resize-none
+                             focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+                             transition-shadow"></textarea>
+        </div>
+
+        {# Buttons #}
+        <div class="flex items-center justify-end gap-2.5 pt-1">
+            <button type="button"
+                    onclick="document.getElementById('waygate-modal').close()"
+                    class="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200
+                           rounded-lg hover:bg-slate-50 hover:border-slate-300
+                           focus:outline-none focus:ring-2 focus:ring-slate-400
+                           transition-all active:scale-95 shadow-sm">
+                Cancel
+            </button>
+            <button type="submit"
+                    class="px-4 py-2 text-sm font-semibold text-white rounded-lg
+                           bg-orange-600 hover:bg-orange-700
+                           focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
+                           transition-all active:scale-95 shadow-sm">
+                Enable Service Maintenance
+            </button>
+        </div>
+    </form>
+</div>

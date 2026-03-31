@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "build:css": "tailwindcss -i input.css -o switchly/dashboard/static/switchly.min.css --minify && node -e \"const f='switchly/dashboard/static/switchly.min.css',fs=require('fs');fs.writeFileSync(f,fs.readFileSync(f,'utf8').trimEnd())\"",
-    "watch:css": "tailwindcss -i input.css -o switchly/dashboard/static/switchly.min.css --watch"
+    "build:css": "tailwindcss -i input.css -o waygate/dashboard/static/waygate.min.css --minify && node -e \"const f='waygate/dashboard/static/waygate.min.css',fs=require('fs');fs.writeFileSync(f,fs.readFileSync(f,'utf8').trimEnd())\"",
+    "watch:css": "tailwindcss -i input.css -o waygate/dashboard/static/waygate.min.css --watch"
   },
   "devDependencies": {
     "@tailwindcss/cli": "4.2.1"

@@ -6,18 +6,18 @@ This tutorial shows you how to put a single route into maintenance mode and veri
 
 ```python title="app.py"
 from fastapi import FastAPI
-from switchly import SwitchlyEngine
-from switchly import MemoryBackend
-from switchly.fastapi import SwitchlyMiddleware
-from switchly.fastapi import SwitchlyRouter
-from switchly.fastapi import maintenance, force_active
+from waygate import WaygateEngine
+from waygate import MemoryBackend
+from waygate.fastapi import WaygateMiddleware
+from waygate.fastapi import WaygateRouter
+from waygate.fastapi import maintenance, force_active
 
-engine = SwitchlyEngine(backend=MemoryBackend())
+engine = WaygateEngine(backend=MemoryBackend())
 
 app = FastAPI()
-app.add_middleware(SwitchlyMiddleware, engine=engine)
+app.add_middleware(WaygateMiddleware, engine=engine)
 
-router = SwitchlyRouter(engine=engine)
+router = WaygateRouter(engine=engine)
 
 @router.get("/payments")
 @maintenance(reason="Database migration — back at 04:00 UTC")
@@ -58,7 +58,7 @@ curl -s http://localhost:8000/payments | python -m json.tool
 ```
 
 ```bash
-# /health → 200 (force_active bypasses all switchly checks)
+# /health → 200 (force_active bypasses all waygate checks)
 curl -s http://localhost:8000/health
 ```
 
@@ -77,11 +77,11 @@ async def get_payments():
     ...
 ```
 
-1. `@maintenance(...)` stamps `__switchly_meta__ = {"status": "maintenance", "reason": "..."}` on the function. The function itself is **not modified**; it still runs normally if called directly.
+1. `@maintenance(...)` stamps `__waygate_meta__ = {"status": "maintenance", "reason": "..."}` on the function. The function itself is **not modified**; it still runs normally if called directly.
 
-2. When `app.include_router(router)` is called, `SwitchlyRouter` scans all routes for `__switchly_meta__` and calls `engine.register()` for each one.
+2. When `app.include_router(router)` is called, `WaygateRouter` scans all routes for `__waygate_meta__` and calls `engine.register()` for each one.
 
-3. On every HTTP request, `SwitchlyMiddleware` calls `engine.check(path)`. If the route is in maintenance, the engine raises `MaintenanceException` and the middleware returns a 503 response. The route handler never executes.
+3. On every HTTP request, `WaygateMiddleware` calls `engine.check(path)`. If the route is in maintenance, the engine raises `MaintenanceException` and the middleware returns a 503 response. The route handler never executes.
 
 ---
 
@@ -94,7 +94,7 @@ async def get_payments():
 | `@env_only("dev", "staging")` | 404 in other environments |
 | `@deprecated(sunset, use_instead)` | 200 + deprecation headers |
 | `@force_active` | Always 200, bypasses all checks |
-| `@rate_limit("100/minute")` | 429 when the limit is exceeded; requires `switchly[rate-limit]` |
+| `@rate_limit("100/minute")` | 429 when the limit is exceeded; requires `waygate[rate-limit]` |
 
 ---
 
@@ -110,11 +110,11 @@ await engine.enable("GET:/payments")
 await engine.set_maintenance("GET:/payments", reason="Second migration wave")
 ```
 
-Or via the CLI (requires `SwitchlyAdmin` mounted; see [Admin Dashboard](admin-dashboard.md)):
+Or via the CLI (requires `WaygateAdmin` mounted; see [Admin Dashboard](admin-dashboard.md)):
 
 ```bash
-switchly enable GET:/payments
-switchly maintenance GET:/payments --reason "Second migration wave"
+waygate enable GET:/payments
+waygate maintenance GET:/payments --reason "Second migration wave"
 ```
 
 ---

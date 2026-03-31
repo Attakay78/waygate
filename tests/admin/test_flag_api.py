@@ -1,4 +1,4 @@
-"""Tests for the feature flag + segment REST API endpoints in SwitchlyAdmin.
+"""Tests for the feature flag + segment REST API endpoints in WaygateAdmin.
 
 All tests use an in-process ASGI transport — no real server needed.
 The admin is mounted with ``enable_flags=True`` so flag routes are active.
@@ -9,9 +9,9 @@ from __future__ import annotations
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from switchly.admin.app import SwitchlyAdmin
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.feature_flags.models import (
+from waygate.admin.app import WaygateAdmin
+from waygate.core.engine import WaygateEngine
+from waygate.core.feature_flags.models import (
     FeatureFlag,
     Segment,
 )
@@ -22,14 +22,14 @@ from switchly.core.feature_flags.models import (
 
 
 @pytest.fixture
-def engine() -> SwitchlyEngine:
-    return SwitchlyEngine()
+def engine() -> WaygateEngine:
+    return WaygateEngine()
 
 
 @pytest.fixture
-def admin(engine: SwitchlyEngine):
-    """SwitchlyAdmin with flags enabled, no auth."""
-    return SwitchlyAdmin(engine=engine, enable_flags=True)
+def admin(engine: WaygateEngine):
+    """WaygateAdmin with flags enabled, no auth."""
+    return WaygateAdmin(engine=engine, enable_flags=True)
 
 
 @pytest.fixture
@@ -78,7 +78,7 @@ def _segment_payload(key: str = "beta") -> dict:
 
 class TestFlagsNotMounted:
     async def test_flag_routes_absent_when_disabled(self, engine):
-        admin_no_flags = SwitchlyAdmin(engine=engine, enable_flags=False)
+        admin_no_flags = WaygateAdmin(engine=engine, enable_flags=False)
         async with AsyncClient(
             transport=ASGITransport(app=admin_no_flags),
             base_url="http://testserver",

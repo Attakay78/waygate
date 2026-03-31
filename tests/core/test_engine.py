@@ -1,4 +1,4 @@
-"""Tests for SwitchlyEngine — every public method has a unit test."""
+"""Tests for WaygateEngine — every public method has a unit test."""
 
 from __future__ import annotations
 
@@ -7,19 +7,19 @@ from datetime import UTC, datetime
 
 import pytest
 
-from switchly.core.backends.memory import MemoryBackend
-from switchly.core.engine import SwitchlyEngine
-from switchly.core.exceptions import (
+from waygate.core.backends.memory import MemoryBackend
+from waygate.core.engine import WaygateEngine
+from waygate.core.exceptions import (
     EnvGatedException,
     MaintenanceException,
     RouteDisabledException,
 )
-from switchly.core.models import MaintenanceWindow, RouteState, RouteStatus
+from waygate.core.models import MaintenanceWindow, RouteState, RouteStatus
 
 
 @pytest.fixture
-def engine() -> SwitchlyEngine:
-    return SwitchlyEngine(backend=MemoryBackend(), current_env="production")
+def engine() -> WaygateEngine:
+    return WaygateEngine(backend=MemoryBackend(), current_env="production")
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +80,7 @@ async def test_check_env_gated_wrong_env_raises(engine):
 
 async def test_check_env_gated_correct_env_passes():
     """Dev engine → ENV_GATED route restricted to dev passes."""
-    engine = SwitchlyEngine(backend=MemoryBackend(), current_env="dev")
+    engine = WaygateEngine(backend=MemoryBackend(), current_env="dev")
     state = RouteState(
         path="/api/debug",
         status=RouteStatus.ENV_GATED,
@@ -105,8 +105,8 @@ async def test_check_fail_open_on_backend_error(engine, caplog):
         async def get_state(self, path):
             raise RuntimeError("Redis is down")
 
-    broken_engine = SwitchlyEngine(backend=BrokenBackend())
-    with caplog.at_level(logging.ERROR, logger="switchly.core.engine"):
+    broken_engine = WaygateEngine(backend=BrokenBackend())
+    with caplog.at_level(logging.ERROR, logger="waygate.core.engine"):
         await broken_engine.check("/api/test")  # must not raise
     log = caplog.text.lower()
     assert "backend error" in log or "redis is down" in log
@@ -300,15 +300,15 @@ async def test_register_does_not_overwrite_persisted_state():
 
     Scenario:
       1. Server starts → decorator says MAINTENANCE → registered.
-      2. CLI: switchly enable /api/pay → state = ACTIVE in backend.
+      2. CLI: waygate enable /api/pay → state = ACTIVE in backend.
       3. Server restarts → register() called again with maintenance meta.
       4. Expected: state remains ACTIVE (persisted state wins).
       5. Old behaviour: state reset back to MAINTENANCE (bug).
     """
-    from switchly.core.backends.memory import MemoryBackend
-    from switchly.core.engine import SwitchlyEngine
+    from waygate.core.backends.memory import MemoryBackend
+    from waygate.core.engine import WaygateEngine
 
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
 
     # Simulate first startup: decorator registers MAINTENANCE.
     await engine.register("/api/pay", {"status": "maintenance", "reason": "DB"})
@@ -330,10 +330,10 @@ async def test_register_does_not_overwrite_persisted_state():
 
 async def test_register_applies_decorator_when_no_persisted_state():
     """On first startup (empty backend) decorator state is always applied."""
-    from switchly.core.backends.memory import MemoryBackend
-    from switchly.core.engine import SwitchlyEngine
+    from waygate.core.backends.memory import MemoryBackend
+    from waygate.core.engine import WaygateEngine
 
-    engine = SwitchlyEngine(backend=MemoryBackend())
+    engine = WaygateEngine(backend=MemoryBackend())
 
     await engine.register("/api/new", {"status": "disabled", "reason": "beta"})
     state = await engine.get_state("/api/new")
@@ -354,7 +354,7 @@ async def test_force_active_registered_with_flag(engine):
 
 
 async def test_force_active_disable_raises(engine):
-    from switchly.core.exceptions import RouteProtectedException
+    from waygate.core.exceptions import RouteProtectedException
 
     await engine.register("/health", {"force_active": True})
     with pytest.raises(RouteProtectedException):
@@ -362,7 +362,7 @@ async def test_force_active_disable_raises(engine):
 
 
 async def test_force_active_enable_raises(engine):
-    from switchly.core.exceptions import RouteProtectedException
+    from waygate.core.exceptions import RouteProtectedException
 
     await engine.register("/health", {"force_active": True})
     with pytest.raises(RouteProtectedException):
@@ -370,7 +370,7 @@ async def test_force_active_enable_raises(engine):
 
 
 async def test_force_active_set_maintenance_raises(engine):
-    from switchly.core.exceptions import RouteProtectedException
+    from waygate.core.exceptions import RouteProtectedException
 
     await engine.register("/health", {"force_active": True})
     with pytest.raises(RouteProtectedException):
@@ -378,7 +378,7 @@ async def test_force_active_set_maintenance_raises(engine):
 
 
 async def test_force_active_set_env_only_raises(engine):
-    from switchly.core.exceptions import RouteProtectedException
+    from waygate.core.exceptions import RouteProtectedException
 
     await engine.register("/health", {"force_active": True})
     with pytest.raises(RouteProtectedException):
@@ -387,8 +387,8 @@ async def test_force_active_set_env_only_raises(engine):
 
 async def test_force_active_schedule_maintenance_raises(engine):
 
-    from switchly.core.exceptions import RouteProtectedException
-    from switchly.core.models import MaintenanceWindow
+    from waygate.core.exceptions import RouteProtectedException
+    from waygate.core.models import MaintenanceWindow
 
     await engine.register("/health", {"force_active": True})
     window = MaintenanceWindow(
@@ -422,7 +422,7 @@ async def test_force_active_state_preserved_on_restart(engine):
 
 async def test_disable_unregistered_raises_not_found(engine):
     """Mutating an unregistered route raises RouteNotFoundException."""
-    from switchly.core.exceptions import RouteNotFoundException
+    from waygate.core.exceptions import RouteNotFoundException
 
     with pytest.raises(RouteNotFoundException) as exc_info:
         await engine.disable("/nonexistent", reason="gone")
@@ -430,14 +430,14 @@ async def test_disable_unregistered_raises_not_found(engine):
 
 
 async def test_enable_unregistered_raises_not_found(engine):
-    from switchly.core.exceptions import RouteNotFoundException
+    from waygate.core.exceptions import RouteNotFoundException
 
     with pytest.raises(RouteNotFoundException):
         await engine.enable("/nonexistent")
 
 
 async def test_set_maintenance_unregistered_raises_not_found(engine):
-    from switchly.core.exceptions import RouteNotFoundException
+    from waygate.core.exceptions import RouteNotFoundException
 
     with pytest.raises(RouteNotFoundException):
         await engine.set_maintenance("/nonexistent", reason="test")
@@ -455,7 +455,7 @@ async def test_bare_path_resolves_single_method_match(engine):
 
 async def test_bare_path_ambiguous_raises(engine):
     """Bare /pay with GET:/pay and POST:/pay raises AmbiguousRouteError."""
-    from switchly.core.exceptions import AmbiguousRouteError
+    from waygate.core.exceptions import AmbiguousRouteError
 
     await engine.register("GET:/pay", {"status": "active"})
     await engine.register("POST:/pay", {"status": "active"})
@@ -505,8 +505,8 @@ async def test_listener_exits_silently_for_memory_backend(engine):
 
 
 async def test_aenter_aexit_starts_and_stops_listener():
-    """async with SwitchlyEngine() starts and stops the listener task."""
-    async with SwitchlyEngine(backend=MemoryBackend()) as eng:
+    """async with WaygateEngine() starts and stops the listener task."""
+    async with WaygateEngine(backend=MemoryBackend()) as eng:
         # Task is created (may already be done for MemoryBackend — that's fine).
         assert eng._global_listener_task is not None
     # After exit, task reference is cleared.
@@ -522,7 +522,7 @@ async def test_global_config_cache_invalidated_by_listener():
         async def subscribe_global_config(self) -> AsyncIterator[None]:
             yield None  # one invalidation signal
 
-    eng = SwitchlyEngine(backend=_FakeBackend())
+    eng = WaygateEngine(backend=_FakeBackend())
     # enable_global_maintenance writes then invalidates the cache; re-fetch to
     # populate it so we can observe the listener clearing it.
     await eng.enable_global_maintenance(reason="test")
@@ -551,7 +551,7 @@ async def test_webhook_fires_when_claim_succeeds():
     async def fake_post(url: str, payload: dict) -> None:  # type: ignore[override]
         delivered.append(url)
 
-    eng = SwitchlyEngine(backend=MemoryBackend())
+    eng = WaygateEngine(backend=MemoryBackend())
     eng.add_webhook("http://example.com/hook")
 
     await eng.register("/api/pay", {"status": "active"})
@@ -580,7 +580,7 @@ async def test_webhook_skipped_when_claim_denied():
         async def try_claim_webhook_dispatch(self, dedup_key: str, ttl_seconds: int = 60) -> bool:
             return False  # simulate another instance already claimed it
 
-    eng = SwitchlyEngine(backend=_AlreadyClaimedBackend())
+    eng = WaygateEngine(backend=_AlreadyClaimedBackend())
     eng.add_webhook("http://example.com/hook")
     await eng.register("/api/pay", {"status": "active"})
 
@@ -598,7 +598,7 @@ async def test_webhook_dedup_key_is_deterministic():
     """Two engines producing the same event+path+state generate the same dedup key."""
     import hashlib
 
-    from switchly.core.models import RouteState, RouteStatus
+    from waygate.core.models import RouteState, RouteStatus
 
     state = RouteState(path="/api/pay", status=RouteStatus.DISABLED, reason="gone")
     raw = f"disable:/api/pay:{state.model_dump_json()}"
@@ -610,7 +610,7 @@ async def test_webhook_dedup_key_is_deterministic():
 
 async def test_no_webhook_tasks_when_no_webhooks_registered():
     """_fire_webhooks is a no-op when no webhooks are registered."""
-    eng = SwitchlyEngine(backend=MemoryBackend())
+    eng = WaygateEngine(backend=MemoryBackend())
     await eng.register("/api/pay", {"status": "active"})
     # No webhook registered — disable should not create any tasks.
     tasks_before = len(asyncio.all_tasks())
@@ -645,15 +645,15 @@ async def test_webhook_fires_once_when_two_engines_share_same_backend():
 
     shared_backend = _CountingBackend()
 
-    eng_a = SwitchlyEngine(backend=shared_backend)
+    eng_a = WaygateEngine(backend=shared_backend)
     eng_a.add_webhook("http://example.com/hook")
     await eng_a.register("/api/pay", {"status": "active"})
 
-    eng_b = SwitchlyEngine(backend=shared_backend)
+    eng_b = WaygateEngine(backend=shared_backend)
     eng_b.add_webhook("http://example.com/hook")
     # eng_b shares the backend but has its own RouteState view —
     # set the state directly so eng_b can also fire for the same event.
-    from switchly.core.models import RouteState, RouteStatus
+    from waygate.core.models import RouteState, RouteStatus
 
     state = RouteState(path="/api/pay", status=RouteStatus.DISABLED, reason="test")
 

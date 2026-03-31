@@ -1,8 +1,8 @@
-"""Tests for switchly.core.rate_limit.models."""
+"""Tests for waygate.core.rate_limit.models."""
 
 from __future__ import annotations
 
-from switchly.core.rate_limit.models import (
+from waygate.core.rate_limit.models import (
     STRATEGY_DEFAULTS,
     OnMissingKey,
     RateLimitAlgorithm,
