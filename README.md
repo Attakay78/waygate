@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="switchly-logo.svg" alt="API Switchly" width="600"/>
+  <img src="https://raw.githubusercontent.com/Attakay78/switchly/main/docs/assets/logo-full.svg" alt="Switchly" width="600"/>
 
   <p><strong>Switchly gives you runtime control of your APIs to toggle features, schedule maintenance, enforce rate limits, and perform rollouts without redeploying.</strong></p>
 
-  <a href="https://pypi.org/project/switchly"><img src="https://img.switchlys.io/pypi/v/switchly?color=F59E0B&label=pypi&cacheSeconds=300" alt="PyPI"></a>
-  <a href="https://pypi.org/project/switchly"><img src="https://img.switchlys.io/pypi/pyversions/switchly?color=F59E0B" alt="Python versions"></a>
-  <a href="LICENSE"><img src="https://img.switchlys.io/github/license/Attakay78/switchly?color=F59E0B" alt="License"></a>
+  <a href="https://pypi.org/project/switchly"><img src="https://img.shields.io/pypi/v/switchly?color=F59E0B&label=pypi&cacheSeconds=300" alt="PyPI"></a>
+  <a href="https://pypi.org/project/switchly"><img src="https://img.shields.io/pypi/pyversions/switchly?color=F59E0B" alt="Python versions"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Attakay78/switchly?color=F59E0B" alt="License"></a>
 </div>
 
 ---
@@ -50,8 +50,8 @@ These features are framework-agnostic and available to any adapter.
 | 🔀 **SwitchlyRouter** | Drop-in `APIRouter` replacement that auto-registers route metadata with the engine at startup |
 
 <div align="center">
-  <img src="docs/assets/openapi.png" alt="Switchly OpenAPI integration" width="48%"/>
-  <img src="docs/assets/openapi-maintenance.png" alt="Switchly maintenance banner in Swagger UI" width="48%"/>
+  <img src="https://raw.githubusercontent.com/Attakay78/switchly/main/docs/assets/openapi.png" alt="Switchly OpenAPI integration" width="48%"/>
+  <img src="https://raw.githubusercontent.com/Attakay78/switchly/main/docs/assets/openapi-maintenance.png" alt="Switchly maintenance banner in Swagger UI" width="48%"/>
   <p><em>Disabled and env-gated routes hidden from /docs. Maintenance banners injected live.</em></p>
 </div>
 
@@ -111,7 +111,7 @@ switchly global enable --reason "Deploying v2" --exempt /health
 ```
 
 <div align="center">
-  <img src="docs/assets/dashboard.png" alt="Switchly admin dashboard" width="90%"/>
+  <img src="https://raw.githubusercontent.com/Attakay78/switchly/main/docs/assets/dashboard.png" alt="Switchly admin dashboard" width="90%"/>
   <p><em>Admin dashboard — route states, audit log, rate limits, and feature flags. No JS framework required.</em></p>
 </div>
 
