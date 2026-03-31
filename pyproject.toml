@@ -1,6 +1,6 @@
 [project]
 name = "waygate"
-version = "0.1.0"
+version = "0.1.1"
 description = "Waygate gives you runtime control of your APIs to toggle features, schedule maintenance, enforce rate limits, and perform rollouts without redeploying."
 readme = "README.md"
 license = { text = "MIT" }
