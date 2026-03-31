@@ -1,16 +1,16 @@
 <svg width="900" height="260" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg">
 
-  <!-- Switchly Icon -->
+  <!-- Waygate Icon -->
   <g transform="translate(40,30)">
 
     <!-- Gradient Circle -->
     <defs>
-      <radialGradient id="gradSwitchly" cx="50%" cy="50%" r="50%">
+      <radialGradient id="gradWaygate" cx="50%" cy="50%" r="50%">
         <stop offset="0%" stop-color="#FFD580"/>
         <stop offset="100%" stop-color="#F59E0B"/>
       </radialGradient>
     </defs>
-    <circle cx="80" cy="100" r="80" fill="url(#gradSwitchly)"/>
+    <circle cx="80" cy="100" r="80" fill="url(#gradWaygate)"/>
 
     <!-- Curved switching arrows -->
     <g stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
@@ -39,15 +39,12 @@
   <!-- Wordmark -->
   <text
     x="240"
-    y="158"
+    y="130"
+    dominant-baseline="central"
     font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
     font-size="98"
     font-weight="600"
     fill="#F59E0B"
-    letter-spacing="0.5">
-
-    Switchly
-
-  </text>
+    letter-spacing="0.5">WayGate</text>
 
 </svg>

@@ -1,107 +1,107 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://attakay78.github.io/switchly/</loc>
+         <loc>https://attakay78.github.io/waygate/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/changelog/</loc>
+         <loc>https://attakay78.github.io/waygate/changelog/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/contributing/</loc>
+         <loc>https://attakay78.github.io/waygate/contributing/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/adapters/</loc>
+         <loc>https://attakay78.github.io/waygate/adapters/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/adapters/custom/</loc>
+         <loc>https://attakay78.github.io/waygate/adapters/custom/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/adapters/fastapi/</loc>
+         <loc>https://attakay78.github.io/waygate/adapters/fastapi/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/guides/distributed/</loc>
+         <loc>https://attakay78.github.io/waygate/guides/distributed/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/guides/production/</loc>
+         <loc>https://attakay78.github.io/waygate/guides/production/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/guides/switchly-server/</loc>
+         <loc>https://attakay78.github.io/waygate/guides/waygate-server/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/reference/backends/</loc>
+         <loc>https://attakay78.github.io/waygate/reference/backends/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/reference/cli/</loc>
+         <loc>https://attakay78.github.io/waygate/reference/cli/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/reference/decorators/</loc>
+         <loc>https://attakay78.github.io/waygate/reference/decorators/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/reference/engine/</loc>
+         <loc>https://attakay78.github.io/waygate/reference/engine/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/reference/exceptions/</loc>
+         <loc>https://attakay78.github.io/waygate/reference/exceptions/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/reference/feature-flags/</loc>
+         <loc>https://attakay78.github.io/waygate/reference/feature-flags/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/reference/middleware/</loc>
+         <loc>https://attakay78.github.io/waygate/reference/middleware/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/reference/models/</loc>
+         <loc>https://attakay78.github.io/waygate/reference/models/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/reference/rate-limiting/</loc>
+         <loc>https://attakay78.github.io/waygate/reference/rate-limiting/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/tutorial/admin-dashboard/</loc>
+         <loc>https://attakay78.github.io/waygate/tutorial/admin-dashboard/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/tutorial/backends/</loc>
+         <loc>https://attakay78.github.io/waygate/tutorial/backends/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/tutorial/cli/</loc>
+         <loc>https://attakay78.github.io/waygate/tutorial/cli/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/tutorial/feature-flags/</loc>
+         <loc>https://attakay78.github.io/waygate/tutorial/feature-flags/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/tutorial/first-decorator/</loc>
+         <loc>https://attakay78.github.io/waygate/tutorial/first-decorator/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/tutorial/installation/</loc>
+         <loc>https://attakay78.github.io/waygate/tutorial/installation/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/tutorial/middleware/</loc>
+         <loc>https://attakay78.github.io/waygate/tutorial/middleware/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
     <url>
-         <loc>https://attakay78.github.io/switchly/tutorial/rate-limiting/</loc>
+         <loc>https://attakay78.github.io/waygate/tutorial/rate-limiting/</loc>
          <lastmod>2026-03-31</lastmod>
     </url>
 </urlset>
