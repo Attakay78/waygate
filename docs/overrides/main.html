@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block extrahead %}
+  <meta name="google-site-verification" content="2aRtQx-i_8GiQfCnRJtWm-wC7HCpdyqDTLmnhifYVxs" />
+{% endblock %}
+
 {% block content %}
   {% if page and page.meta and page.meta.hide
         and "toc" in page.meta.hide
