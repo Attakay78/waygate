@@ -181,6 +181,9 @@ jobs:
         run: |
           TAG="${{ needs.check-version.outputs.tag }}"
           VERSION="${{ needs.check-version.outputs.version }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release delete "$TAG" --yes
+          fi
           gh release create "$TAG" dist/* \
             --title "waygate $VERSION" \
             --notes-file release_notes.txt
