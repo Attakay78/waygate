@@ -2,126 +2,126 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://attakay78.github.io/waygate/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/changelog/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/contributing/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/adapters/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/adapters/custom/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/adapters/fastapi/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/guides/distributed/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/guides/production/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/guides/waygate-server/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/reference/backends/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/reference/cli/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/reference/decorators/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/reference/engine/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/reference/exceptions/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/reference/feature-flags/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/reference/middleware/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/reference/models/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/reference/rate-limiting/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/admin-dashboard/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/audit-log/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/backends/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/cli/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/custom-responses/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/feature-flags/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/first-decorator/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/installation/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/middleware/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/rate-limiting/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/rollouts/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/route-control/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
     <url>
          <loc>https://attakay78.github.io/waygate/tutorial/webhooks/</loc>
-         <lastmod>2026-04-01</lastmod>
+         <lastmod>2026-04-03</lastmod>
     </url>
 </urlset>

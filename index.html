@@ -1582,11 +1582,11 @@
       </p>
 
       <h1 class="hp-h1">
-        Toggle features,<br>control your <span class="hp-accent">API</span> at runtime
+        Control how your <span class="hp-accent">API</span> behaves at runtime
       </h1>
 
       <p class="hp-hero-desc">
-        Waygate gives you runtime control of your APIs to toggle features, schedule maintenance, enforce rate limits, and perform rollouts without redeploying.
+        Waygate is a runtime behavior layer for your API. Disable a broken route, enforce limits per user, roll out to 10% of traffic, or schedule a maintenance window. No code changes. No restarts. No redeployments.
       </p>
 
       <div class="hp-hero-btns">
@@ -1727,14 +1727,14 @@ app.<span class="t-fn">mount</span>(<span class="t-str">"/waygate"</span>,
 
     <div class="hp-ecosystem-col">
       <span class="hp-label">The problem</span>
-      <h2 class="hp-h2">Redeploying to toggle a feature is the wrong tool</h2>
-      <p class="hp-body">Redeployment just to flip a flag. Shut everything down or nothing at all. No targeting rules, no gradual rollouts, no per-route control, no audit trail.</p>
+      <h2 class="hp-h2">API behavior is buried in code and deployments</h2>
+      <p class="hp-body">Changing how your API behaves requires editing code, merging a PR, and waiting for a deploy. Disabling a broken route, adjusting a rate limit, or restricting a feature to one user segment all go through the same slow path. There is no dedicated layer for runtime control.</p>
     </div>
 
     <div class="hp-ecosystem-col">
       <span class="hp-label">The solution</span>
-      <h2 class="hp-h2">Feature flags, rollouts, and route control in one tool.</h2>
-      <p class="hp-body"><code class="hp-inline-code">waygate</code> lets you toggle features, run percentage rollouts, and control every route's lifecycle in real time. State changes are immediate. No restart. No redeploy. Full control from a dashboard, CLI, or REST API.</p>
+      <h2 class="hp-h2">A dedicated runtime layer for API behavior.</h2>
+      <p class="hp-body"><code class="hp-inline-code">waygate</code> sits between your framework and your business logic. It handles route lifecycle, rate limiting, feature flags, and rollouts in one place. Changes take effect immediately from a dashboard, CLI, or REST API with no code changes and no server restart.</p>
     </div>
 
   </div>
@@ -1762,6 +1762,11 @@ app.<span class="t-fn">mount</span>(<span class="t-str">"/waygate"</span>,
       <p class="hp-pillar-body">Maintenance, env gating, deprecation, instant disable. Per route. Managed from dashboard, CLI, or REST API with no code changes.</p>
     </div>
   </div>
+
+  <div class="hp-screenshot" style="text-align:center;">
+    <img src="assets/dashboard.png" alt="Waygate admin dashboard" style="width:75%;border-radius:10px;margin-top:2.5rem;"/>
+    <p style="text-align:center;font-size:0.85rem;opacity:0.6;margin-top:0.75rem;">Admin dashboard — route states, rate limits, audit log, and feature flags. No JS framework required.</p>
+  </div>
 </section>
 
 <!-- ═══════════════════════════════════════════════
@@ -1771,8 +1776,8 @@ app.<span class="t-fn">mount</span>(<span class="t-str">"/waygate"</span>,
   <div class="hp-diff-inner">
     <div class="hp-diff-header">
       <span class="hp-label">What makes it different</span>
-      <h2 class="hp-h2">Feature flags and full<br>route lifecycle in one tool.</h2>
-      <p class="hp-body">LaunchDarkly, Flagsmith, Unleash operate at the application layer with no concept of what a route is. waygate does feature flags and gives you route-level control: put <code class="hp-inline-code">/api/payments</code> into maintenance, schedule the window, reset its rate limit counters when it comes back, and see a live dashboard of route states across your fleet.</p>
+      <h2 class="hp-h2">Route-level control that other tools don't have.</h2>
+      <p class="hp-body">LaunchDarkly, Flagsmith, and Unleash operate at the application layer with no concept of what a route is. waygate does feature flags and gives you route-level control: put <code class="hp-inline-code">/api/payments</code> into maintenance, schedule the window, reset its rate limit counters when it comes back, and see a live dashboard of every route's state across your fleet.</p>
     </div>
 
     <div class="hp-diff-grid">
@@ -1800,6 +1805,17 @@ app.<span class="t-fn">mount</span>(<span class="t-str">"/waygate"</span>,
         <p class="hp-diff-body">Back your state with Redis you already run, or a plain JSON file for local dev. No data leaves your infra. No third-party uptime dependency sitting in your request path.</p>
       </div>
     </div>
+
+    <div style="display:flex;gap:1rem;margin-top:2.5rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:280px;">
+        <img src="assets/openapi.png" alt="Disabled and env-gated routes hidden from /docs" style="width:100%;border-radius:8px;"/>
+        <p style="text-align:center;font-size:0.85rem;opacity:0.6;margin-top:0.5rem;">Disabled and env-gated routes hidden from /docs</p>
+      </div>
+      <div style="flex:1;min-width:280px;">
+        <img src="assets/openapi-maintenance.png" alt="Maintenance banner injected into Swagger UI" style="width:100%;border-radius:8px;"/>
+        <p style="text-align:center;font-size:0.85rem;opacity:0.6;margin-top:0.5rem;">Maintenance banners injected live into Swagger UI</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1811,7 +1827,7 @@ app.<span class="t-fn">mount</span>(<span class="t-str">"/waygate"</span>,
 
     <div class="hp-section-header">
       <span class="hp-label">Why waygate</span>
-      <h2 class="hp-h2">Built for production from day one</h2>
+      <h2 class="hp-h2">Everything you need to control API behavior at runtime</h2>
     </div>
 
     <div class="hp-feat-grid">
@@ -1863,7 +1879,7 @@ app.<span class="t-fn">mount</span>(<span class="t-str">"/waygate"</span>,
   <div class="hp-cta-inner">
     <span class="hp-label">Get started</span>
     <h2 class="hp-h2">Add runtime control to your API today</h2>
-    <p class="hp-body">Install in seconds. No external services. Currently supports FastAPI, more adapters coming.</p>
+    <p class="hp-body">Install in seconds. No external services required. Currently supports FastAPI, more adapters coming.</p>
 
     <div class="hp-cta-install">
       <span class="hp-install-label">$ </span>
