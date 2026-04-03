@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/Attakay78/waygate/main/docs/assets/logo-full.svg" alt="Waygate" width="600"/>
 
-  <p><strong>Waygate gives you runtime control of your APIs to toggle features, schedule maintenance, enforce rate limits, and perform rollouts without redeploying.</strong></p>
+  <p><strong>Control how your API behaves at runtime. Roll out changes, enforce limits, and manage endpoints without redeploying.</strong></p>
 
   <a href="https://pypi.org/project/waygate"><img src="https://img.shields.io/pypi/v/waygate?color=F59E0B&label=pypi&cacheSeconds=300" alt="PyPI"></a>
   <a href="https://pypi.org/project/waygate"><img src="https://img.shields.io/pypi/pyversions/waygate?color=F59E0B" alt="Python versions"></a>
@@ -18,6 +18,27 @@
 
 ---
 
+## What is Waygate
+
+Waygate is an **API behavior control layer** for Python web applications.
+
+It lets you control how your API responds — per request, per user, and per route — at runtime, without modifying business logic or redeploying.
+
+Most teams handle API control in the wrong place: inside business logic with conditionals, in infrastructure with limited flexibility, or through redeploys for simple changes. Waygate gives you a dedicated runtime layer for that instead.
+
+---
+
+## Solve real production problems
+
+- Roll out a new endpoint to a subset of users safely
+- Disable a broken route instantly without a hotfix
+- Enforce rate limits per user or plan with no code changes
+- Restrict features by environment or segment
+- Schedule maintenance without touching code
+- Manage all of the above from one dashboard, CLI, or REST API
+
+---
+
 ## Key features
 
 ### Core (`waygate.core`)
@@ -30,7 +51,7 @@ These features are framework-agnostic and available to any adapter.
 | 🚦 **Rate limiting** | Per-IP, per-user, per-API-key, or global counters with tiered limits, burst allowance, and runtime mutation |
 | ⏰ **Scheduled windows** | `asyncio`-native scheduler, maintenance windows activate and deactivate automatically |
 | 🔔 **Webhooks** | Fire HTTP POST on every state change. Built-in Slack formatter and custom formatters supported |
-| 📋 **Audit log** | Every state change is recorded: who, when, what route, old status → new status |
+| 📋 **Audit log** | Every state change is recorded: who, when, what route, old status to new status |
 | 🖥️ **Admin dashboard** | HTMX-powered UI with live SSE updates, no JS framework required |
 | 🖱️ **REST API + CLI** | Full programmatic control from the terminal or CI pipelines, works over HTTPS remotely |
 | 🏗️ **Waygate Server** | Centralised control plane for multi-service architectures. SDK clients sync state via SSE with zero per-request latency |
@@ -85,7 +106,7 @@ app = FastAPI()
 app.add_middleware(WaygateMiddleware, engine=engine)
 
 @app.get("/payments")
-@maintenance(reason="DB migration — back at 04:00 UTC")
+@maintenance(reason="DB migration - back at 04:00 UTC")
 async def get_payments():
     return {"payments": []}
 
@@ -128,6 +149,7 @@ waygate global enable --reason "Deploying v2" --exempt /health
 | `@deprecated(sunset, use_instead)` | Still works, injects deprecation headers | 200 |
 | `@force_active` | Bypasses all waygate checks | Always 200 |
 | `@rate_limit("100/minute")` | Cap requests per IP, user, API key, or globally | 429 |
+
 ### Custom responses (FastAPI)
 
 By default, blocked routes return a structured JSON error body. You can replace it with HTML, a redirect, plain text, or custom JSON in two ways:
@@ -162,7 +184,7 @@ app.add_middleware(
     WaygateMiddleware,
     engine=engine,
     responses={
-        "maintenance": maintenance_page,   # all maintenance routes
+        "maintenance": maintenance_page,
         "disabled": lambda req, exc: HTMLResponse(
             f"<h1>Gone</h1><p>{exc.reason}</p>", status_code=503
         ),
@@ -170,7 +192,7 @@ app.add_middleware(
 )
 ```
 
-Resolution order: **per-route `response=`** → **global `responses[...]`** → **built-in JSON**. The factory can be sync or async and receives the live `Request` and the `WaygateException` that triggered the block.
+Resolution order: **per-route `response=`** then **global `responses[...]`** then **built-in JSON**. The factory can be sync or async and receives the live `Request` and the `WaygateException` that triggered the block.
 
 ## Rate limiting
 
@@ -188,7 +210,7 @@ async def get_current_user():
     ...
 
 @router.get("/reports")
-@rate_limit(                           # tiered limits
+@rate_limit(                           # tiered limits per plan
     {"free": "10/minute", "pro": "100/minute", "enterprise": "unlimited"},
     key="user",
 )
@@ -196,7 +218,7 @@ async def get_reports():
     ...
 ```
 
-Policies can be mutated at runtime without redeploying (`waygate rl` and `waygate rate-limits` are aliases):
+Update limits at runtime with no redeploy:
 
 ```bash
 waygate rl set GET:/public/posts 20/minute   # raise the limit live
@@ -220,7 +242,6 @@ from waygate import (
 
 engine.use_openfeature()
 
-# Define a boolean flag with a 20% rollout and individual targeting
 await engine.save_flag(
     FeatureFlag(
         key="new-checkout",
@@ -235,7 +256,7 @@ await engine.save_flag(
             RolloutVariation(variation="on",  weight=20_000),  # 20%
             RolloutVariation(variation="off", weight=80_000),  # 80%
         ],
-        targets={"on": ["beta_tester_1"]},   # individual targeting
+        targets={"on": ["beta_tester_1"]},
         rules=[
             TargetingRule(
                 description="Enterprise users always get the new flow",
@@ -279,7 +300,7 @@ waygate's core is completely framework-agnostic with zero framework imports. Ada
 | Framework | Status | Adapter |
 |---|---|---|
 | **FastAPI** | ✅ Supported | `waygate.fastapi` |
-| More coming | 🔜 On the way | — |
+| More coming | 🔜 On the way | |
 
 > Want your framework supported? [Open an issue](https://github.com/Attakay78/waygate/issues).
 

@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.1.5]
+
+### Added
+
+- Rewrote README and docs homepage to focus on runtime API behavior control without redeploying.
+
+---
+
 ## [0.1.4]
 
 ### Added
