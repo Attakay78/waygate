@@ -115,26 +115,21 @@ class TestEngineSyncFlagClient:
         assert fc is not None
         assert isinstance(fc, _SyncWaygateFeatureClient)
 
-    def test_evaluates_registered_boolean_flag(self) -> None:
+    async def test_evaluates_registered_boolean_flag(self) -> None:
         """A saved boolean flag returns its fallthrough value."""
-        import asyncio
-
         engine = _make_engine()
-
         flag = _make_flag(
             "beta_feature",
             FlagType.BOOLEAN,
             [FlagVariation(name="on", value=True), FlagVariation(name="off", value=False)],
             "on",
         )
-        asyncio.get_event_loop().run_until_complete(engine.save_flag(flag))
+        await engine.save_flag(flag)
 
         result = engine.sync.flag_client.get_boolean_value("beta_feature", False)
         assert result is True
 
-    def test_evaluates_registered_string_flag(self) -> None:
-        import asyncio
-
+    async def test_evaluates_registered_string_flag(self) -> None:
         engine = _make_engine()
         flag = _make_flag(
             "theme",
@@ -142,14 +137,12 @@ class TestEngineSyncFlagClient:
             [FlagVariation(name="dark", value="dark"), FlagVariation(name="light", value="light")],
             "dark",
         )
-        asyncio.get_event_loop().run_until_complete(engine.save_flag(flag))
+        await engine.save_flag(flag)
 
         result = engine.sync.flag_client.get_string_value("theme", "light")
         assert result == "dark"
 
-    def test_evaluates_registered_integer_flag(self) -> None:
-        import asyncio
-
+    async def test_evaluates_registered_integer_flag(self) -> None:
         engine = _make_engine()
         flag = _make_flag(
             "max_retries",
@@ -157,14 +150,12 @@ class TestEngineSyncFlagClient:
             [FlagVariation(name="low", value=3), FlagVariation(name="high", value=10)],
             "high",
         )
-        asyncio.get_event_loop().run_until_complete(engine.save_flag(flag))
+        await engine.save_flag(flag)
 
         result = engine.sync.flag_client.get_integer_value("max_retries", 1)
         assert result == 10
 
-    def test_evaluates_registered_float_flag(self) -> None:
-        import asyncio
-
+    async def test_evaluates_registered_float_flag(self) -> None:
         engine = _make_engine()
         flag = _make_flag(
             "rate",
@@ -172,15 +163,13 @@ class TestEngineSyncFlagClient:
             [FlagVariation(name="low", value=0.1), FlagVariation(name="high", value=0.9)],
             "low",
         )
-        asyncio.get_event_loop().run_until_complete(engine.save_flag(flag))
+        await engine.save_flag(flag)
 
         result = engine.sync.flag_client.get_float_value("rate", 0.5)
         assert result == pytest.approx(0.1)
 
-    def test_disabled_flag_returns_default(self) -> None:
+    async def test_disabled_flag_returns_default(self) -> None:
         """A disabled flag always returns the default value."""
-        import asyncio
-
         engine = _make_engine()
         flag = FeatureFlag(
             key="off_flag",
@@ -194,16 +183,14 @@ class TestEngineSyncFlagClient:
             off_variation="off",
             fallthrough="on",
         )
-        asyncio.get_event_loop().run_until_complete(engine.save_flag(flag))
+        await engine.save_flag(flag)
 
         result = engine.sync.flag_client.get_boolean_value("off_flag", False)
         # Disabled flag → OpenFeature returns the OFF variation or default
         assert isinstance(result, bool)
 
-    def test_sync_and_async_return_same_value(self) -> None:
+    async def test_sync_and_async_return_same_value(self) -> None:
         """Sync and async evaluation of the same flag return identical results."""
-        import asyncio
-
         engine = _make_engine()
         flag = _make_flag(
             "consistent",
@@ -211,12 +198,8 @@ class TestEngineSyncFlagClient:
             [FlagVariation(name="on", value=True), FlagVariation(name="off", value=False)],
             "on",
         )
-        asyncio.get_event_loop().run_until_complete(engine.save_flag(flag))
+        await engine.save_flag(flag)
 
         sync_result = engine.sync.flag_client.get_boolean_value("consistent", False)
-
-        async def _async_eval() -> bool:
-            return await engine.flag_client.get_boolean_value("consistent", False)
-
-        async_result = asyncio.get_event_loop().run_until_complete(_async_eval())
+        async_result = await engine.flag_client.get_boolean_value("consistent", False)
         assert sync_result == async_result

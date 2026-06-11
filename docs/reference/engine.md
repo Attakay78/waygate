@@ -55,6 +55,35 @@ WaygateEngine(
 | `backend` | `WaygateBackend \| None` | `MemoryBackend()` | Storage backend for route state and the audit log. Read more in [Backends](backends.md). |
 | `current_env` | `str` | `"dev"` | The current environment name. Used by `@env_only` to decide whether to allow or block a request. |
 | `webhooks` | `list[str] \| None` | `[]` | Webhook URLs notified on every state change. Read more in [add_webhook](#add_webhook). |
+| `bypass_rate_limits` | `bool` | `False` | Skip all rate limit checks. Requests pass without consuming quota. Also settable via the `WAYGATE_BYPASS_RATE_LIMITS` environment variable. |
+| `bypass_lifecycle` | `bool` | `False` | Skip maintenance, disabled, and env-gated checks. Every route is treated as active. Also settable via the `WAYGATE_BYPASS_LIFECYCLE` environment variable. |
+
+---
+
+## Testing mode
+
+`WaygateEngine` supports two bypass flags that disable enforcement during tests. See the full guide at [Testing](../tutorial/testing.md).
+
+```python
+# Disable everything for the test engine
+engine = WaygateEngine(bypass_rate_limits=True, bypass_lifecycle=True)
+
+# Or via env var (no code change required)
+# WAYGATE_BYPASS_RATE_LIMITS=1 pytest
+
+# Or scoped to one block via the context manager
+from waygate.testing import bypass
+
+with bypass(engine):
+    response = client.get("/rate-limited-route")
+```
+
+The flags can also be toggled at runtime directly on the instance:
+
+```python
+engine.bypass_rate_limits = True
+engine.bypass_lifecycle = True
+```
 
 ---
 

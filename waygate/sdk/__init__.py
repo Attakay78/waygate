@@ -95,6 +95,15 @@ class WaygateSDK:
                 app_id="payments-service",
                 rate_limit_backend=RedisBackend(url="redis://redis:6379/1"),
             )
+    bypass_rate_limits:
+        When ``True``, all rate limit checks are skipped on this service.
+        Equivalent to setting the ``WAYGATE_BYPASS_RATE_LIMITS`` environment
+        variable. Intended for test environments.
+    bypass_lifecycle:
+        When ``True``, maintenance, disabled, and env-gated checks are
+        skipped on this service. Routes behave as if they are active.
+        Equivalent to setting the ``WAYGATE_BYPASS_LIFECYCLE`` environment
+        variable. Intended for test environments.
     """
 
     def __init__(
@@ -106,6 +115,8 @@ class WaygateSDK:
         password: str | None = None,
         reconnect_delay: float = 5.0,
         rate_limit_backend: WaygateBackend | None = None,
+        bypass_rate_limits: bool = False,
+        bypass_lifecycle: bool = False,
     ) -> None:
         self._backend = WaygateServerBackend(
             server_url=server_url,
@@ -118,6 +129,8 @@ class WaygateSDK:
         self._engine = WaygateEngine(
             backend=self._backend,
             rate_limit_backend=rate_limit_backend,
+            bypass_rate_limits=bypass_rate_limits,
+            bypass_lifecycle=bypass_lifecycle,
         )
 
     @property

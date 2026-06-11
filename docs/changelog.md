@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
+## [0.2.0]
+
+### Added
+
+- **Test bypass mode**: routes annotated with `@maintenance`, `@disabled`, `@env_only`, or `@rate_limit` can now be bypassed during tests without mocking. `WaygateEngine` and `WaygateSDK` accept two new flags: `bypass_lifecycle` (skips maintenance, disabled, and env-gated checks) and `bypass_rate_limits` (skips all rate limit checks). Both flags can also be set via the `WAYGATE_BYPASS_LIFECYCLE` and `WAYGATE_BYPASS_RATE_LIMITS` environment variables. A `bypass()` context manager in `waygate.testing` lets you scope the bypass to specific test blocks.
+
+---
+
 ## [0.1.5]
 
 ### Added

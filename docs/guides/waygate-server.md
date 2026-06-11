@@ -345,6 +345,44 @@ The service rate limit uses the same `GlobalRateLimitPolicy` model as the all-se
 
 ---
 
+## Testing with WaygateSDK
+
+Routes decorated with `@maintenance`, `@disabled`, `@env_only`, or `@rate_limit` block requests the same way in tests as in production. `WaygateSDK` accepts the same two bypass flags as `WaygateEngine` so you can disable checks for a test SDK instance without changing application code.
+
+```python title="tests/conftest.py"
+import pytest
+from waygate.sdk import WaygateSDK
+
+@pytest.fixture
+def sdk():
+    return WaygateSDK(
+        server_url="http://waygate-server:9000",
+        app_id="payments-service",
+        bypass_rate_limits=True,
+        bypass_lifecycle=True,
+    )
+```
+
+You can also scope the bypass to a specific block using the context manager:
+
+```python
+from waygate.testing import bypass
+
+with bypass(sdk.engine, rate_limits=True, lifecycle=False):
+    response = client.get("/api/payments")
+    assert response.status_code == 200
+```
+
+Or set environment variables to bypass for the whole test run without any code changes:
+
+```bash
+WAYGATE_BYPASS_RATE_LIMITS=1 WAYGATE_BYPASS_LIFECYCLE=1 pytest
+```
+
+See the full [Testing](../tutorial/testing.md) tutorial for details on all three approaches.
+
+---
+
 ## SSE event types
 
 The Waygate Server's `GET /api/sdk/events` stream carries two event types:
