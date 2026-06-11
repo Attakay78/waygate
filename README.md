@@ -60,6 +60,7 @@ These features are framework-agnostic and available to any adapter.
 | 🔄 **Sync & async** | Full support for both `async def` and plain `def` route handlers. Use `await engine.*` or `engine.sync.*` |
 | 🛡️ **Fail-open by default** | If the backend is unreachable, requests pass through. Waygate never takes down your API |
 | 🔌 **Pluggable backends** | In-memory (default), file-based JSON, or Redis for multi-instance deployments |
+| 🧪 **Test mode** | Disable lifecycle checks or rate limits per engine instance, via env var, or scoped to a test block with `waygate.testing.bypass` |
 
 ### Framework adapters
 

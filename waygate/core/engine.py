@@ -10,6 +10,7 @@ import asyncio
 import contextlib
 import hashlib
 import logging
+import os
 import uuid
 from collections.abc import Callable, Coroutine
 from datetime import UTC, datetime
@@ -414,6 +415,16 @@ class WaygateEngine:
     current_env:
         Name of the current runtime environment (e.g. ``"dev"``).
         Used to evaluate ``ENV_GATED`` route restrictions.
+    bypass_rate_limits:
+        When ``True``, all rate limit checks are skipped and every request
+        passes through without consuming quota. Overridden by the
+        ``WAYGATE_BYPASS_RATE_LIMITS`` environment variable. Intended for
+        use in test environments.
+    bypass_lifecycle:
+        When ``True``, maintenance, disabled, and env-gated checks are
+        skipped and every route is treated as active. Overridden by the
+        ``WAYGATE_BYPASS_LIFECYCLE`` environment variable. Intended for
+        use in test environments.
     """
 
     def __init__(
@@ -424,11 +435,20 @@ class WaygateEngine:
         default_rate_limit_algorithm: Any = None,
         rate_limit_snapshot_interval: int = 10,
         max_rl_hit_entries: int = 10_000,
+        bypass_rate_limits: bool = False,
+        bypass_lifecycle: bool = False,
     ) -> None:
         self.backend: WaygateBackend = backend or MemoryBackend(
             max_rl_hit_entries=max_rl_hit_entries,
         )
         self.current_env = current_env
+        # Env vars take precedence when set; constructor kwargs are the fallback.
+        self.bypass_rate_limits: bool = (
+            bool(os.environ.get("WAYGATE_BYPASS_RATE_LIMITS")) or bypass_rate_limits
+        )
+        self.bypass_lifecycle: bool = (
+            bool(os.environ.get("WAYGATE_BYPASS_LIFECYCLE")) or bypass_lifecycle
+        )
         # Scheduler is lazily imported to avoid a circular reference.
         from waygate.core.scheduler import MaintenanceScheduler
 
@@ -915,56 +935,57 @@ class WaygateEngine:
         context:
             Optional dict with request metadata (``ip``, ``headers``, etc.).
         """
-        # 1. Global maintenance check — highest priority.
-        try:
-            global_cfg = await self._get_global_config_cached()
-            if global_cfg.enabled:
-                method_key = f"{method.upper()}:{path}" if method else None
-                # Use frozenset for O(1) membership tests instead of O(M) list scan.
-                exempt = global_cfg.exempt_set
-                is_exempt = path in exempt or (method_key is not None and method_key in exempt)
-                if not is_exempt:
-                    raise MaintenanceException(reason=global_cfg.reason)
-        except MaintenanceException:
-            raise
-        except Exception:
-            logger.exception("waygate: backend error reading global config — failing open")
+        service = None
 
-        # 2. Per-route state check.
-        state = await self._resolve_state(path, method)
-        if state is None:
-            return  # no state registered → effectively ACTIVE
+        if not self.bypass_lifecycle:
+            # 1. Global maintenance check — highest priority.
+            try:
+                global_cfg = await self._get_global_config_cached()
+                if global_cfg.enabled:
+                    method_key = f"{method.upper()}:{path}" if method else None
+                    # Use frozenset for O(1) membership tests instead of O(M) list scan.
+                    exempt = global_cfg.exempt_set
+                    is_exempt = path in exempt or (method_key is not None and method_key in exempt)
+                    if not is_exempt:
+                        raise MaintenanceException(reason=global_cfg.reason)
+            except MaintenanceException:
+                raise
+            except Exception:
+                logger.exception("waygate: backend error reading global config — failing open")
 
-        service = state.service if state is not None else None
+            # 2. Per-route state check.
+            state = await self._resolve_state(path, method)
+            if state is None:
+                return  # no state registered, effectively ACTIVE
 
-        if state.status == RouteStatus.ACTIVE:
-            return await self._run_rate_limit_check(path, method or "", context, service=service)
+            service = state.service
 
-        if state.status == RouteStatus.MAINTENANCE:
-            retry_after = state.window.end if state.window else None
-            raise MaintenanceException(reason=state.reason, retry_after=retry_after)
+            if state.status == RouteStatus.MAINTENANCE:
+                retry_after = state.window.end if state.window else None
+                raise MaintenanceException(reason=state.reason, retry_after=retry_after)
 
-        if state.status == RouteStatus.DISABLED:
-            raise RouteDisabledException(reason=state.reason)
+            if state.status == RouteStatus.DISABLED:
+                raise RouteDisabledException(reason=state.reason)
 
-        if state.status == RouteStatus.ENV_GATED:
-            if self.current_env not in state.allowed_envs:
-                raise EnvGatedException(
-                    path=path,
-                    current_env=self.current_env,
-                    allowed_envs=state.allowed_envs,
-                )
-            return
+            if state.status == RouteStatus.ENV_GATED:
+                if self.current_env not in state.allowed_envs:
+                    raise EnvGatedException(
+                        path=path,
+                        current_env=self.current_env,
+                        allowed_envs=state.allowed_envs,
+                    )
+                return  # env-gated and allowed; rate limiting does not apply
 
-        if state.status == RouteStatus.DEPRECATED:
-            # Deprecated routes still serve requests — headers injected by middleware.
-            # Rate limit check still runs for deprecated routes.
-            return await self._run_rate_limit_check(path, method or "", context, service=service)
+            # ACTIVE and DEPRECATED fall through to the rate limit check below.
+            # Deprecated routes still serve requests; headers are injected by middleware.
 
-        # Rate limiting runs after all lifecycle checks (maintenance / disabled
-        # routes short-circuit before touching any counters).  Within the rate
-        # limit check, the global limit is evaluated first.
-        await self._run_rate_limit_check(path, method or "", context, service=service)
+        # Rate limiting runs after all lifecycle checks so that blocked routes
+        # (maintenance, disabled) never consume quota. The global limit is
+        # evaluated first inside _run_rate_limit_check.
+        if self.bypass_rate_limits:
+            return None
+
+        return await self._run_rate_limit_check(path, method or "", context, service=service)
 
     async def _run_rate_limit_check(
         self,

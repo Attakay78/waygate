@@ -108,6 +108,7 @@ nav:
       - Webhooks: tutorial/webhooks.md
       - Audit Log: tutorial/audit-log.md
       - Custom Responses: tutorial/custom-responses.md
+      - Testing: tutorial/testing.md
       - Admin Dashboard: tutorial/admin-dashboard.md
       - CLI: tutorial/cli.md
   - Reference:
