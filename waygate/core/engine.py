@@ -10,6 +10,7 @@ import asyncio
 import contextlib
 import hashlib
 import logging
+import os
 import uuid
 from collections.abc import Callable, Coroutine
 from datetime import UTC, datetime
@@ -410,10 +411,38 @@ class WaygateEngine:
     Parameters
     ----------
     backend:
-        Storage backend. Defaults to ``MemoryBackend``.
+        Storage backend for route lifecycle state, audit log, and (when
+        ``rate_limit_backend`` is ``None``) rate limit counters.
+        Defaults to ``MemoryBackend``.
     current_env:
         Name of the current runtime environment (e.g. ``"dev"``).
         Used to evaluate ``ENV_GATED`` route restrictions.
+    rate_limit_backend:
+        Separate backend for rate limit counter storage.  When ``None`` the
+        same ``backend`` is used for both lifecycle state and rate limit
+        counters.  Pass a dedicated ``RedisBackend`` to keep lifecycle state
+        in one Redis database and rate limit counters in another.
+    default_rate_limit_algorithm:
+        ``RateLimitAlgorithm`` to use when a ``@rate_limit`` decorator does
+        not specify an algorithm.  Defaults to ``FIXED_WINDOW``.
+    rate_limit_snapshot_interval:
+        Seconds between periodic counter snapshots to the backend when using
+        ``FileRateLimitStorage``.  Ignored for ``MemoryBackend`` and
+        ``RedisBackend``.  Defaults to ``10``.
+    max_rl_hit_entries:
+        Maximum number of blocked-request records kept in the hit log.
+        Oldest entries are evicted when the cap is reached.
+        Defaults to ``10 000``.
+    bypass_rate_limits:
+        When ``True``, all rate limit checks are skipped and every request
+        passes through without consuming quota.  Overridden by the
+        ``WAYGATE_BYPASS_RATE_LIMITS`` environment variable.  Intended for
+        use in test environments.
+    bypass_lifecycle:
+        When ``True``, maintenance, disabled, and env-gated checks are
+        skipped and every route is treated as active.  Overridden by the
+        ``WAYGATE_BYPASS_LIFECYCLE`` environment variable.  Intended for
+        use in test environments.
     """
 
     def __init__(
@@ -424,11 +453,20 @@ class WaygateEngine:
         default_rate_limit_algorithm: Any = None,
         rate_limit_snapshot_interval: int = 10,
         max_rl_hit_entries: int = 10_000,
+        bypass_rate_limits: bool = False,
+        bypass_lifecycle: bool = False,
     ) -> None:
         self.backend: WaygateBackend = backend or MemoryBackend(
             max_rl_hit_entries=max_rl_hit_entries,
         )
         self.current_env = current_env
+        # Env vars take precedence when set; constructor kwargs are the fallback.
+        self.bypass_rate_limits: bool = (
+            bool(os.environ.get("WAYGATE_BYPASS_RATE_LIMITS")) or bypass_rate_limits
+        )
+        self.bypass_lifecycle: bool = (
+            bool(os.environ.get("WAYGATE_BYPASS_LIFECYCLE")) or bypass_lifecycle
+        )
         # Scheduler is lazily imported to avoid a circular reference.
         from waygate.core.scheduler import MaintenanceScheduler
 
@@ -915,56 +953,57 @@ class WaygateEngine:
         context:
             Optional dict with request metadata (``ip``, ``headers``, etc.).
         """
-        # 1. Global maintenance check — highest priority.
-        try:
-            global_cfg = await self._get_global_config_cached()
-            if global_cfg.enabled:
-                method_key = f"{method.upper()}:{path}" if method else None
-                # Use frozenset for O(1) membership tests instead of O(M) list scan.
-                exempt = global_cfg.exempt_set
-                is_exempt = path in exempt or (method_key is not None and method_key in exempt)
-                if not is_exempt:
-                    raise MaintenanceException(reason=global_cfg.reason)
-        except MaintenanceException:
-            raise
-        except Exception:
-            logger.exception("waygate: backend error reading global config — failing open")
+        service = None
 
-        # 2. Per-route state check.
-        state = await self._resolve_state(path, method)
-        if state is None:
-            return  # no state registered → effectively ACTIVE
+        if not self.bypass_lifecycle:
+            # 1. Global maintenance check — highest priority.
+            try:
+                global_cfg = await self._get_global_config_cached()
+                if global_cfg.enabled:
+                    method_key = f"{method.upper()}:{path}" if method else None
+                    # Use frozenset for O(1) membership tests instead of O(M) list scan.
+                    exempt = global_cfg.exempt_set
+                    is_exempt = path in exempt or (method_key is not None and method_key in exempt)
+                    if not is_exempt:
+                        raise MaintenanceException(reason=global_cfg.reason)
+            except MaintenanceException:
+                raise
+            except Exception:
+                logger.exception("waygate: backend error reading global config — failing open")
 
-        service = state.service if state is not None else None
+            # 2. Per-route state check.
+            state = await self._resolve_state(path, method)
+            if state is None:
+                return  # no state registered, effectively ACTIVE
 
-        if state.status == RouteStatus.ACTIVE:
-            return await self._run_rate_limit_check(path, method or "", context, service=service)
+            service = state.service
 
-        if state.status == RouteStatus.MAINTENANCE:
-            retry_after = state.window.end if state.window else None
-            raise MaintenanceException(reason=state.reason, retry_after=retry_after)
+            if state.status == RouteStatus.MAINTENANCE:
+                retry_after = state.window.end if state.window else None
+                raise MaintenanceException(reason=state.reason, retry_after=retry_after)
 
-        if state.status == RouteStatus.DISABLED:
-            raise RouteDisabledException(reason=state.reason)
+            if state.status == RouteStatus.DISABLED:
+                raise RouteDisabledException(reason=state.reason)
 
-        if state.status == RouteStatus.ENV_GATED:
-            if self.current_env not in state.allowed_envs:
-                raise EnvGatedException(
-                    path=path,
-                    current_env=self.current_env,
-                    allowed_envs=state.allowed_envs,
-                )
-            return
+            if state.status == RouteStatus.ENV_GATED:
+                if self.current_env not in state.allowed_envs:
+                    raise EnvGatedException(
+                        path=path,
+                        current_env=self.current_env,
+                        allowed_envs=state.allowed_envs,
+                    )
+                return  # env-gated and allowed; rate limiting does not apply
 
-        if state.status == RouteStatus.DEPRECATED:
-            # Deprecated routes still serve requests — headers injected by middleware.
-            # Rate limit check still runs for deprecated routes.
-            return await self._run_rate_limit_check(path, method or "", context, service=service)
+            # ACTIVE and DEPRECATED fall through to the rate limit check below.
+            # Deprecated routes still serve requests; headers are injected by middleware.
 
-        # Rate limiting runs after all lifecycle checks (maintenance / disabled
-        # routes short-circuit before touching any counters).  Within the rate
-        # limit check, the global limit is evaluated first.
-        await self._run_rate_limit_check(path, method or "", context, service=service)
+        # Rate limiting runs after all lifecycle checks so that blocked routes
+        # (maintenance, disabled) never consume quota. The global limit is
+        # evaluated first inside _run_rate_limit_check.
+        if self.bypass_rate_limits:
+            return None
+
+        return await self._run_rate_limit_check(path, method or "", context, service=service)
 
     async def _run_rate_limit_check(
         self,
@@ -1428,7 +1467,21 @@ class WaygateEngine:
     async def disable(
         self, path: str, reason: str = "", actor: str = "system", platform: str = "system"
     ) -> RouteState:
-        """Disable *path* permanently, returning the updated ``RouteState``."""
+        """Disable *path* permanently, returning the updated ``RouteState``.
+
+        Parameters
+        ----------
+        path:
+            The route key to disable (e.g. ``"GET:/payments"``).
+        reason:
+            Human-readable explanation stored in the route state and included
+            in 503 responses.
+        actor:
+            Identity of the caller, written to the audit log.
+        platform:
+            Where the call originated (``"cli"``, ``"dashboard"``,
+            ``"system"``).
+        """
         old_state = await self._assert_mutable(path)
         actual_path = old_state.path
         new_state = old_state.model_copy(update={"status": RouteStatus.DISABLED, "reason": reason})
@@ -1454,7 +1507,24 @@ class WaygateEngine:
         actor: str = "system",
         platform: str = "system",
     ) -> RouteState:
-        """Put *path* into maintenance mode, returning the updated ``RouteState``."""
+        """Put *path* into maintenance mode, returning the updated ``RouteState``.
+
+        Parameters
+        ----------
+        path:
+            The route key to put into maintenance mode.
+        reason:
+            Human-readable explanation included in 503 responses.
+        window:
+            Optional scheduled window.  When provided, ``Retry-After`` is set
+            to ``window.end`` and the scheduler automatically re-enables the
+            route when the window expires.
+        actor:
+            Identity of the caller, written to the audit log.
+        platform:
+            Where the call originated (``"cli"``, ``"dashboard"``,
+            ``"system"``).
+        """
         old_state = await self._assert_mutable(path)
         actual_path = old_state.path
         new_state = old_state.model_copy(
@@ -1499,7 +1569,21 @@ class WaygateEngine:
     async def set_env_only(
         self, path: str, envs: list[str], actor: str = "system", platform: str = "system"
     ) -> RouteState:
-        """Restrict *path* to *envs*, returning the updated ``RouteState``."""
+        """Restrict *path* to *envs*, returning the updated ``RouteState``.
+
+        Parameters
+        ----------
+        path:
+            The route key to restrict.
+        envs:
+            List of environment names that are allowed to access this route.
+            Requests from any other environment receive a 403 response.
+        actor:
+            Identity of the caller, written to the audit log.
+        platform:
+            Where the call originated (``"cli"``, ``"dashboard"``,
+            ``"system"``).
+        """
         old_state = await self._assert_mutable(path)
         actual_path = old_state.path
         new_state = old_state.model_copy(
@@ -2096,7 +2180,35 @@ class WaygateEngine:
         The global policy applies to every route that is not listed in
         *exempt_routes*.  Persisted so the policy survives restarts.
 
-        Returns the ``GlobalRateLimitPolicy`` instance.
+        Parameters
+        ----------
+        limit:
+            Rate limit string in ``limits`` format, e.g. ``"1000/minute"``.
+        algorithm:
+            Algorithm name (``"fixed_window"``, ``"sliding_window"``,
+            ``"moving_window"``).  Defaults to ``FIXED_WINDOW``.
+        key_strategy:
+            How to derive the per-request bucket key (``"ip"``, ``"user"``,
+            ``"api_key"``, ``"global"``).  Defaults to ``IP``.
+        on_missing_key:
+            What to do when the key strategy cannot produce a key
+            (``"exempt"``, ``"fallback_ip"``, ``"block"``).  When ``None``,
+            the per-strategy default is used.
+        burst:
+            Extra requests allowed above the base limit (additive).
+        exempt_routes:
+            Routes that bypass the global limit.  Each entry is either a bare
+            path (``"/health"``) or a method-prefixed path
+            (``"GET:/api/internal"``).
+        actor:
+            Identity of the caller, written to the audit log.
+        platform:
+            Where the call originated.
+
+        Returns
+        -------
+        GlobalRateLimitPolicy
+            The newly created or updated policy instance.
         """
         self._validate_limit_string(limit)
         from waygate.core.rate_limit.models import (
@@ -2409,7 +2521,15 @@ class WaygateEngine:
     async def get_state(self, path: str) -> RouteState:
         """Return the current ``RouteState`` for *path*.
 
-        Returns a default ACTIVE state if the path is not registered.
+        Parameters
+        ----------
+        path:
+            The route key to look up (e.g. ``"GET:/payments"`` or
+            ``"/payments"``).
+
+        Returns a synthetic ACTIVE state when the path is not registered so
+        that reads never raise.  Use ``list_states()`` to discover all
+        registered keys.
         """
         return await self._get_or_create(path)
 
@@ -2419,7 +2539,16 @@ class WaygateEngine:
         return [s for s in states if not s.path.startswith("__waygate:")]
 
     async def get_audit_log(self, path: str | None = None, limit: int = 100) -> list[AuditEntry]:
-        """Return audit log entries, newest first."""
+        """Return audit log entries, newest first.
+
+        Parameters
+        ----------
+        path:
+            When set, return only entries for this route key.  When ``None``,
+            return entries for all routes.
+        limit:
+            Maximum number of entries to return.  Defaults to ``100``.
+        """
         return await self.backend.get_audit_log(path=path, limit=limit)
 
     # ------------------------------------------------------------------

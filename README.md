@@ -60,6 +60,7 @@ These features are framework-agnostic and available to any adapter.
 | 🔄 **Sync & async** | Full support for both `async def` and plain `def` route handlers. Use `await engine.*` or `engine.sync.*` |
 | 🛡️ **Fail-open by default** | If the backend is unreachable, requests pass through. Waygate never takes down your API |
 | 🔌 **Pluggable backends** | In-memory (default), file-based JSON, or Redis for multi-instance deployments |
+| 🧪 **Test mode** | Disable lifecycle checks or rate limits per engine instance, via env var, or scoped to a test block with `waygate.testing.bypass` |
 
 ### Framework adapters
 
@@ -145,7 +146,7 @@ waygate global enable --reason "Deploying v2" --exempt /health
 |---|---|---|
 | `@maintenance(reason, start, end)` | Temporarily unavailable | 503 |
 | `@disabled(reason)` | Permanently off | 503 |
-| `@env_only("dev", "staging")` | Restricted to named environments | 404 elsewhere |
+| `@env_only("dev", "staging")` | Restricted to named environments | 403 elsewhere |
 | `@deprecated(sunset, use_instead)` | Still works, injects deprecation headers | 200 |
 | `@force_active` | Bypasses all waygate checks | Always 200 |
 | `@rate_limit("100/minute")` | Cap requests per IP, user, API key, or globally | 429 |

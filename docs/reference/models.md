@@ -21,7 +21,7 @@ from waygate import RouteStatus
 | `RouteStatus.ACTIVE` | `"active"` | Route is responding normally |
 | `RouteStatus.MAINTENANCE` | `"maintenance"` | Route is temporarily unavailable; returns 503 |
 | `RouteStatus.DISABLED` | `"disabled"` | Route is permanently off; returns 503 |
-| `RouteStatus.ENV_GATED` | `"env_gated"` | Route is restricted to specific environments; returns 404 elsewhere |
+| `RouteStatus.ENV_GATED` | `"env_gated"` | Route is restricted to specific environments; returns 403 elsewhere |
 | `RouteStatus.DEPRECATED` | `"deprecated"` | Route still responds but injects deprecation headers |
 
 ```python title="comparing statuses"
@@ -84,15 +84,17 @@ from waygate import RouteState
 | Field | Type | Default | Description |
 |---|---|---|---|
 | `path` | `str` | required | Route key in `METHOD:/path` format, e.g. `"GET:/payments"`. Read more in [route key format](../reference/cli.md#route-key-format). |
+| `service` | `str \| None` | `None` | Optional service name grouping this route. Set by the Waygate SDK to associate routes with a named application service. |
 | `status` | `RouteStatus` | `ACTIVE` | Current lifecycle state. Read more in [RouteStatus](#routestatus). |
 | `reason` | `str` | `""` | Human-readable reason for the current status. Shown in error responses and the admin dashboard. |
 | `allowed_envs` | `list[str]` | `[]` | Environments where the route is accessible. Only relevant when `status` is `ENV_GATED`. |
-| `allowed_roles` | `list[str]` | `[]` | Roles that bypass maintenance mode. *(v0.4+)* |
-| `allowed_ips` | `list[str]` | `[]` | IPs or CIDR blocks that bypass maintenance mode. *(v0.4+)* |
+| `allowed_roles` | `list[str]` | `[]` | Reserved for future role-based allowlisting. *(v0.4+)* |
+| `allowed_ips` | `list[str]` | `[]` | Reserved for future IP-based allowlisting. *(v0.4+)* |
 | `window` | `MaintenanceWindow \| None` | `None` | Scheduled maintenance window. Read more in [MaintenanceWindow](#maintenancewindow). |
-| `sunset_date` | `datetime \| None` | `None` | The date the route will be removed. Used by `@deprecated`. |
+| `sunset_date` | `str \| None` | `None` | RFC 7231 or ISO-8601 date string injected into the `Sunset` response header when the route is deprecated. |
 | `successor_path` | `str \| None` | `None` | Path or URL of the replacement resource. Used by `@deprecated` to populate the `Link` header. |
-| `rollout_percentage` | `int` | `100` | Percentage of requests that reach this route during a canary rollout. *(v0.4+)* |
+| `rollout_percentage` | `int` | `100` | Reserved for future gradual rollout support. Currently always `100`. *(v0.4+)* |
+| `force_active` | `bool` | `False` | When `True`, all state mutations are rejected. Set by the `@force_active` decorator. |
 
 ??? example "Creating and serialising a RouteState"
 
@@ -131,13 +133,14 @@ from waygate import AuditEntry
 |---|---|---|
 | `id` | `str` | UUID4 identifier for this entry |
 | `timestamp` | `datetime` | When the change occurred (UTC) |
-| `path` | `str` | Route key that was changed |
-| `action` | `str` | What happened: `"enable"`, `"disable"`, `"maintenance"`, `"env_only"`, `"schedule"`, etc. |
-| `actor` | `str` | Who made the change. One of: a username from the admin dashboard or CLI, `"system"` for scheduler-driven changes, or `"anonymous"` for unauthenticated requests. |
+| `path` | `str` | Route key that was changed, or an internal sentinel path for rate-limit and global-maintenance entries |
+| `service` | `str \| None` | Mirrors `RouteState.service` so audit rows can be filtered by service name |
+| `action` | `str` | What happened: `"enable"`, `"disable"`, `"maintenance_on"`, `"env_gate"`, `"global_rl_set"`, etc. |
+| `actor` | `str` | Who made the change — a username from the admin dashboard or CLI, `"system"` for scheduler-driven changes, or `"anonymous"` for unauthenticated requests |
 | `platform` | `str` | Where the change originated: `"cli"`, `"dashboard"`, or `"system"` |
-| `reason` | `str` | Optional reason, passed through from the state-change call |
-| `previous_status` | `RouteStatus` | The route's status before the change |
-| `new_status` | `RouteStatus` | The route's status after the change |
+| `reason` | `str` | Optional context for the change, passed through from the state-change call |
+| `previous_status` | `RouteStatus \| None` | The route's status before the change. `None` for non-lifecycle mutations such as rate limit policy changes. |
+| `new_status` | `RouteStatus \| None` | The route's status after the change. `None` for non-lifecycle mutations. |
 
 ??? example "Reading the audit log"
 

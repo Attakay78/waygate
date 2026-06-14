@@ -106,6 +106,19 @@ class _AuthMiddleware(BaseHTTPMiddleware):
         token_manager: TokenManager,
         auth_backend: object,
     ) -> None:
+        """
+        Parameters
+        ----------
+        app:
+            The inner ASGI application to wrap.
+        token_manager:
+            ``TokenManager`` instance used to verify bearer tokens and
+            session cookies.
+        auth_backend:
+            The active ``WaygateAuthBackend``, or ``None`` when auth is
+            disabled.  When ``None`` every request passes through without
+            credential checks.
+        """
         super().__init__(app)
         self._tm = token_manager
         self._has_auth = auth_backend is not None

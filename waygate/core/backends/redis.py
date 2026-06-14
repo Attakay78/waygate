@@ -60,6 +60,10 @@ _RL_POLICY_CHANNEL = "waygate:rl-policy-change"
 _MAX_AUDIT_ENTRIES = 1000
 
 
+async def _aw(val: Any) -> Any:
+    return await val
+
+
 def _state_key(path: str) -> str:
     return f"waygate:state:{path}"
 
@@ -199,11 +203,11 @@ class RedisBackend(WaygateBackend):
         """
         try:
             async with self._client() as r:
-                paths: set[str] = await r.smembers(_ROUTE_INDEX_KEY)  # type: ignore[misc]
+                paths: set[str] = await _aw(r.smembers(_ROUTE_INDEX_KEY))
                 if not paths:
                     return []
                 keys = [_state_key(p) for p in paths]
-                values: list[str | None] = await r.mget(*keys)
+                values: list[str | None] = await _aw(r.mget(*keys))
         except Exception as exc:
             logger.error("waygate: redis list_states error: %s", exc)
             raise
@@ -249,12 +253,10 @@ class RedisBackend(WaygateBackend):
             async with self._client() as r:
                 if path is not None:
                     # Per-path list: fetch exactly what we need — O(limit).
-                    raws: list[str] = await r.lrange(  # type: ignore[misc]
-                        _audit_path_key(path), 0, limit - 1
-                    )
+                    raws: list[str] = await _aw(r.lrange(_audit_path_key(path), 0, limit - 1))
                 else:
                     # Global list: all entries newest-first.
-                    raws = await r.lrange(_AUDIT_KEY, 0, limit - 1)  # type: ignore[misc]
+                    raws = await _aw(r.lrange(_AUDIT_KEY, 0, limit - 1))
         except Exception as exc:
             logger.error("waygate: redis get_audit_log error: %s", exc)
             raise
@@ -354,7 +356,7 @@ class RedisBackend(WaygateBackend):
 
         try:
             async with self._client() as r:
-                raws: list[str] = await r.lrange(_RATE_LIMIT_HITS_KEY, 0, -1)  # type: ignore[misc]
+                raws: list[str] = await _aw(r.lrange(_RATE_LIMIT_HITS_KEY, 0, -1))
         except Exception as exc:
             logger.warning("waygate: redis get_rate_limit_hits error: %s", exc)
             return []
@@ -395,11 +397,11 @@ class RedisBackend(WaygateBackend):
         index_key = "waygate:rl-policy-index"
         try:
             async with self._client() as r:
-                keys: set[str] = await r.smembers(index_key)  # type: ignore[misc]
+                keys: set[str] = await _aw(r.smembers(index_key))
                 if not keys:
                     return []
                 redis_keys = [f"waygate:rlpolicy:{k}" for k in keys]
-                raws: list[str | None] = await r.mget(*redis_keys)
+                raws: list[str | None] = await _aw(r.mget(*redis_keys))
             policies = []
             for raw in raws:
                 if raw is not None:

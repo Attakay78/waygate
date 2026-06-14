@@ -46,7 +46,12 @@ from waygate import WaygateEngine
 WaygateEngine(
     backend: WaygateBackend | None = None,
     current_env: str = "dev",
-    webhooks: list[str] | None = None,
+    rate_limit_backend: WaygateBackend | None = None,
+    default_rate_limit_algorithm: RateLimitAlgorithm | None = None,
+    rate_limit_snapshot_interval: int = 10,
+    max_rl_hit_entries: int = 10_000,
+    bypass_rate_limits: bool = False,
+    bypass_lifecycle: bool = False,
 )
 ```
 
@@ -54,7 +59,39 @@ WaygateEngine(
 |---|---|---|---|
 | `backend` | `WaygateBackend \| None` | `MemoryBackend()` | Storage backend for route state and the audit log. Read more in [Backends](backends.md). |
 | `current_env` | `str` | `"dev"` | The current environment name. Used by `@env_only` to decide whether to allow or block a request. |
-| `webhooks` | `list[str] \| None` | `[]` | Webhook URLs notified on every state change. Read more in [add_webhook](#add_webhook). |
+| `rate_limit_backend` | `WaygateBackend \| None` | `None` | Separate backend for rate limit counter storage. When `None`, the same `backend` is used for both lifecycle state and rate limit counters. Pass a dedicated `RedisBackend` to isolate counter storage. |
+| `default_rate_limit_algorithm` | `RateLimitAlgorithm \| None` | `FIXED_WINDOW` | Algorithm used when a `@rate_limit` decorator does not specify one explicitly. |
+| `rate_limit_snapshot_interval` | `int` | `10` | Seconds between counter snapshots to disk when using `FileRateLimitStorage`. Ignored for `MemoryBackend` and `RedisBackend`. |
+| `max_rl_hit_entries` | `int` | `10_000` | Maximum number of blocked-request records kept in the hit log. Oldest entries are evicted when the cap is reached. |
+| `bypass_rate_limits` | `bool` | `False` | Skip all rate limit checks. Requests pass without consuming quota. Also settable via the `WAYGATE_BYPASS_RATE_LIMITS` environment variable. |
+| `bypass_lifecycle` | `bool` | `False` | Skip maintenance, disabled, and env-gated checks. Every route is treated as active. Also settable via the `WAYGATE_BYPASS_LIFECYCLE` environment variable. |
+
+---
+
+## Testing mode
+
+`WaygateEngine` supports two bypass flags that disable enforcement during tests. See the full guide at [Testing](../tutorial/testing.md).
+
+```python
+# Disable everything for the test engine
+engine = WaygateEngine(bypass_rate_limits=True, bypass_lifecycle=True)
+
+# Or via env var (no code change required)
+# WAYGATE_BYPASS_RATE_LIMITS=1 pytest
+
+# Or scoped to one block via the context manager
+from waygate.testing import bypass
+
+with bypass(engine):
+    response = client.get("/rate-limited-route")
+```
+
+The flags can also be toggled at runtime directly on the instance:
+
+```python
+engine.bypass_rate_limits = True
+engine.bypass_lifecycle = True
+```
 
 ---
 
@@ -222,8 +259,8 @@ Restrict a route to the listed environments. Returns a silent 404 in all other e
 await engine.set_env_only("GET:/debug", envs=["dev", "staging"])
 ```
 
-!!! note "404, not 403"
-    Env-gated routes return 404 with no response body to avoid revealing that the path exists at all.
+!!! note "403, not 404"
+    Env-gated routes return 403 with a structured JSON body containing `code`, `current_env`, `allowed_envs`, and `path`.
 
 ---
 
@@ -240,7 +277,7 @@ state = await engine.get_state("GET:/payments")
 print(state.status, state.reason)
 ```
 
-Raises `KeyError` if the path has not been registered. Read more in [RouteState](models.md#routestate).
+Returns a synthetic `ACTIVE` state when the path has not been registered — reads never raise. Use `list_states()` to discover all registered keys. Read more in [RouteState](models.md#routestate).
 
 ---
 
@@ -321,6 +358,9 @@ FastAPI automatically runs sync handlers in a worker thread, which is exactly th
 | `enable_global_maintenance(reason, ...)` | `await engine.enable_global_maintenance(...)` |
 | `disable_global_maintenance(actor)` | `await engine.disable_global_maintenance(...)` |
 | `set_global_exempt_paths(paths)` | `await engine.set_global_exempt_paths(...)` |
+| `get_service_maintenance(service)` | `await engine.get_service_maintenance(...)` |
+| `enable_service_maintenance(service, reason, ...)` | `await engine.enable_service_maintenance(...)` |
+| `disable_service_maintenance(service, actor)` | `await engine.disable_service_maintenance(...)` |
 | `get_rate_limit_hits(path, limit)` | `await engine.get_rate_limit_hits(...)` |
 | `set_rate_limit_policy(path, method, limit, ...)` | `await engine.set_rate_limit_policy(...)` |
 | `delete_rate_limit_policy(path, method, actor)` | `await engine.delete_rate_limit_policy(...)` |
@@ -331,6 +371,12 @@ FastAPI automatically runs sync handlers in a worker thread, which is exactly th
 | `reset_global_rate_limit(actor)` | `await engine.reset_global_rate_limit(...)` |
 | `enable_global_rate_limit(actor)` | `await engine.enable_global_rate_limit(...)` |
 | `disable_global_rate_limit(actor)` | `await engine.disable_global_rate_limit(...)` |
+| `get_service_rate_limit(service)` | `await engine.get_service_rate_limit(...)` |
+| `set_service_rate_limit(service, limit, ...)` | `await engine.set_service_rate_limit(...)` |
+| `delete_service_rate_limit(service, actor)` | `await engine.delete_service_rate_limit(...)` |
+| `reset_service_rate_limit(service, actor)` | `await engine.reset_service_rate_limit(...)` |
+| `enable_service_rate_limit(service, actor)` | `await engine.enable_service_rate_limit(...)` |
+| `disable_service_rate_limit(service, actor)` | `await engine.disable_service_rate_limit(...)` |
 | `get_state(path)` | `await engine.get_state(path)` |
 | `list_states()` | `await engine.list_states()` |
 | `get_audit_log(path, limit)` | `await engine.get_audit_log(...)` |
@@ -355,13 +401,15 @@ Scheduled windows survive restarts: they are persisted to the backend and restor
 
 ---
 
-### `cancel_schedule`
+### Cancelling a scheduled window
+
+To cancel a scheduled maintenance window, use the scheduler directly:
 
 ```python
-async def cancel_schedule(path: str) -> None
+await engine.scheduler.cancel(path)
 ```
 
-Cancel any pending scheduled window for the given path. No-op if no window is scheduled.
+No-op if no window is scheduled for the path.
 
 ---
 
@@ -433,7 +481,7 @@ if cfg.enabled:
 ### `set_global_exempt_paths`
 
 ```python
-async def set_global_exempt_paths(paths: list[str], actor: str = "system") -> None
+async def set_global_exempt_paths(paths: list[str]) -> GlobalMaintenanceConfig
 ```
 
 Update the exempt path list while global maintenance is active, without toggling the mode on or off. Useful for adding emergency access to a monitoring endpoint mid-incident.
@@ -616,15 +664,6 @@ hits = await engine.get_rate_limit_hits(path="/public/posts")
 
 ---
 
-### `list_rate_limit_policies`
-
-```python
-async def list_rate_limit_policies() -> list[RateLimitPolicy]
-```
-
-Return all registered rate limit policies.
-
----
 
 ## Global rate limit
 

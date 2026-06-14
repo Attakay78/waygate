@@ -49,7 +49,23 @@ class _SyncWaygateFeatureClient:
         default: bool,
         ctx: object | None = None,
     ) -> bool:
-        """Evaluate a boolean flag synchronously."""
+        """Evaluate a boolean flag synchronously.
+
+        Parameters
+        ----------
+        flag_key:
+            The flag identifier to look up.
+        default:
+            Value returned when the flag is not found or evaluation fails.
+        ctx:
+            Evaluation context.  Accepts a plain ``dict``, an OpenFeature
+            ``EvaluationContext``, or ``None``.
+
+        Returns
+        -------
+        bool
+            The resolved flag value, or *default* on error.
+        """
         from waygate.core.feature_flags._context import to_of_context
 
         return self._of_client.get_boolean_value(flag_key, default, to_of_context(ctx))  # type: ignore[attr-defined, no-any-return, arg-type]
@@ -60,7 +76,23 @@ class _SyncWaygateFeatureClient:
         default: str,
         ctx: object | None = None,
     ) -> str:
-        """Evaluate a string flag synchronously."""
+        """Evaluate a string flag synchronously.
+
+        Parameters
+        ----------
+        flag_key:
+            The flag identifier to look up.
+        default:
+            Value returned when the flag is not found or evaluation fails.
+        ctx:
+            Evaluation context.  Accepts a plain ``dict``, an OpenFeature
+            ``EvaluationContext``, or ``None``.
+
+        Returns
+        -------
+        str
+            The resolved flag value, or *default* on error.
+        """
         from waygate.core.feature_flags._context import to_of_context
 
         return self._of_client.get_string_value(flag_key, default, to_of_context(ctx))  # type: ignore[attr-defined, no-any-return, arg-type]
@@ -71,7 +103,23 @@ class _SyncWaygateFeatureClient:
         default: int,
         ctx: object | None = None,
     ) -> int:
-        """Evaluate an integer flag synchronously."""
+        """Evaluate an integer flag synchronously.
+
+        Parameters
+        ----------
+        flag_key:
+            The flag identifier to look up.
+        default:
+            Value returned when the flag is not found or evaluation fails.
+        ctx:
+            Evaluation context.  Accepts a plain ``dict``, an OpenFeature
+            ``EvaluationContext``, or ``None``.
+
+        Returns
+        -------
+        int
+            The resolved flag value, or *default* on error.
+        """
         from waygate.core.feature_flags._context import to_of_context
 
         return self._of_client.get_integer_value(flag_key, default, to_of_context(ctx))  # type: ignore[attr-defined, no-any-return, arg-type]
@@ -82,7 +130,23 @@ class _SyncWaygateFeatureClient:
         default: float,
         ctx: object | None = None,
     ) -> float:
-        """Evaluate a float flag synchronously."""
+        """Evaluate a float flag synchronously.
+
+        Parameters
+        ----------
+        flag_key:
+            The flag identifier to look up.
+        default:
+            Value returned when the flag is not found or evaluation fails.
+        ctx:
+            Evaluation context.  Accepts a plain ``dict``, an OpenFeature
+            ``EvaluationContext``, or ``None``.
+
+        Returns
+        -------
+        float
+            The resolved flag value, or *default* on error.
+        """
         from waygate.core.feature_flags._context import to_of_context
 
         return self._of_client.get_float_value(flag_key, default, to_of_context(ctx))  # type: ignore[attr-defined, no-any-return, arg-type]
@@ -93,20 +157,43 @@ class _SyncWaygateFeatureClient:
         default: dict,  # type: ignore[type-arg]
         ctx: object | None = None,
     ) -> dict:  # type: ignore[type-arg]
-        """Evaluate a JSON/object flag synchronously."""
+        """Evaluate a JSON/object flag synchronously.
+
+        Parameters
+        ----------
+        flag_key:
+            The flag identifier to look up.
+        default:
+            Value returned when the flag is not found or evaluation fails.
+        ctx:
+            Evaluation context.  Accepts a plain ``dict``, an OpenFeature
+            ``EvaluationContext``, or ``None``.
+
+        Returns
+        -------
+        dict
+            The resolved flag value, or *default* on error.
+        """
         from waygate.core.feature_flags._context import to_of_context
 
         return self._of_client.get_object_value(flag_key, default, to_of_context(ctx))  # type: ignore[attr-defined, no-any-return, arg-type]
 
 
 class WaygateFeatureClient:
-    """Thin wrapper around the OpenFeature client.
+    """Thin async wrapper around the OpenFeature client.
 
-    Instantiated via ``engine.use_openfeature()``.
-    Do not construct directly.
+    Obtain an instance via ``engine.use_openfeature()`` — do not construct
+    directly.  The sync equivalent is available as ``engine.sync.flag_client``.
     """
 
     def __init__(self, domain: str = "waygate") -> None:
+        """
+        Parameters
+        ----------
+        domain:
+            OpenFeature domain name.  Must match the domain passed to
+            ``of_api.set_provider()``.  Defaults to ``"waygate"``.
+        """
         from openfeature import api
 
         self._client = api.get_client(domain)
@@ -118,6 +205,23 @@ class WaygateFeatureClient:
         default: bool,
         ctx: object | None = None,
     ) -> bool:
+        """Evaluate a boolean feature flag.
+
+        Parameters
+        ----------
+        flag_key:
+            The flag identifier to look up.
+        default:
+            Value returned when the flag is not found or evaluation fails.
+        ctx:
+            Evaluation context.  Accepts a plain ``dict``, an OpenFeature
+            ``EvaluationContext``, or ``None``.
+
+        Returns
+        -------
+        bool
+            The resolved flag value, or *default* on error.
+        """
         from waygate.core.feature_flags._context import to_of_context
 
         return self._client.get_boolean_value(flag_key, default, to_of_context(ctx))  # type: ignore[arg-type]
@@ -128,6 +232,23 @@ class WaygateFeatureClient:
         default: str,
         ctx: object | None = None,
     ) -> str:
+        """Evaluate a string feature flag.
+
+        Parameters
+        ----------
+        flag_key:
+            The flag identifier to look up.
+        default:
+            Value returned when the flag is not found or evaluation fails.
+        ctx:
+            Evaluation context.  Accepts a plain ``dict``, an OpenFeature
+            ``EvaluationContext``, or ``None``.
+
+        Returns
+        -------
+        str
+            The resolved flag value, or *default* on error.
+        """
         from waygate.core.feature_flags._context import to_of_context
 
         return self._client.get_string_value(flag_key, default, to_of_context(ctx))  # type: ignore[arg-type]
@@ -138,6 +259,23 @@ class WaygateFeatureClient:
         default: int,
         ctx: object | None = None,
     ) -> int:
+        """Evaluate an integer feature flag.
+
+        Parameters
+        ----------
+        flag_key:
+            The flag identifier to look up.
+        default:
+            Value returned when the flag is not found or evaluation fails.
+        ctx:
+            Evaluation context.  Accepts a plain ``dict``, an OpenFeature
+            ``EvaluationContext``, or ``None``.
+
+        Returns
+        -------
+        int
+            The resolved flag value, or *default* on error.
+        """
         from waygate.core.feature_flags._context import to_of_context
 
         return self._client.get_integer_value(flag_key, default, to_of_context(ctx))  # type: ignore[arg-type]
@@ -148,6 +286,23 @@ class WaygateFeatureClient:
         default: float,
         ctx: object | None = None,
     ) -> float:
+        """Evaluate a float feature flag.
+
+        Parameters
+        ----------
+        flag_key:
+            The flag identifier to look up.
+        default:
+            Value returned when the flag is not found or evaluation fails.
+        ctx:
+            Evaluation context.  Accepts a plain ``dict``, an OpenFeature
+            ``EvaluationContext``, or ``None``.
+
+        Returns
+        -------
+        float
+            The resolved flag value, or *default* on error.
+        """
         from waygate.core.feature_flags._context import to_of_context
 
         return self._client.get_float_value(flag_key, default, to_of_context(ctx))  # type: ignore[arg-type]
@@ -158,6 +313,23 @@ class WaygateFeatureClient:
         default: dict[str, Any],
         ctx: object | None = None,
     ) -> dict[str, Any]:
+        """Evaluate a JSON/object feature flag.
+
+        Parameters
+        ----------
+        flag_key:
+            The flag identifier to look up.
+        default:
+            Value returned when the flag is not found or evaluation fails.
+        ctx:
+            Evaluation context.  Accepts a plain ``dict``, an OpenFeature
+            ``EvaluationContext``, or ``None``.
+
+        Returns
+        -------
+        dict
+            The resolved flag value, or *default* on error.
+        """
         from waygate.core.feature_flags._context import to_of_context
 
         return self._client.get_object_value(flag_key, default, to_of_context(ctx))  # type: ignore[arg-type, return-value]

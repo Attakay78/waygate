@@ -11,13 +11,48 @@ directly on the ``FastAPI`` app to benefit from waygate decorators too.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any
 
 from fastapi import APIRouter
 from starlette.routing import Route
 
 from waygate.core.engine import WaygateEngine
+
+
+def _iter_routes(app: Any) -> Iterator[Any]:
+    """Yield all route-like objects from *app*, handling FastAPI 0.137+ layout.
+
+    FastAPI 0.137 replaced the flat ``app.routes`` list with a two-level
+    structure: routes added via ``app.include_router()`` are now wrapped in
+    ``_IncludedRouter`` objects (a ``BaseRoute`` subclass, *not* a
+    ``starlette.routing.Route``).  ``_IncludedRouter.effective_candidates()``
+    returns the fully-qualified ``_EffectiveRouteContext`` objects — each with
+    ``.path``, ``.methods``, and ``.endpoint`` — and may include nested
+    ``_IncludedRouter`` entries for sub-routers.
+
+    This generator handles both the old layout (every entry is a ``Route``)
+    and the new layout transparently so callers only see leaf route objects
+    with ``.path``, ``.methods``, and ``.endpoint``.
+    """
+    for route in getattr(app, "routes", []):
+        if isinstance(route, Route):
+            yield route
+        elif callable(getattr(route, "effective_candidates", None)):
+            # FastAPI 0.137+ _IncludedRouter (duck-typed to avoid importing
+            # the private class and to stay compatible with future renames).
+            yield from _iter_included_candidates(route)
+
+
+def _iter_included_candidates(node: Any) -> Iterator[Any]:
+    """Recursively yield leaf route contexts from a FastAPI _IncludedRouter."""
+    for candidate in node.effective_candidates():
+        if callable(getattr(candidate, "effective_candidates", None)):
+            # Nested _IncludedRouter — recurse.
+            yield from _iter_included_candidates(candidate)
+        else:
+            # _EffectiveRouteContext — a leaf with .path, .methods, .endpoint.
+            yield candidate
 
 
 async def _register_rate_limit_from_meta(
@@ -100,28 +135,29 @@ async def scan_routes(app: Any, engine: WaygateEngine) -> None:
     """
     routes_to_register: list[tuple[str, dict[str, Any]]] = []
 
-    for route in getattr(app, "routes", []):
-        if not isinstance(route, Route):
-            continue
+    for route in _iter_routes(app):
         endpoint = getattr(route, "endpoint", None)
         if endpoint is None:
             continue
+        path: str = getattr(route, "path", None) or ""
+        if not path:
+            continue
         # Skip FastAPI's built-in docs/schema routes — they are not
         # user-defined routes and should never appear in waygate status.
-        if route.path in {"/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"}:
+        if path in {"/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect"}:
             continue
         # Use decorator meta if present; fall back to empty dict for
         # undecorated routes so they are still registered as ACTIVE.
         meta: dict[str, Any] = getattr(endpoint, "__waygate_meta__", {})
-        methods: set[str] = route.methods or set()
+        methods: set[str] = getattr(route, "methods", None) or set()
         if methods:
             for method in sorted(methods):
-                routes_to_register.append((f"{method}:{route.path}", meta))
+                routes_to_register.append((f"{method}:{path}", meta))
                 # Register rate limit policy if declared on the endpoint.
-                await _register_rate_limit_from_meta(route.path, method, meta, engine)
+                await _register_rate_limit_from_meta(path, method, meta, engine)
         else:
-            routes_to_register.append((route.path, meta))
-            await _register_rate_limit_from_meta(route.path, "ALL", meta, engine)
+            routes_to_register.append((path, meta))
+            await _register_rate_limit_from_meta(path, "ALL", meta, engine)
 
     await engine.register_batch(routes_to_register)
 

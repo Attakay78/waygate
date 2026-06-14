@@ -52,7 +52,20 @@ class WaygateAuthBackend(ABC):
 
     @abstractmethod
     def authenticate_user(self, username: str, password: str) -> bool:
-        """Return ``True`` when *username* / *password* are valid."""
+        """Verify that *username* and *password* are valid credentials.
+
+        Parameters
+        ----------
+        username:
+            The username provided by the caller.
+        password:
+            The plaintext password provided by the caller.
+
+        Returns
+        -------
+        bool
+            ``True`` when the credentials are accepted, ``False`` otherwise.
+        """
         ...
 
     def fingerprint(self) -> str:
@@ -78,6 +91,14 @@ class _SingleUserAuth(WaygateAuthBackend):
     """Auth backend for a single ``(username, password)`` pair."""
 
     def __init__(self, username: str, password: str) -> None:
+        """
+        Parameters
+        ----------
+        username:
+            The accepted username.
+        password:
+            The accepted plaintext password.
+        """
         self._username = username
         self._password = password
 
@@ -89,6 +110,13 @@ class _MultiUserAuth(WaygateAuthBackend):
     """Auth backend for multiple ``(username, password)`` pairs."""
 
     def __init__(self, credentials: list[tuple[str, str]]) -> None:
+        """
+        Parameters
+        ----------
+        credentials:
+            List of ``(username, password)`` pairs.  Any pair in the list is
+            accepted.
+        """
         self._creds: dict[str, str] = {u: p for u, p in credentials}
 
     def authenticate_user(self, username: str, password: str) -> bool:
