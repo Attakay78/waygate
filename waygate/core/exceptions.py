@@ -14,6 +14,15 @@ class MaintenanceException(WaygateException):
     """Raised when a route is in maintenance mode."""
 
     def __init__(self, reason: str = "", retry_after: datetime | None = None) -> None:
+        """
+        Parameters
+        ----------
+        reason:
+            Human-readable explanation of the maintenance period.
+        retry_after:
+            When the maintenance window is expected to end.  When set, the
+            middleware injects a ``Retry-After`` header with this datetime.
+        """
         self.reason = reason
         self.retry_after = retry_after
         super().__init__(reason)
@@ -23,6 +32,17 @@ class EnvGatedException(WaygateException):
     """Raised when a route is restricted to specific environments."""
 
     def __init__(self, path: str, current_env: str, allowed_envs: list[str]) -> None:
+        """
+        Parameters
+        ----------
+        path:
+            The route path that was requested.
+        current_env:
+            The environment name the engine is running in (from
+            ``WaygateEngine(current_env=...)``).
+        allowed_envs:
+            The list of environments where this route is accessible.
+        """
         self.path = path
         self.current_env = current_env
         self.allowed_envs = allowed_envs
@@ -36,6 +56,12 @@ class RouteDisabledException(WaygateException):
     """Raised when a route has been permanently disabled."""
 
     def __init__(self, reason: str = "") -> None:
+        """
+        Parameters
+        ----------
+        reason:
+            Human-readable explanation of why the route was disabled.
+        """
         self.reason = reason
         super().__init__(reason)
 
@@ -49,6 +75,12 @@ class RouteNotFoundException(WaygateException):
     """
 
     def __init__(self, path: str) -> None:
+        """
+        Parameters
+        ----------
+        path:
+            The route key that was not found in the backend.
+        """
         self.path = path
         super().__init__(
             f"Route {path!r} is not registered. Use 'waygate status' to see all registered routes."
@@ -64,6 +96,15 @@ class AmbiguousRouteError(WaygateException):
     """
 
     def __init__(self, path: str, matches: list[str]) -> None:
+        """
+        Parameters
+        ----------
+        path:
+            The bare path that matched multiple registered keys.
+        matches:
+            All method-prefixed keys that were matched (e.g.
+            ``["GET:/payments", "POST:/payments"]``).
+        """
         self.path = path
         self.matches = matches
         super().__init__(
@@ -82,6 +123,12 @@ class RouteProtectedException(WaygateException):
     """
 
     def __init__(self, path: str) -> None:
+        """
+        Parameters
+        ----------
+        path:
+            The route key that is protected by ``@force_active``.
+        """
         self.path = path
         super().__init__(
             f"Route {path!r} is decorated with @force_active and cannot "
@@ -105,6 +152,24 @@ class RateLimitExceededException(WaygateException):
         remaining: int,
         key: str,
     ) -> None:
+        """
+        Parameters
+        ----------
+        limit:
+            The rate limit string that was exceeded (e.g. ``"100/minute"``).
+        retry_after_seconds:
+            Seconds until the limit resets.  Placed in the ``Retry-After``
+            response header.
+        reset_at:
+            Absolute datetime when the window resets.  Placed in the
+            ``X-RateLimit-Reset`` header.
+        remaining:
+            Requests remaining in the current window (always ``0`` when this
+            exception is raised).
+        key:
+            The bucket key used to count this request (e.g. the client IP
+            or user ID).
+        """
         self.limit = limit
         self.retry_after_seconds = retry_after_seconds
         self.reset_at = reset_at

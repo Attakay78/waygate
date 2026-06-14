@@ -34,7 +34,7 @@ from typing import Any, cast
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
-from starlette.routing import Match, Route
+from starlette.routing import Match
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from waygate.core.engine import WaygateEngine
@@ -45,6 +45,7 @@ from waygate.core.exceptions import (
     RouteDisabledException,
 )
 from waygate.core.models import RouteStatus
+from waygate.fastapi.router import _iter_routes, scan_routes
 
 # Prefixes that are always exempt from waygate checks.
 _SKIP_PREFIXES = ("/waygate/", "/docs", "/redoc", "/openapi.json")
@@ -118,7 +119,7 @@ class WaygateMiddleware(BaseHTTPMiddleware):
         # Each entry stores (is_force_active, template_path, response_factory | None,
         #                    rate_limit_response_factory | None).
         self._static_route_meta: dict[str, tuple[bool, str, Any, Any]] = {}
-        self._param_routes: list[tuple[Route, bool, str, Any, Any]] = []
+        self._param_routes: list[tuple[Any, bool, str, Any, Any]] = []
         self._route_cache_built: bool = False
 
     # ------------------------------------------------------------------
@@ -176,8 +177,6 @@ class WaygateMiddleware(BaseHTTPMiddleware):
         async with self._scan_lock:
             if self._routes_scanned:
                 return
-            from waygate.fastapi.router import scan_routes
-
             await scan_routes(app, self.engine)
             self._routes_scanned = True
             # Build the O(1) route-lookup cache now that all routes are registered.
@@ -196,13 +195,17 @@ class WaygateMiddleware(BaseHTTPMiddleware):
 
         The structure stores ``(is_force_active, template_path)`` per route
         so ``_resolve_route`` can answer both questions in a single pass.
+
+        FastAPI 0.137+ wraps included-router routes in ``_IncludedRouter``
+        objects (not ``starlette.routing.Route`` instances).  ``_iter_routes``
+        from ``waygate.fastapi.router`` flattens these into leaf objects that
+        expose the same ``.path``, ``.methods``, ``.endpoint``, and
+        ``.matches()`` interface as plain ``Route`` objects.
         """
         static: dict[str, tuple[bool, str, Any, Any]] = {}
-        param: list[tuple[Route, bool, str, Any, Any]] = []
+        param: list[tuple[Any, bool, str, Any, Any]] = []
 
-        for route in getattr(app, "routes", []):
-            if not isinstance(route, Route):
-                continue
+        for route in _iter_routes(app):
             endpoint = getattr(route, "endpoint", None)
             meta = getattr(endpoint, "__waygate_meta__", {}) if endpoint else {}
             is_force_active = bool(meta.get("force_active"))
@@ -365,8 +368,7 @@ class WaygateMiddleware(BaseHTTPMiddleware):
             return False, None, None, None
 
         # Fallback: full O(N) walk used before the cache is ready.
-        routes = getattr(request.app, "routes", [])
-        for route in routes:
+        for route in _iter_routes(request.app):
             match, _ = route.matches(request.scope)
             if match == Match.FULL:
                 endpoint = getattr(route, "endpoint", None)
@@ -421,6 +423,16 @@ class WaygateMiddleware(BaseHTTPMiddleware):
 
     @staticmethod
     def _maintenance_response(path: str, exc: MaintenanceException) -> JSONResponse:
+        """Build a 503 Service Unavailable response for a route in maintenance mode.
+
+        Parameters
+        ----------
+        path:
+            The request path, included in the error body.
+        exc:
+            The ``MaintenanceException`` carrying the reason and optional
+            ``retry_after`` datetime.
+        """
         retry_after = exc.retry_after.isoformat() if exc.retry_after else None
         body: dict[str, Any] = {
             "error": {
@@ -441,6 +453,15 @@ class WaygateMiddleware(BaseHTTPMiddleware):
 
     @staticmethod
     def _disabled_response(path: str, exc: RouteDisabledException) -> JSONResponse:
+        """Build a 503 Service Unavailable response for a permanently disabled route.
+
+        Parameters
+        ----------
+        path:
+            The request path, included in the error body.
+        exc:
+            The ``RouteDisabledException`` carrying the disable reason.
+        """
         return JSONResponse(
             status_code=503,
             content={
@@ -455,6 +476,16 @@ class WaygateMiddleware(BaseHTTPMiddleware):
 
     @staticmethod
     def _env_gated_response(path: str, exc: EnvGatedException) -> JSONResponse:
+        """Build a 403 Forbidden response for an environment-gated route.
+
+        Parameters
+        ----------
+        path:
+            The request path, included in the error body.
+        exc:
+            The ``EnvGatedException`` carrying the current env and the list
+            of allowed environments.
+        """
         return JSONResponse(
             status_code=403,
             content={

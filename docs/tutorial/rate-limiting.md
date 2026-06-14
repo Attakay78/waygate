@@ -426,7 +426,7 @@ The service rate limit sits between the all-services global rate limit (`waygate
 
 From the dashboard: open the **Rate Limits** tab and filter to a service. A **Service Rate Limit** card appears above the policies table with controls to configure, pause, reset, and remove the policy.
 
-See [Per-service rate limit reference](../reference/rate-limiting.md#per-service-rate-limit) and the [`waygate srl` CLI reference](../reference/cli.md#waygate-srl--waygate-service-rate-limit) for the full API.
+See [Per-service rate limit reference](../reference/rate-limiting.md#per-service-rate-limit) and the [`waygate srl` CLI reference](../reference/cli.md#waygate-srl-waygate-service-rate-limit) for the full API.
 
 ---
 

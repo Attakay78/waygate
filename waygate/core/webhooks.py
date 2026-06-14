@@ -16,7 +16,24 @@ from waygate.core.models import RouteState
 
 
 def default_formatter(event: str, path: str, state: RouteState) -> dict[str, Any]:
-    """Generic JSON payload suitable for any HTTP webhook consumer."""
+    """Build a generic JSON payload for any HTTP webhook consumer.
+
+    Parameters
+    ----------
+    event:
+        The lifecycle event name (e.g. ``"enable"``, ``"maintenance_on"``,
+        ``"disable"``).
+    path:
+        The route key that changed.
+    state:
+        Current ``RouteState`` after the change.
+
+    Returns
+    -------
+    dict
+        JSON-serialisable payload with ``event``, ``path``, ``reason``,
+        ``timestamp``, and a full ``state`` dump.
+    """
     return {
         "event": event,
         "path": path,
@@ -43,7 +60,23 @@ class SlackWebhookFormatter:
     }
 
     def __call__(self, event: str, path: str, state: RouteState) -> dict[str, Any]:
-        """Return a Slack Incoming Webhook payload."""
+        """Format a state-change event as a Slack Incoming Webhook payload.
+
+        Parameters
+        ----------
+        event:
+            The lifecycle event name (e.g. ``"enable"``, ``"maintenance_on"``,
+            ``"disable"``).
+        path:
+            The route key that changed.
+        state:
+            Current ``RouteState`` after the change.
+
+        Returns
+        -------
+        dict
+            Slack Incoming Webhook payload with a colour-coded attachment.
+        """
         colour = self._COLOURS.get(event, "#888888")
         text = f"*{event.upper()}*: `{path}`"
         if state.reason:

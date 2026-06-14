@@ -32,6 +32,18 @@ class WaygateClientError(Exception):
         status_code: int = 0,
         ambiguous_matches: list[str] | None = None,
     ) -> None:
+        """
+        Parameters
+        ----------
+        message:
+            Human-readable description of the error.
+        status_code:
+            HTTP status code returned by the server.  ``0`` when no HTTP
+            response was received (e.g. connection refused).
+        ambiguous_matches:
+            When the server returned a 409 Ambiguous response, the list of
+            method-prefixed keys that matched the requested path.
+        """
         super().__init__(message)
         self.status_code = status_code
         self.ambiguous_matches: list[str] = ambiguous_matches or []
