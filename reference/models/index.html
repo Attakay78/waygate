@@ -805,6 +805,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../tutorial/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../tutorial/admin-dashboard/" class="md-nav__link">
         
   
@@ -1990,7 +2018,7 @@
 <tr>
 <td><code>RouteStatus.ENV_GATED</code></td>
 <td><code>"env_gated"</code></td>
-<td>Route is restricted to specific environments; returns 404 elsewhere</td>
+<td>Route is restricted to specific environments; returns 403 elsewhere</td>
 </tr>
 <tr>
 <td><code>RouteStatus.DEPRECATED</code></td>
@@ -2081,6 +2109,12 @@
 <td>Route key in <code>METHOD:/path</code> format, e.g. <code>"GET:/payments"</code>. Read more in <a href="../cli/#route-key-format">route key format</a>.</td>
 </tr>
 <tr>
+<td><code>service</code></td>
+<td><code>str \| None</code></td>
+<td><code>None</code></td>
+<td>Optional service name grouping this route. Set by the Waygate SDK to associate routes with a named application service.</td>
+</tr>
+<tr>
 <td><code>status</code></td>
 <td><code>RouteStatus</code></td>
 <td><code>ACTIVE</code></td>
@@ -2102,13 +2136,13 @@
 <td><code>allowed_roles</code></td>
 <td><code>list[str]</code></td>
 <td><code>[]</code></td>
-<td>Roles that bypass maintenance mode. <em>(v0.4+)</em></td>
+<td>Reserved for future role-based allowlisting. <em>(v0.4+)</em></td>
 </tr>
 <tr>
 <td><code>allowed_ips</code></td>
 <td><code>list[str]</code></td>
 <td><code>[]</code></td>
-<td>IPs or CIDR blocks that bypass maintenance mode. <em>(v0.4+)</em></td>
+<td>Reserved for future IP-based allowlisting. <em>(v0.4+)</em></td>
 </tr>
 <tr>
 <td><code>window</code></td>
@@ -2118,9 +2152,9 @@
 </tr>
 <tr>
 <td><code>sunset_date</code></td>
-<td><code>datetime \| None</code></td>
+<td><code>str \| None</code></td>
 <td><code>None</code></td>
-<td>The date the route will be removed. Used by <code>@deprecated</code>.</td>
+<td>RFC 7231 or ISO-8601 date string injected into the <code>Sunset</code> response header when the route is deprecated.</td>
 </tr>
 <tr>
 <td><code>successor_path</code></td>
@@ -2132,7 +2166,13 @@
 <td><code>rollout_percentage</code></td>
 <td><code>int</code></td>
 <td><code>100</code></td>
-<td>Percentage of requests that reach this route during a canary rollout. <em>(v0.4+)</em></td>
+<td>Reserved for future gradual rollout support. Currently always <code>100</code>. <em>(v0.4+)</em></td>
+</tr>
+<tr>
+<td><code>force_active</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>When <code>True</code>, all state mutations are rejected. Set by the <code>@force_active</code> decorator.</td>
 </tr>
 </tbody>
 </table>
@@ -2185,17 +2225,22 @@
 <tr>
 <td><code>path</code></td>
 <td><code>str</code></td>
-<td>Route key that was changed</td>
+<td>Route key that was changed, or an internal sentinel path for rate-limit and global-maintenance entries</td>
+</tr>
+<tr>
+<td><code>service</code></td>
+<td><code>str \| None</code></td>
+<td>Mirrors <code>RouteState.service</code> so audit rows can be filtered by service name</td>
 </tr>
 <tr>
 <td><code>action</code></td>
 <td><code>str</code></td>
-<td>What happened: <code>"enable"</code>, <code>"disable"</code>, <code>"maintenance"</code>, <code>"env_only"</code>, <code>"schedule"</code>, etc.</td>
+<td>What happened: <code>"enable"</code>, <code>"disable"</code>, <code>"maintenance_on"</code>, <code>"env_gate"</code>, <code>"global_rl_set"</code>, etc.</td>
 </tr>
 <tr>
 <td><code>actor</code></td>
 <td><code>str</code></td>
-<td>Who made the change. One of: a username from the admin dashboard or CLI, <code>"system"</code> for scheduler-driven changes, or <code>"anonymous"</code> for unauthenticated requests.</td>
+<td>Who made the change — a username from the admin dashboard or CLI, <code>"system"</code> for scheduler-driven changes, or <code>"anonymous"</code> for unauthenticated requests</td>
 </tr>
 <tr>
 <td><code>platform</code></td>
@@ -2205,17 +2250,17 @@
 <tr>
 <td><code>reason</code></td>
 <td><code>str</code></td>
-<td>Optional reason, passed through from the state-change call</td>
+<td>Optional context for the change, passed through from the state-change call</td>
 </tr>
 <tr>
 <td><code>previous_status</code></td>
-<td><code>RouteStatus</code></td>
-<td>The route's status before the change</td>
+<td><code>RouteStatus \| None</code></td>
+<td>The route's status before the change. <code>None</code> for non-lifecycle mutations such as rate limit policy changes.</td>
 </tr>
 <tr>
 <td><code>new_status</code></td>
-<td><code>RouteStatus</code></td>
-<td>The route's status after the change</td>
+<td><code>RouteStatus \| None</code></td>
+<td>The route's status after the change. <code>None</code> for non-lifecycle mutations.</td>
 </tr>
 </tbody>
 </table>
