@@ -77,7 +77,8 @@ engine = WaygateEngine(backend=FileBackend(path="waygate-state.json"))
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `path` | `str` | required | File path for the JSON state file. Relative to the working directory of the process. |
+| `path` | `str` | required | File path for the state file. Relative to the working directory of the process. The extension (`.json`, `.yaml`, `.yml`, `.toml`) determines the serialisation format. |
+| `max_rl_hit_entries` | `int` | `10_000` | Maximum number of blocked-request records kept in the hit log. Oldest entries are evicted when the cap is reached. |
 
 ### File format
 

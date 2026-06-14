@@ -38,37 +38,35 @@ async def _redis_available() -> bool:
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture
-def memory_backend() -> MemoryBackend:
-    return MemoryBackend()
+@pytest.fixture(params=["memory", "file", "redis"])
+async def backend(request, tmp_path: Path):
+    if request.param == "memory":
+        yield MemoryBackend()
+    elif request.param == "file":
+        yield FileBackend(str(tmp_path / "waygate.json"))
+    else:
+        if not await _redis_available():
+            pytest.skip("Redis not available")
+        b = RedisBackend(url=REDIS_URL)
+        import redis.asyncio as aioredis
 
-
-@pytest.fixture
-def file_backend(tmp_path: Path) -> FileBackend:
-    return FileBackend(str(tmp_path / "waygate.json"))
+        r = aioredis.from_url(REDIS_URL)
+        await r.flushdb()
+        await r.aclose()
+        yield b
 
 
 @pytest.fixture
 async def redis_backend():
     if not await _redis_available():
         pytest.skip("Redis not available")
-    backend = RedisBackend(url=REDIS_URL)
-    # Flush the test DB before each test for isolation.
+    b = RedisBackend(url=REDIS_URL)
     import redis.asyncio as aioredis
 
     r = aioredis.from_url(REDIS_URL)
     await r.flushdb()
     await r.aclose()
-    yield backend
-
-
-@pytest.fixture(params=["memory", "file", "redis"])
-def backend(request, memory_backend, file_backend, redis_backend):
-    if request.param == "memory":
-        return memory_backend
-    if request.param == "file":
-        return file_backend
-    return redis_backend
+    yield b
 
 
 def _make_state(path: str = "/api/test", status: RouteStatus = RouteStatus.ACTIVE) -> RouteState:

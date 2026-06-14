@@ -93,6 +93,10 @@ class FileBackend(WaygateBackend):
     path:
         Path to the state file.  Created automatically if absent.
         The extension determines the serialisation format.
+    max_rl_hit_entries:
+        Maximum number of blocked-request records to keep in the hit log.
+        Oldest entries are evicted when the cap is reached.  Defaults to
+        ``10 000``.
 
     Raises
     ------

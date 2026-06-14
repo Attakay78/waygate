@@ -366,8 +366,8 @@ The `exc` argument carries useful context for building your response:
 
 | Waygate state | Exception type | Useful attributes |
 |---|---|---|
-| Maintenance | `MaintenanceException` | `exc.reason`, `exc.retry_after`, `exc.path` |
-| Disabled | `RouteDisabledException` | `exc.reason`, `exc.path` |
+| Maintenance | `MaintenanceException` | `exc.reason`, `exc.retry_after` |
+| Disabled | `RouteDisabledException` | `exc.reason` |
 | Env-gated | `EnvGatedException` | `exc.path`, `exc.current_env`, `exc.allowed_envs` |
 | Rate limited | `RateLimitExceededException` | `exc.limit`, `exc.retry_after_seconds`, `exc.reset_at`, `exc.remaining`, `exc.key` |
 

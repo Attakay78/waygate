@@ -51,7 +51,6 @@ from waygate import MaintenanceException
 |---|---|---|
 | `reason` | `str` | Human-readable maintenance reason, passed from the decorator or engine call |
 | `retry_after` | `datetime \| None` | End of the maintenance window. The middleware writes this to the `Retry-After` response header so clients know when to retry. `None` if no window was scheduled. |
-| `path` | `str` | The route key that triggered the exception |
 
 ### In a custom response factory
 
@@ -86,7 +85,6 @@ from waygate import RouteDisabledException
 | Attribute | Type | Description |
 |---|---|---|
 | `reason` | `str` | The reason the route was disabled |
-| `path` | `str` | The route key |
 
 ---
 

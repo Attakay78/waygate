@@ -41,6 +41,14 @@ class MemoryBackend(WaygateBackend):
         self,
         max_rl_hit_entries: int = _DEFAULT_MAX_RL_HIT_ENTRIES,
     ) -> None:
+        """
+        Parameters
+        ----------
+        max_rl_hit_entries:
+            Maximum number of blocked-request records to keep in memory.
+            Oldest entries are evicted when the cap is reached.  Defaults to
+            ``10 000``.  Lower this if memory pressure is a concern.
+        """
         self._states: dict[str, RouteState] = {}
         # Ordered audit log — deque gives O(1) append and O(1) popleft eviction.
         self._audit: deque[AuditEntry] = deque()
