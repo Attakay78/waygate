@@ -56,7 +56,6 @@ from waygate.core.exceptions import (
 # ---------------------------------------------------------------------------
 # Feature flag models  (pure Pydantic — safe without the [flags] extra)
 # ---------------------------------------------------------------------------
-from waygate.core.feature_flags.evaluator import FlagEvaluator
 from waygate.core.feature_flags.models import (
     EvaluationContext,
     EvaluationReason,
@@ -167,3 +166,12 @@ __all__ = [
     "SegmentRule",
     "TargetingRule",
 ]
+
+
+def __getattr__(name: str):
+    if name == "FlagEvaluator":
+        from waygate.core.feature_flags.evaluator import FlagEvaluator
+
+        globals()["FlagEvaluator"] = FlagEvaluator
+        return FlagEvaluator
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
